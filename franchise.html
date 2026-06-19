@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>모딜 — 지역 분양 안내 🐴</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+.fr-hero {
+  position: relative;
+  padding: 4rem 1.5rem;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--cream) 0%, var(--cream2) 100%);
+}
+.fr-hero::before, .fr-hero::after {
+  content: ''; position: absolute;
+  background: var(--coral-soft); opacity: 0.4;
+  border-radius: 50%; filter: blur(40px);
+  pointer-events: none;
+}
+.fr-hero::before { top: -100px; right: -80px; width: 320px; height: 320px; }
+.fr-hero::after  { bottom: -80px; left: -80px; width: 260px; height: 260px; }
+
+.fr-inner {
+  position: relative; z-index: 1;
+  max-width: 1100px; margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 0.8fr;
+  gap: 3rem;
+  align-items: center;
+}
+@media (max-width: 768px) {
+  .fr-inner { grid-template-columns: 1fr; text-align: center; }
+  .fr-left { order: 2; }
+  .fr-right { order: 1; }
+}
+
+.fr-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--paper);
+  border: 1px solid var(--coral-soft);
+  color: var(--coral-dark);
+  padding: 6px 16px; border-radius: 100px;
+  font-size: 12px; font-weight: 600;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow);
+}
+.fr-h {
+  font-size: clamp(40px, 8vw, 72px);
+  font-weight: 900; line-height: 1.05; letter-spacing: -0.03em;
+  margin-bottom: 1.25rem; color: var(--ink);
+}
+.fr-h em {
+  font-style: normal; color: var(--coral-dark);
+  position: relative; display: inline-block;
+}
+.fr-h em::after {
+  content: ''; position: absolute;
+  bottom: 4px; left: 0; right: 0;
+  height: 10px; z-index: -1;
+  background: var(--coral-soft); opacity: 0.6;
+  border-radius: 8px;
+}
+.fr-desc {
+  font-size: clamp(14px, 2.5vw, 17px);
+  color: var(--ink2); line-height: 1.8;
+  margin-bottom: 2rem; word-break: keep-all;
+}
+.fr-desc strong { color: var(--coral-dark); font-weight: 700; }
+
+.fr-stage {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.fr-stage-bg {
+  position: absolute;
+  inset: 10%;
+  background: var(--paper);
+  border-radius: 50%;
+  box-shadow: var(--shadow-lg);
+}
+.fr-sosik {
+  position: relative; z-index: 2;
+  width: 70%;
+  animation: sosik-bounce 4s ease-in-out infinite;
+  filter: drop-shadow(0 12px 24px rgba(228,53,52,0.25));
+}
+.fr-chat {
+  position: absolute;
+  background: var(--gold); color: var(--ink);
+  border-radius: 18px;
+  padding: 10px 16px;
+  font-size: 13px; font-weight: 700;
+  z-index: 3; white-space: nowrap;
+  top: 10%; right: 5%;
+  box-shadow: 0 4px 12px rgba(242,169,63,0.3);
+}
+
+.section {
+  max-width: 1100px; margin: 0 auto;
+  padding: 4rem 1.5rem;
+}
+.sec-mini { font-size: 12px; font-weight: 700; color: var(--coral); letter-spacing: 0.06em; margin-bottom: 8px; }
+.sec-title {
+  font-size: clamp(28px, 5vw, 42px);
+  font-weight: 900; letter-spacing: -0.02em; line-height: 1.1;
+  margin-bottom: 12px; color: var(--ink);
+}
+.sec-desc { font-size: 14px; color: var(--ink3); line-height: 1.7; margin-bottom: 2.5rem; max-width: 600px; }
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+.benefit-card {
+  background: var(--paper);
+  border-radius: 20px;
+  padding: 1.75rem 1.5rem;
+  box-shadow: 0 4px 12px rgba(228,53,52,0.06);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.benefit-card:hover { transform: translateY(-4px); box-shadow: 0 14px 32px rgba(228,53,52,0.12); }
+.bc-icon-wrap {
+  width: 56px; height: 56px;
+  background: var(--coral-soft);
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; margin-bottom: 14px;
+}
+.bc-title { font-size: 15px; font-weight: 800; color: var(--ink); margin-bottom: 8px; line-height: 1.35; }
+.bc-desc { font-size: 12.5px; color: var(--ink3); line-height: 1.7; }
+
+.cities-wrap {
+  background: var(--paper);
+  border-radius: 24px;
+  padding: 2rem;
+  box-shadow: 0 4px 12px rgba(228,53,52,0.06);
+}
+.cities {
+  display: flex; flex-wrap: wrap; gap: 10px;
+}
+.city-pill {
+  background: var(--cream);
+  border: 1px solid var(--line2);
+  border-radius: 100px;
+  padding: 12px 24px;
+  font-size: 14px; font-weight: 700; color: var(--ink);
+  transition: all 0.2s; cursor: pointer;
+}
+.city-pill:hover {
+  background: var(--coral); color: #fff;
+  border-color: var(--coral);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(228,53,52,0.25);
+}
+.city-pill.soon {
+  opacity: 0.55; cursor: default;
+  background: var(--cream3);
+}
+.city-pill.soon:hover {
+  transform: none; box-shadow: none;
+  background: var(--cream3); color: var(--ink); border-color: var(--line2);
+}
+
+.fee-table {
+  background: var(--paper);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(228,53,52,0.06);
+}
+.fee-row {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  border-bottom: 1px solid var(--line);
+  padding: 1.5rem 2rem;
+}
+.fee-row:last-child { border-bottom: none; }
+.fee-label { font-size: 12px; color: var(--ink3); font-weight: 600; letter-spacing: 0.04em; }
+.fee-value { font-size: 17px; font-weight: 800; color: var(--ink); }
+.fee-value strong { color: var(--coral-dark); }
+.fee-value small { display: block; font-size: 12px; color: var(--ink3); font-weight: 400; margin-top: 4px; line-height: 1.6; }
+@media (max-width: 600px) {
+  .fee-row { grid-template-columns: 1fr; gap: 4px; padding: 1.25rem 1.5rem; }
+}
+
+.compare-wrap {
+  background: var(--paper);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(228,53,52,0.06);
+}
+.compare-wrap table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.compare-wrap th, .compare-wrap td {
+  padding: 16px 20px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+.compare-wrap th {
+  font-size: 11px; font-weight: 700;
+  color: var(--ink3); letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--cream);
+}
+.compare-wrap td:first-child { color: var(--ink2); font-weight: 600; }
+.compare-wrap td:nth-child(2) { color: var(--ink3); }
+.compare-wrap td:nth-child(3) { color: var(--coral-dark); font-weight: 700; }
+.compare-wrap tr:last-child td { border-bottom: none; }
+
+.cta-section {
+  background: linear-gradient(135deg, var(--coral) 0%, var(--coral-dark) 100%);
+  padding: 4rem 1.5rem;
+  color: #fff;
+  position: relative; overflow: hidden;
+}
+.cta-section::before, .cta-section::after {
+  content: ''; position: absolute;
+  width: 240px; height: 240px; border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+}
+.cta-section::before { top: -100px; right: -60px; }
+.cta-section::after  { bottom: -100px; left: -60px; }
+.cta-inner {
+  max-width: 600px; margin: 0 auto;
+  position: relative; z-index: 1;
+  text-align: center;
+}
+.cta-sosik {
+  width: 100px; height: 100px;
+  background: var(--paper);
+  border-radius: 50%;
+  margin: 0 auto 1rem;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 10px 32px rgba(0,0,0,0.2);
+}
+.cta-sosik img { width: 130%; margin-top: 6%; }
+.cta-title {
+  font-size: clamp(28px, 6vw, 40px);
+  font-weight: 900; letter-spacing: -0.02em; line-height: 1.1;
+  margin-bottom: 0.75rem;
+}
+.cta-desc { font-size: 14px; opacity: 0.95; margin-bottom: 2rem; }
+
+.fr-form {
+  background: var(--paper);
+  border-radius: 20px;
+  padding: 2rem;
+  text-align: left;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+.fr-form .form-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;
+}
+.fr-form .full { grid-column: 1 / -1; }
+.fr-form label { font-size: 12px; font-weight: 700; color: var(--ink2); display: block; margin-bottom: 6px; }
+.fr-form input, .fr-form select, .fr-form textarea {
+  width: 100%;
+  background: var(--cream); color: var(--ink);
+  border: 1px solid var(--line2);
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.15s;
+}
+.fr-form input:focus, .fr-form select:focus, .fr-form textarea:focus {
+  border-color: var(--coral); background: #fff;
+  box-shadow: 0 0 0 4px rgba(228,53,52,0.1);
+}
+.fr-form textarea { resize: none; height: 90px; }
+.fr-form .submit {
+  width: 100%;
+  padding: 14px;
+  font-size: 15px; font-weight: 700;
+  background: var(--coral); color: #fff;
+  border: none; border-radius: 100px; cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.2s;
+}
+.fr-form .submit:hover { background: var(--coral-dark); }
+@media (max-width: 480px) { .fr-form .form-row { grid-template-columns: 1fr; } }
+
+footer {
+  background: var(--ink); color: rgba(255,255,255,0.65);
+  padding: 2.5rem 1.5rem;
+}
+.footer-inner {
+  max-width: 1100px; margin: 0 auto;
+  display: flex; justify-content: space-between;
+  flex-wrap: wrap; gap: 2rem;
+}
+.f-brand-row { display: flex; align-items: center; gap: 12px; }
+.f-brand-img {
+  width: 44px; height: 44px; background: var(--coral);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.f-brand-img img { width: 130%; margin-top: 6%; }
+.f-logo { font-size: 18px; font-weight: 900; color: var(--coral-light); }
+.f-tag  { font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: 0.08em; }
+.f-links { display: flex; flex-direction: column; gap: 8px; }
+.f-links a { font-size: 12px; color: rgba(255,255,255,0.55); text-decoration: none; }
+.f-links a:hover { color: var(--coral-light); }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="nav-logo" href="index.html">
+    <div class="nav-logo-img"><img src="sosik.png" alt="소식이"></div>
+    <div class="nav-logo-text">
+      <span class="nav-logo-name">모딜</span>
+      <span class="nav-logo-tag">FRANCHISE</span>
+    </div>
+  </a>
+  <div class="nav-right">
+    <button class="nav-btn ghost" onclick="window.location.href='index.html'">메인으로</button>
+    <button class="nav-btn primary" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">분양 문의</button>
+  </div>
+</nav>
+
+<section class="fr-hero">
+  <div class="fr-inner">
+    <div class="fr-left">
+      <div class="fr-badge">
+        <span style="width:7px;height:7px;border-radius:50%;background:var(--coral);display:inline-block;animation:blink 1.5s infinite"></span>
+        지역 운영자 모집 중
+      </div>
+      <h1 class="fr-h">우리 도시에도<br><em>딜이</em> 됩니다.</h1>
+      <p class="fr-desc">
+        안산에서 검증된 <strong>소식이의 모딜 시스템</strong>을<br>
+        당신의 도시에 그대로 가져갈 수 있어요.<br>
+        플랫폼·매뉴얼·거점까지 통째로!
+      </p>
+      <button class="nav-btn primary" style="padding:14px 28px;font-size:15px;font-weight:700;border-radius:100px;border:none;background:var(--coral);color:#fff;cursor:pointer;box-shadow:0 8px 24px rgba(228,53,52,0.3)" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">분양 문의하기 →</button>
+    </div>
+    <div class="fr-right">
+      <div class="fr-stage">
+        <div class="fr-stage-bg"></div>
+        <img src="sosik.png" alt="소식이" class="fr-sosik">
+        <div class="fr-chat">소식이 친구 모집! 🤝</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="sec-mini">왜 모딜인가</div>
+  <div class="sec-title">검증된 시스템,<br>그대로 들여오세요</div>
+  <div class="sec-desc">광고가 아닌 요청에서 시작하는 커머스. 안산에서 1년간 검증한 구조를 그대로 분양합니다.</div>
+
+  <div class="benefits-grid">
+    <div class="benefit-card">
+      <div class="bc-icon-wrap">🤝</div>
+      <div class="bc-title">검증된 협상 매뉴얼</div>
+      <div class="bc-desc">안산에서 38건의 딜을 성사시킨 매뉴얼 — 사장님 설득법, 가격 설계, 마감 압박까지 통째 전수.</div>
+    </div>
+    <div class="benefit-card">
+      <div class="bc-icon-wrap">⚡</div>
+      <div class="bc-title">서브도메인 자동발급</div>
+      <div class="bc-desc">신청 후 7일 내 siheung.modil.kr 같은 도시별 도메인이 자동 생성. 로고와 색상만 바꾸면 즉시 가동.</div>
+    </div>
+    <div class="benefit-card">
+      <div class="bc-icon-wrap">💬</div>
+      <div class="bc-title">카카오 인프라 공유</div>
+      <div class="bc-desc">본사가 미리 등록한 알림톡 인프라를 그대로 사용. 별도 API 신청·계약 없이 첫날부터 발송 가능.</div>
+    </div>
+    <div class="benefit-card">
+      <div class="bc-icon-wrap">📍</div>
+      <div class="bc-title">거점 운영 가이드</div>
+      <div class="bc-desc">안산 17개 거점 운영 데이터 기반의 입지 선정, 운영시간 설계, 입점 협상까지 통합 가이드 제공.</div>
+    </div>
+    <div class="benefit-card">
+      <div class="bc-icon-wrap">📊</div>
+      <div class="bc-title">통합 대시보드</div>
+      <div class="bc-desc">회원·요청·딜·주문·쿠폰·정산이 한 화면에서 관리되는 어드민 콘솔. 본사와 데이터 실시간 연동.</div>
+    </div>
+    <div class="benefit-card">
+      <div class="bc-icon-wrap">🎓</div>
+      <div class="bc-title">3일 오프라인 교육</div>
+      <div class="bc-desc">안산 본사 방문 — 실제 네고 현장 동행, 거점 투어, 운영자 1:1 코칭이 포함된 집중 3일 프로그램.</div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top:0">
+  <div class="sec-mini">분양 가능한 도시</div>
+  <div class="sec-title">우리 동네에<br>딜이 시작됩니다</div>
+  <div class="sec-desc">1차 분양 대상 — 인구 30만 이상 / 본사로부터 2시간 이내 도시 우선</div>
+
+  <div class="cities-wrap">
+    <div class="cities">
+      <div class="city-pill">🏙️ 시흥</div>
+      <div class="city-pill">🏙️ 수원</div>
+      <div class="city-pill">🏙️ 평택</div>
+      <div class="city-pill">🏙️ 인천</div>
+      <div class="city-pill">🏙️ 광명</div>
+      <div class="city-pill">🏙️ 부천</div>
+      <div class="city-pill">🏙️ 안양</div>
+      <div class="city-pill">🏙️ 의왕</div>
+      <div class="city-pill soon">🏙️ 대전 (2단계)</div>
+      <div class="city-pill soon">🏙️ 광주 (2단계)</div>
+      <div class="city-pill soon">🏙️ 대구 (2단계)</div>
+      <div class="city-pill soon">🏙️ 부산 (2단계)</div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top:0">
+  <div class="sec-mini">💰 분양 비용</div>
+  <div class="sec-title">단순하고<br>합리적이에요</div>
+  <div class="sec-desc">고정비를 낮추고 본사·지점이 함께 성장하는 수익 공유 구조</div>
+
+  <div class="fee-table">
+    <div class="fee-row">
+      <div class="fee-label">초기 분양료 (1회)</div>
+      <div class="fee-value"><strong>500만원</strong><small>플랫폼, 매뉴얼, 3일 오프라인 교육, 서브도메인 발급 포함</small></div>
+    </div>
+    <div class="fee-row">
+      <div class="fee-label">월 시스템 유지비</div>
+      <div class="fee-value"><strong>30만원 / 월</strong><small>서버, 카카오 인프라, CS 공동운영, 본사 컨설팅 포함</small></div>
+    </div>
+    <div class="fee-row">
+      <div class="fee-label">매출 수수료</div>
+      <div class="fee-value"><strong>거래액의 15%</strong><small>지점 매출 발생분의 본사 수수료 (브랜드·시스템·R&D 비용)</small></div>
+    </div>
+    <div class="fee-row">
+      <div class="fee-label">예상 손익분기</div>
+      <div class="fee-value"><strong>4–6개월</strong><small>안산 1년 데이터 기반 추정 (도시 규모·운영 강도에 따라 변동)</small></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top:0">
+  <div class="sec-mini">📊 비교</div>
+  <div class="sec-title">맨바닥 vs 모딜 분양</div>
+  <div class="sec-desc">시간·비용·실패 리스크가 모두 압축됩니다</div>
+
+  <div class="compare-wrap">
+    <table>
+      <thead>
+        <tr><th>구분</th><th>맨바닥 창업</th><th>모딜 분양</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>플랫폼 개발</td><td>6–12개월 / 5천만원+</td><td>즉시 사용 / 0원</td></tr>
+        <tr><td>운영 노하우</td><td>시행착오 1–2년</td><td>1년 검증 매뉴얼 즉시</td></tr>
+        <tr><td>카카오 인프라</td><td>3개월 신청·인증</td><td>본사 공유 즉시</td></tr>
+        <tr><td>거점 시스템</td><td>처음부터 설계</td><td>17곳 검증 구조 제공</td></tr>
+        <tr><td>브랜드 신뢰</td><td>0부터 구축</td><td>모딜 브랜드 활용</td></tr>
+        <tr><td>손익분기</td><td>12–24개월</td><td>4–6개월</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="cta-section" id="contact">
+  <div class="cta-inner">
+    <div class="cta-sosik"><img src="sosik.png" alt="소식이"></div>
+    <h2 class="cta-title">소식이가 기다리고 있어요!</h2>
+    <p class="cta-desc">아래 폼을 남기시면 1영업일 이내 본사에서 직접 연락드려요</p>
+
+    <form class="fr-form" onsubmit="submitFranchise(event)">
+      <div class="form-row">
+        <div><label>이름</label><input type="text" id="frName" required placeholder="홍길동"></div>
+        <div><label>연락처</label><input type="tel" id="frPhone" required placeholder="010-0000-0000"></div>
+      </div>
+      <div class="form-row">
+        <div><label>희망 도시</label>
+          <select id="frCity" required>
+            <option value="">선택해주세요</option>
+            <option>시흥</option><option>수원</option><option>평택</option>
+            <option>인천</option><option>광명</option><option>부천</option>
+            <option>안양</option><option>의왕</option>
+            <option>기타 (메모에 작성)</option>
+          </select>
+        </div>
+        <div><label>이메일</label><input type="email" id="frEmail" required placeholder="email@example.com"></div>
+      </div>
+      <div class="full" style="margin-bottom:0">
+        <label>운영 경력 또는 자기소개</label>
+        <textarea id="frMemo" placeholder="유통·커머스·지역 운영 등 관련 경력이나 운영 계획을 자유롭게 작성해주세요."></textarea>
+      </div>
+      <button type="submit" class="submit">분양 문의 제출하기 🐴 →</button>
+    </form>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="f-brand-row">
+        <div class="f-brand-img"><img src="sosik.png" alt="소식이"></div>
+        <div>
+          <div class="f-logo">모딜</div>
+          <div class="f-tag">MODIL · 지역 분양 안내</div>
+        </div>
+      </div>
+    </div>
+    <div class="f-links">
+      <a href="index.html">메인 페이지</a>
+      <a href="admin.html">관리자 콘솔</a>
+      <a href="#">사업소개서 다운로드</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+function submitFranchise(e) {
+  e.preventDefault();
+  const name = document.getElementById('frName').value;
+  const city = document.getElementById('frCity').value;
+  alert(`🐴 ${name}님, ${city} 분양 문의가 접수되었어요!\n1영업일 이내 본사에서 연락드릴게요.`);
+  e.target.reset();
+}
+</script>
+
+</body>
+</html>
