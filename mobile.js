@@ -216,7 +216,30 @@
   window.mSummon = function (id) {
     var p = findP(id); if (!p) return;
     p.likes += 1; savePlaza(); renderFeed();
-    toast('💬 카톡으로 친구를 소환했어요! 모이면 협상 시작 🚀');
+    var shareUrl = 'https://visualmakerofficial-sejung.github.io/homme/';
+    var msg = '[' + p.cat + '] ' + p.title;
+    // 카카오 SDK 공유
+    if (window.Kakao && window.Kakao.isInitialized && window.Kakao.isInitialized()) {
+      window.Kakao.Share.sendDefault({
+        objectType: 'feed',
+        content: {
+          title: '모딜 — 같이 딜 하자!',
+          description: msg,
+          imageUrl: shareUrl + 'sosik.png',
+          link: { mobileWebUrl: shareUrl, webUrl: shareUrl }
+        },
+        buttons: [{ title: '딜 보러가기', link: { mobileWebUrl: shareUrl, webUrl: shareUrl } }]
+      });
+    } else {
+      // SDK 미초기화 시 카카오 링크 공유 fallback
+      var kakaoUrl = 'https://sharer.kakao.com/talk/friends/picker/link?app_key=KAKAO_APP_KEY&validation_action=default&validation_params=' + encodeURIComponent(JSON.stringify({ link: { webUrl: shareUrl } }));
+      if (navigator.share) {
+        navigator.share({ title: '모딜 — 같이 딜 하자!', text: msg, url: shareUrl });
+      } else {
+        window.open('https://accounts.kakao.com/login?continue=' + encodeURIComponent('https://sharer.kakao.com/talk/friends/picker/easylink?app_key=KAKAO_APP_KEY&url=' + shareUrl));
+      }
+      toast('💬 카톡으로 친구를 소환했어요! 모이면 협상 시작 🚀');
+    }
   };
   window.mPostDeal = function () {
     var ti = $('composerInput'), ca = $('composerCat');
