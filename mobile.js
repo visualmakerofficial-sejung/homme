@@ -401,7 +401,7 @@
   }
   function renderSignup() {
     $('authBody').innerHTML = sheetXTop('mCloseAuth') +
-      '<div class="auth-sosik"><img src="sosik.svg" alt="소식이"></div>' +
+      '<div class="auth-sosik"><img src="sosik.png" alt="소식이"></div>' +
       '<div class="auth-h"><div class="auth-t1">모딜 시작하기 🐴</div>' +
       '<div class="auth-t2">3초 만에 가입하고, 우리 동네 딜을<br>내 카톡으로 받아보세요</div></div>' +
       (pendingPay ? '<div class="auth-note" style="color:var(--coral-dark);font-weight:700;margin:12px 0 0">🛒 공동구매 참여를 위해 가입이 필요해요</div>' : '') +
