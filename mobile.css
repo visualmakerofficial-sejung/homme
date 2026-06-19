@@ -264,9 +264,9 @@ body {
 }
 
 /* 피드 — 컴팩트 카드 */
-.feed { display: flex; flex-direction: column; gap: 8px; position: relative; z-index: 1; }
+.feed { display: flex; flex-direction: column; gap: 4px; position: relative; z-index: 1; }
 .fcard {
-  background: rgba(255,255,255,0.96); border-radius: 12px; padding: 6px 10px;
+  background: rgba(255,255,255,0.96); border-radius: 10px; padding: 5px 10px;
   animation: fcardIn 0.4s ease both;
 }
 .fcard.fresh { box-shadow: 0 0 0 2px var(--gold); }
@@ -283,7 +283,7 @@ body {
   display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
 }
 .fc-title b { color: var(--coral-dark); font-weight: 800; }
-.fc-foot { display: flex; align-items: center; gap: 5px; margin-top: 4px; }
+.fc-foot { display: flex; align-items: center; gap: 5px; margin-top: 3px; }
 .fc-btn {
   border: 1px solid var(--line2); background: var(--paper); color: var(--ink2);
   font-size: 10px; font-weight: 700; padding: 4px 9px; border-radius: 100px;
