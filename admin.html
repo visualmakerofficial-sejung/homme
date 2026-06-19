@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>모딜 — 관리자 콘솔</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+body { background: var(--cream2); }
+
+.admin-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+.sidebar {
+  background: var(--paper);
+  border-right: 1px solid var(--line);
+  padding: 1.5rem 0;
+  box-shadow: 2px 0 12px rgba(228,53,52,0.04);
+}
+.sb-brand {
+  padding: 0 1.25rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 1rem;
+  display: flex; align-items: center; gap: 10px;
+  text-decoration: none;
+}
+.sb-brand-img {
+  width: 40px; height: 40px;
+  background: var(--coral-soft);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.sb-brand-img img { width: 130%; margin-top: 6%; }
+.sb-brand-text h1 { font-size: 16px; font-weight: 900; color: var(--coral-dark); line-height: 1; }
+.sb-brand-text small { font-size: 9px; color: var(--ink3); letter-spacing: 0.1em; display: block; margin-top: 4px; }
+
+.sb-section { padding: 0.5rem 1.25rem; font-size: 10px; letter-spacing: 0.1em; color: var(--ink3); text-transform: uppercase; margin-top: 1rem; font-weight: 700; }
+.sb-link {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 1.25rem;
+  font-size: 13px; font-weight: 600; color: var(--ink2);
+  cursor: pointer; transition: background 0.15s, color 0.15s;
+  border-left: 3px solid transparent;
+}
+.sb-link:hover { background: var(--cream); color: var(--coral-dark); }
+.sb-link.active {
+  background: var(--coral-soft); color: var(--coral-dark);
+  border-left-color: var(--coral);
+}
+.sb-icon { font-size: 16px; }
+.sb-back {
+  margin: 1.5rem 1.25rem 0;
+  padding: 10px 12px;
+  background: var(--cream);
+  color: var(--ink2);
+  border-radius: 8px;
+  font-size: 12px; font-weight: 600;
+  text-decoration: none;
+  display: block;
+  text-align: center;
+}
+.sb-back:hover { background: var(--coral-soft); color: var(--coral-dark); }
+
+.main { padding: 2rem; overflow-x: auto; }
+.page-head {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  margin-bottom: 1.5rem; padding-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.page-title { font-size: 24px; font-weight: 900; color: var(--ink); }
+.page-sub { font-size: 12px; color: var(--ink3); margin-top: 4px; }
+.page-actions { display: flex; gap: 8px; }
+.btn {
+  font-size: 12px; font-weight: 600;
+  padding: 9px 14px; border-radius: 8px;
+  cursor: pointer; border: 1px solid var(--line2);
+  background: var(--paper); color: var(--ink);
+  transition: all 0.15s;
+}
+.btn:hover { border-color: var(--coral); color: var(--coral); }
+.btn.primary { background: var(--coral); color: #fff; border-color: var(--coral); }
+.btn.primary:hover { background: var(--coral-dark); color: #fff; }
+.btn.danger { background: var(--paper); color: var(--coral-dark); border-color: var(--coral-soft); }
+.btn.danger:hover { background: var(--coral-dark); color: #fff; border-color: var(--coral-dark); }
+.btn.sm { padding: 5px 11px; font-size: 11px; }
+
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 2rem;
+}
+.kpi-card {
+  background: var(--paper);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(228,53,52,0.06);
+}
+.kpi-label { font-size: 11px; color: var(--ink3); margin-bottom: 8px; letter-spacing: 0.04em; font-weight: 600; }
+.kpi-value { font-size: 32px; font-weight: 900; color: var(--coral-dark); line-height: 1; }
+.kpi-sub { font-size: 11px; color: var(--green); margin-top: 8px; font-weight: 600; }
+.kpi-sub.down { color: var(--coral-dark); }
+
+.card {
+  background: var(--paper);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 12px rgba(228,53,52,0.04);
+}
+.card-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 1.25rem;
+}
+.card-title { font-size: 15px; font-weight: 800; color: var(--ink); }
+.card-sub { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead th {
+  text-align: left;
+  font-size: 10px; font-weight: 700;
+  color: var(--ink3); letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--line);
+  background: var(--cream);
+}
+tbody td {
+  padding: 13px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink2);
+}
+tbody tr { transition: background 0.15s; }
+tbody tr:hover { background: var(--cream); }
+.pill {
+  display: inline-block; font-size: 10px; font-weight: 700;
+  padding: 3px 10px; border-radius: 100px;
+}
+.pill.green { background: rgba(56,168,122,0.15); color: var(--green); }
+.pill.orange { background: var(--coral-soft); color: var(--coral-dark); }
+.pill.blue { background: rgba(24,95,165,0.15); color: #185FA5; }
+.pill.gray { background: var(--cream3); color: var(--ink2); }
+.pill.red { background: rgba(228,53,52,0.15); color: var(--coral-dark); }
+
+input.editable, select.editable, textarea.editable {
+  width: 100%;
+  background: var(--cream);
+  border: 1px solid var(--line2);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 12px;
+  color: var(--ink);
+  outline: none;
+}
+input.editable:focus, select.editable:focus, textarea.editable:focus {
+  border-color: var(--coral); background: var(--paper);
+  box-shadow: 0 0 0 3px rgba(228,53,52,0.08);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.form-row .full { grid-column: 1 / -1; }
+.form-row label { font-size: 11px; color: var(--ink2); display: block; margin-bottom: 5px; font-weight: 700; }
+
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(45,27,20,0.5);
+  display: none;
+  align-items: center; justify-content: center;
+  z-index: 999;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--paper);
+  border-radius: 20px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.modal-title { font-size: 18px; font-weight: 900; margin-bottom: 1rem; color: var(--ink); }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.5rem; }
+
+.kakao-preview {
+  background: #FEE500;
+  color: #3B1E1E;
+  border-radius: 16px;
+  padding: 1rem;
+  max-width: 320px;
+  margin: 1rem 0;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+.kakao-preview .kkk-head {
+  font-size: 11px;
+  background: #3B1E1E;
+  color: #FEE500;
+  padding: 4px 10px;
+  border-radius: 100px;
+  display: inline-block;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.kakao-preview .kkk-link {
+  margin-top: 12px;
+  background: rgba(0,0,0,0.08);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .admin-layout { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .main { padding: 1rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="admin-layout">
+
+<aside class="sidebar">
+  <a class="sb-brand" href="index.html">
+    <div class="sb-brand-img"><img src="sosik.png" alt="소식이"></div>
+    <div class="sb-brand-text">
+      <h1 id="adminBrand">모딜</h1>
+      <small>ADMIN CONSOLE</small>
+    </div>
+  </a>
+
+  <div class="sb-section">메인</div>
+  <div class="sb-link active" data-page="dashboard">
+    <span class="sb-icon">📊</span>대시보드
+  </div>
+
+  <div class="sb-section">운영</div>
+  <div class="sb-link" data-page="members"><span class="sb-icon">👥</span>회원 관리</div>
+  <div class="sb-link" data-page="requests"><span class="sb-icon">📬</span>요청 관리</div>
+  <div class="sb-link" data-page="partners"><span class="sb-icon">🏪</span>제휴 신청 관리</div>
+  <div class="sb-link" data-page="nego"><span class="sb-icon">🤝</span>네고딜 관리</div>
+  <div class="sb-link" data-page="deals"><span class="sb-icon">🛒</span>공동구매 관리</div>
+  <div class="sb-link" data-page="orders"><span class="sb-icon">📦</span>주문·배송 관리</div>
+
+  <div class="sb-section">고객 발송</div>
+  <div class="sb-link" data-page="coupons"><span class="sb-icon">🎟️</span>쿠폰 관리</div>
+  <div class="sb-link" data-page="kakao"><span class="sb-icon">💬</span>카톡 쿠폰발송</div>
+
+  <div class="sb-section">거점</div>
+  <div class="sb-link" data-page="spots"><span class="sb-icon">📍</span>17개 거점 관리</div>
+
+  <div class="sb-section">시스템</div>
+  <div class="sb-link" data-page="site"><span class="sb-icon">⚙️</span>사이트 설정</div>
+
+  <div class="sb-section">채널 바로가기</div>
+  <a class="sb-link" href="index.html" style="text-decoration:none"><span class="sb-icon">🖥️</span>PC 홈페이지</a>
+  <a class="sb-link" href="모딜 모바일.html" style="text-decoration:none"><span class="sb-icon">📱</span>모바일 홈페이지</a>
+  <a class="sb-link" href="모딜 미리보기.html" style="text-decoration:none"><span class="sb-icon">🔀</span>PC·모바일 비교</a>
+
+  <a class="sb-back" href="index.html">← 사용자 페이지로</a>
+</aside>
+
+<main class="main" id="main"></main>
+
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<script src="data.js"></script>
+<script>
+let DATA = loadData();
+let currentPage = 'dashboard';
+
+document.querySelectorAll('.sb-link').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
+    el.classList.add('active');
+    currentPage = el.dataset.page;
+    renderPage();
+  });
+});
+
+function openModal(html) {
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+}
+document.getElementById('modal').addEventListener('click', e => {
+  if (e.target.id === 'modal') closeModal();
+});
+
+function save() {
+  saveData(DATA);
+  renderPage();
+}
+
+function renderPage() {
+  if (currentPage === 'dashboard') return renderDashboard();
+  if (currentPage === 'members') return renderMembers();
+  if (currentPage === 'requests') return renderRequests();
+  if (currentPage === 'partners') return renderPartnersAdmin();
+  if (currentPage === 'nego') return renderNego();
+  if (currentPage === 'deals') return renderDeals();
+  if (currentPage === 'orders') return renderOrders();
+  if (currentPage === 'coupons') return renderCoupons();
+  if (currentPage === 'kakao') return renderKakao();
+  if (currentPage === 'spots') return renderSpots();
+  if (currentPage === 'site') return renderSite();
+}
+
+function renderDashboard() {
+  const totalRevenue = DATA.orders.reduce((sum, o) => sum + o.amount, 0);
+  const totalOrders = DATA.orders.length;
+  const pendingOrders = DATA.orders.filter(o => o.status === 'preparing' || o.status === 'pickup_ready').length;
+  const activeRequests = DATA.requests.length;
+
+  document.getElementById('main').innerHTML = `
+    <div class="page-head">
+      <div>
+        <div class="page-title">대시보드</div>
+        <div class="page-sub">소식이가 정리한 오늘의 운영 현황</div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,#2D1410,#46201A);color:#fff;border-radius:16px;padding:16px 20px;margin-bottom:20px;flex-wrap:wrap">
+      <div style="font-size:26px">🎛️</div>
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:14px;font-weight:800">통합 관리 — PC · 모바일 한 번에</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.72);margin-top:3px">여기서 수정한 딜·요청·제휴·거점은 <b style="color:#FF8B72">PC 홈페이지</b>와 <b style="color:#FF8B72">모바일 홈페이지</b>에 동시에 반영돼요.</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a href="index.html" style="text-decoration:none;background:rgba(255,255,255,0.12);color:#fff;font-size:12px;font-weight:700;padding:9px 15px;border-radius:100px">🖥️ PC 홈</a>
+        <a href="모딜 모바일.html" style="text-decoration:none;background:rgba(255,255,255,0.12);color:#fff;font-size:12px;font-weight:700;padding:9px 15px;border-radius:100px">📱 모바일 홈</a>
+        <a href="모딜 미리보기.html" style="text-decoration:none;background:#F86D53;color:#fff;font-size:12px;font-weight:700;padding:9px 15px;border-radius:100px">🔀 비교 보기</a>
+      </div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-label">함께한 친구</div>
+        <div class="kpi-value">${fmt(DATA.stats.totalMembers)}</div>
+        <div class="kpi-sub">↑ 이번 달 +124</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">성사된 딜</div>
+        <div class="kpi-value">${DATA.stats.successDeals}</div>
+        <div class="kpi-sub">↑ 이번 달 +5</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">진행 중 네고</div>
+        <div class="kpi-value">${DATA.negoDeals.length}</div>
+        <div class="kpi-sub">활성 협상</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">누적 거래액</div>
+        <div class="kpi-value">${fmt(Math.round(totalRevenue/10000))}만</div>
+        <div class="kpi-sub">건당 평균 ${fmt(Math.round(totalRevenue/totalOrders))}원</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">처리 대기 주문</div>
+        <div class="kpi-value">${pendingOrders}</div>
+        <div class="kpi-sub down">즉시 처리 필요</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">신규 요청</div>
+        <div class="kpi-value">${activeRequests}</div>
+        <div class="kpi-sub">검토 대기</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">제휴 신청</div>
+        <div class="kpi-value">${(DATA.partners || []).length}</div>
+        <div class="kpi-sub down">${(DATA.partners || []).filter(p => p.status === 'review').length}건 검토 대기</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div><div class="card-title">최근 주문</div><div class="card-sub">처리가 필요한 최근 주문 5건</div></div>
+        <button class="btn" onclick="goTo('orders')">전체 주문 →</button>
+      </div>
+      <table>
+        <thead><tr><th>주문번호</th><th>회원</th><th>상품</th><th>금액</th><th>수령방법</th><th>상태</th></tr></thead>
+        <tbody>${DATA.orders.slice(0,5).map(o => `
+          <tr>
+            <td><b>${o.id}</b></td>
+            <td>${o.member}</td>
+            <td>${o.deal}</td>
+            <td>${fmt(o.amount)}원</td>
+            <td>${o.pickup}</td>
+            <td>${statusPill(o.status)}</td>
+          </tr>`).join('')}</tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div><div class="card-title">요청 현황 TOP 5</div><div class="card-sub">소식이가 검토 중인 인기 요청</div></div>
+      </div>
+      <table>
+        <thead><tr><th>요청 항목</th><th>지역</th><th>요청 수</th><th>상태</th></tr></thead>
+        <tbody>${DATA.requests.slice(0,5).map(r => `
+          <tr>
+            <td>${r.icon} ${r.name}</td>
+            <td>${r.meta}</td>
+            <td><b>${r.count}명</b></td>
+            <td><span class="pill ${r.status === 'live' ? 'orange' : 'gray'}">${r.status === 'live' ? '협상중' : '검토 중'}</span></td>
+          </tr>`).join('')}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function goTo(page) {
+  currentPage = page;
+  document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
+  document.querySelector('[data-page=' + page + ']').classList.add('active');
+  renderPage();
+}
+
+function statusPill(s) {
+  const map = {
+    preparing:    { c: 'orange', t: '준비중' },
+    pickup_ready: { c: 'blue', t: '픽업대기' },
+    shipped:      { c: 'blue', t: '배송중' },
+    completed:    { c: 'green', t: '완료' },
+  };
+  const m = map[s] || { c: 'gray', t: s };
+  return `<span class="pill ${m.c}">${m.t}</span>`;
+}
+
+function renderMembers() {
+  document.getElementById('main').innerHTML = `
+    <div class="page-head">
+      <div><div class="page-title">회원 관리</div><div class="page-sub">소식이 친구들 ${DATA.members.length}명</div></div>
+      <div class="page-actions"><button class="btn primary" onclick="addMember()">+ 회원 추가</button></div>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>ID</th><th>이름</th><th>전화</th><th>가입경로</th><th>가입일</th><th>참여 딜</th><th>등급</th><th>카톡연동</th><th>작업</th></tr></thead>
+        <tbody>${DATA.members.map((m,i) => `
+          <tr>
+            <td><b>${m.id}</b></td>
+            <td>${m.name}</td>
+            <td>${m.phone}</td>
+            <td><span class="pill ${m.channel === 'kakao' ? 'orange' : m.channel === 'naver' ? 'green' : m.channel === 'instagram' ? 'red' : 'gray'}">${({kakao:'💬 카카오', naver:'🟢 네이버', instagram:'📷 인스타'})[m.channel] || '직접가입'}</span></td>
+            <td>${m.joinDate}</td>
+            <td>${m.deals}건</td>
+            <td><span class="pill ${m.status === 'vip' ? 'orange' : 'gray'}">${m.status === 'vip' ? 'VIP' : '일반'}</span></td>
+            <td><span class="pill ${m.kakao === 'connected' ? 'green' : m.kakao === 'pending' ? 'orange' : 'red'}">${m.kakao === 'connected' ? '연동' : m.kakao === 'pending' ? '대기' : '미연동'}</span></td>
+            <td>
+              <button class="btn sm" onclick="editMember(${i})">수정</button>
+              <button class="btn sm danger" onclick="deleteMember(${i})">삭제</button>
+            </td>
+          </tr>`).join('')}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function addMember() {
+  openModal(`
+    <div class="modal-title">회원 추가</div>
+    <div class="form-row">
+      <div><label>이름</label><input class="editable" id="mNm" placeholder="홍길동"></div>
+      <div><label>전화번호</label><input class="editable" id="mPh" placeholder="010-0000-0000"></div>
+    </div>
+    <div class="form-row">
+      <div><label>가입일</label><input class="editable" id="mDt" type="date" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div><label>등급</label>
+        <select class="editable" id="mSt"><option value="active">일반</option><option value="vip">VIP</option></select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">취소</button>
+      <button class="btn primary" onclick="saveNewMember()">추가</button>
+    </div>
+  `);
+}
+function saveNewMember() {
+  const id = 'M-' + (1000 + DATA.members.length + 1);
+  DATA.members.push({
+    id, name: document.getElementById('mNm').value,
+    phone: document.getElementById('mPh').value,
+    joinDate: document.getElementById('mDt').value,
+    status: document.getElementById('mSt').value,
+    deals: 0, kakao: 'pending',
+  });
+  save();
+  closeModal();
+}
+function editMember(i) {
+  const m = DATA.members[i];
+  openModal(`
+    <div class="modal-title">회원 수정 — ${m.id}</div>
+    <div class="form-row">
+      <div><label>이름</label><input class="editable" id="mNm" value="${m.name}"></div>
+      <div><label>전화번호</label><input class="editable" id="mPh" value="${m.phone}"></div>
+    </div>
+    <div class="form-row">
+      <div><label>가입일</label><input class="editable" id="mDt" type="date" value="${m.joinDate}"></div>
+      <div><label>참여 딜</label><input class="editable" id="mDl" type="number" value="${m.deals}"></div>
+    </div>
+    <div class="form-row">
+      <div><label>등급</label>
+        <select class="editable" id="mSt">
+          <option value="active" ${m.status === 'active' ? 'selected' : ''}>일반</option>
+          <option value="vip" ${m.status === 'vip' ? 'selected' : ''}>VIP</option>
+        </select>
+      </div>
+      <div><label>카톡 연동</label>
+        <select class="editable" id="mKa">
+          <option value="connected" ${m.kakao === 'connected' ? 'selected' : ''}>연동</option>
+          <option value="pending" ${m.kakao === 'pending' ? 'selected' : ''}>대기</option>
+          <option value="disconnected" ${m.kakao === 'disconnected' ? 'selected' : ''}>미연동</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">취소</button>
+      <button class="btn primary" onclick="saveEditMember(${i})">저장</button>
+    </div>
+  `);
+}
+function saveEditMember(i) {
+  const m = DATA.members[i];
+  m.name = document.getElementById('mNm').value;
+  m.phone = document.getElementById('mPh').value;
+  m.joinDate = document.getElementById('mDt').value;
+  m.deals = +document.getElementById('mDl').value;
+  m.status = document.getElementById('mSt').value;
+  m.kakao = document.getElementById('mKa').value;
+  save(); closeModal();
+}
+function deleteMember(i) {
+  if (!confirm('정말 삭제하시겠습니까?')) return;
+  DATA.members.splice(i, 1);
+  save();
+}
+
+function renderRequests() {
+  document.getElementById('main').innerHTML = `
+    <div class="page-head">
+      <div><div class="page-title">요청 관리</div><div class="page-sub">고객이 직접 제출한 딜 요청 검토</div></div>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>요청 항목</th><th>지역</th><th>요청 수</th><th>상태</th><th>작업</th></tr></thead>
+        <tbody>${DATA.requests.map((r,i) => `
+          <tr>
+            <td>${r.icon} <b>${r.name}</b></td>
+            <td>${r.meta}</td>
+            <td>${r.count}명</td>
+            <td>
+              <select class="editable" style="max-width:130px" onchange="updateReqStatus(${i}, this.value)">
+                <option value="check" ${r.status === 'check' ? 'selected' : ''}>검토 중</option>
+                <option value="live" ${r.status === 'live' ? 'selected' : ''}>협상 진행중</option>
+              </select>
+            </td>
+            <td>
+              <button class="btn sm primary" onclick="promoteToNego(${i})">네고딜로 →</button>
+              <button class="btn sm danger" onclick="deleteRequest(${i})">삭제</button>
+            </td>
+          </tr>`).join('')}</tbody>
+      </table>
+    </div>
+  `;
+}
+function updateReqStatus(i, v) {
+  DATA.requests[i].status = v;
+  save();
+}
+function promoteToNego(i) {
+  const r = DATA.requests[i];
+  DATA.negoDeals.push({
+    id: 'nego-' + Date.now(),
+    category: r.icon + ' ' + r.meta.split(' · ')[0],
+    name: r.name,
+    status: 'live',
+    statusText: '소식이가 협상중',
+    currentCount: r.count,
+    targetCount: r.count + 20,
+    reservable: true,
+  });
+  DATA.requests.splice(i, 1);
+  save();
+  alert('✅ 네고딜로 등록되었습니다!');
+}
+function deleteRequest(i) {
+  if (!confirm('삭제하시겠습니까?')) return;
+  DATA.requests.splice(i, 1);
+  save();
+}
+
+function renderPartnersAdmin() {
+  DATA.partners = DATA.partners || [];
+  const reviewCnt = DATA.partners.filter(p => p.status === 'review').length;
+  const liveCnt = DATA.partners.filter(p => p.status === 'live').length;
+  document.getElementById('main').innerHTML = `
+    <div class="page-head">
+      <div><div class="page-title">제휴 신청 관리</div><div class="page-sub">사장님이 직접 제안한 매장 딜 — 검토 후 네고딜로 전환</div></div>
+      <div class="page-actions"><button class="btn primary" onclick="addPartner()">+ 제휴 매장 추가</button></div>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi-card"><div class="kpi-label">총 제휴 신청</div><div class="kpi-value">${DATA.partners.length}</div></div>
+      <div class="kpi-card"><div class="kpi-label">검토 대기</div><div class="kpi-value">${reviewCnt}</div><div class="kpi-sub down">확인 필요</div></div>
+      <div class="kpi-card"><div class="kpi-label">진행중</div><div class="kpi-value">${liveCnt}</div><div class="kpi-sub">운영중</div></div>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>매장</th><th>사장님</th><th>업종</th><th>동네</th><th>제안 혜택</th><th>연락처</th><th>상태</th><th>작업</th></tr></thead>
+        <tbody>${DATA.partners.map((p,i) => `
+          <tr>
+            <td><b>${p.store}</b></td>
+            <td>${p.owner}</td>
+            <td>${p.category}</td>
+            <td>${p.dong || '-'}</td>
+            <td style="max-width:240px">${p.offer}</td>
+            <td>${p.phone}${p.kakao ? '<br><span style="color:var(--ink3)">' + p.kakao + '</span>' : ''}</td>
+            <td>
+              <select class="editable" style="max-width:120px" onchange="updatePartnerStatus(${i}, this.value)">
+                <option value="review" ${p.status === 'review' ? 'selected' : ''}>검토 중</option>
+                <option value="live" ${p.status === 'live' ? 'selected' : ''}>진행중</option>
+              </select>
+            </td>
+            <td>
+              <button class="btn sm primary" onclick="partnerToNego(${i})">네고딜로 →</button>
+              <button class="btn sm danger" onclick="deletePartner(${i})">삭제</button>
+            </td>
+          </tr>`).join('')}</tbody>
+      </table>
+    </div>
+  `;
+}
+function addPartner() {
+  openModal(`
+    <div class="modal-title">제휴 매장 추가</div>
+    <div class="form-row">
+      <div><label>매장명</label><input class="editable" id="pStore" placeholder="소소베이커리"></div>
+      <div><label>사장님</label><input class="editable" id="pOwner" placeholder="박소소"></div>
+      <div><label>업종 (이모지 포함)</label><input class="editable" id="pCat" placeholder="☕ 카페 / 베이커리"></div>
+      <div><label>동네</label><input class="editable" id="pDong" placeholder="고잔동"></div>
+      <div class="full"><label>제안 혜택</label><textarea class="editable" id="pOffer" rows="2" placeholder="10명 모이면 전메뉴 20% 할인"></textarea></div>
+      <div><label>연락처</label><input class="editable" id="pPhone" placeholder="010-0000-0000"></div>
+      <div><label>카카오톡 ID</label><input class="editable" id="pKakao" placeholder="@store_id"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">취소</button>
+      <button class="btn primary" onclick="saveNewPartner()">추가</button>
+    </div>
+  `);
+}
+function saveNewPartner() {
+  DATA.partners = DATA.partners || [];
+  DATA.partners.unshift({
+    id: 'P-' + Date.now(),
+    store: document.getElementById('pStore').value,
+    owner: document.getElementById('pOwner').value,
+    category: document.getElementById('pCat').value,
+    dong: document.getElementById('pDong').value,
+    offer: document.getElementById('pOffer').value,
+    phone: document.getElementById('pPhone').value,
+    kakao: document.getElementById('pKakao').value,
+    status: 'review',
+    date: new Date().toISOString().slice(0,10),
+  });
+  save(); closeModal();
+}
+function updatePartnerStatus(i, v) { DATA.partners[i].status = v; save(); }
+function deletePartner(i) {
+  if (!confirm('삭제하시겠습니까?')) return;
+  DATA.partners.splice(i, 1);
+  save();
+}
+function partnerToNego(i) {
+  const p = DATA.partners[i];
+  if (!confirm(`'${p.store}' 제안을 네고딜로 등록하시겠습니까?`)) return;
+  DATA.negoDeals.push({
+    id: 'nego-' + Date.now(),
+    category: (p.category.trim().split(' ')[0] || '🏪') + ' ' + p.store,
+    name: p.store + '\n' + p.offer,
+    status: 'live', statusText: '소식이가 협상중',
+    currentCount: 0, targetCount: 50, reservable: true,
+  });
+  DATA.partners[i].status = 'live';
+  save();
+  alert('✅ 네고딜로 등록되었습니다!');
+}
+
+function renderNego() {
+  document.getElementById('main').innerHTML = `
+    <div class="page-head">
+      <div><div class="page-title">네고딜 관리</div><div class="page-sub">현재 협상 중인 ${DATA.negoDeals.length}건</div></div>
+      <div class="page-actions"><button class="btn primary" onclick="addNego()">+ 네고딜 추가</button></div>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>카테고리</th><th>딜명</th><th>진행률</th><th>현재 / 목표</th><th>상태</th><th>작업</th></tr></thead>
+        <tbody>${DATA.negoDeals.map((d,i) => `
+          <tr>
+            <td>${d.category}</td>
+            <td><b>${d.name.replace(/\n/g, ' ')}</b></td>
+            <td>${Math.round(d.currentCount / d.targetCount * 100)}%</td>
+            <td>${d.currentCount} / ${d.targetCount}명</td>
+            <td><span class="pill ${d.status === 'opening' ? 'green' : 'orange'}">${d.statusText}</span></td>
+            <td>
+              <button class="btn sm" onclick="editNego(${i})">수정</button>
+              <button class="btn sm primary" onclick="openNegoDeal(${i})">오픈 →</button>
+              <button class="btn sm danger" onclick="deleteNego(${i})">삭제</button>
+            </td>
+          </tr>`).join('')}</tbody>
+      </table>
+    </div>
+  `;
+}
+function addNego() {
+  openModal(`
+    <div class="modal-title">네고딜 추가</div>
+    <div class="form-row">
+      <div class="full"><label>카테고리 (이모지 포함)</label><input class="editable" id="nC" placeholder="📱 휴대폰"></div>
+      <div class="full"><label>딜명</label><input class="editable" id="nN" placeholder="갤럭시 S25 공구"></div>
+      <div><label>현재 요청 수</label><input class="editable" id="nCt" type="number" value="0"></div>
+      <div><label>목표 수</label><input class="editable" id="nT" type="number" value="100"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">취소</button>
+      <button class="btn primary" onclick="saveNewNego()">추가</button>
+    </div>
+  `);
+}
+function saveNewNego() {
+  DATA.negoDeals.push({
+    id: 'nego-' + Date.now(),
+    category: document.getElementById('nC').value,
+    name: document.getElementById('nN').value,
+    status: 'live', statusText: '소식이가 협상중',
+    currentCount: +document.getElementById('nCt').value,
+    targetCount: +document.getElementById('nT').value,
+    reservable: true,
+  });
+  save(); closeModal();
+}
+function editNego(i) {
+  const d = DATA.negoDeals[i];
+  openModal(`
+    <div class="modal-title">네고딜 수정</div>
+    <div class="form-row">
+      <div class="full"><label>카테고리</label><input class="editable" id="nC" value="${d.category}"></div>
+      <div class="full"><label>딜명</label><input class="editable" id="nN" value="${d.name.replace(/"/g, '&quot;')}"></div>
+      <div><label>현재 수</label><input class="editable" id="nCt" type="number" value="${d.currentCount}"></div>
+      <div><label>목표 수</label><input class="editable" id="nT" type="number" value="${d.targetCount}"></div>
+      <div class="full"><label>상태</label>
+        <select class="editable" id="nSt">
+          <option value="live" ${d.status === 'live' ? 'selected' : ''}>협상 진행중</option>
+          <option value="opening" ${d.status === 'opening' ? 'selected' : ''}>오픈 임박</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">취소</button>
+      <button class="btn primary" onclick="saveEditNego(${i})">저장</button>
+    </div>
+  `);
+}
+function saveEditNego(i) {
+  const d = DATA.negoDeals[i];
+  d.category = document.getElementById('nC').value;
+  d.name = document.getElementById('nN').value;
+  d.currentCount = +document.getElementById('nCt').value;
+  d.targetCount = +document.getElementById('nT').value;
+  d.status = document.getElementById('nSt').value;
+  d.statusText = d.status === 'opening' ? '오픈 임박' : '소식이가 협상중';
+  save(); closeModal();
+}
+function openNegoDeal(i) {
+  if (!confirm('이 네고딜을 공동구매로 오픈하시겠습니까?')) return;
+  const d = DATA.negoDeals[i];
+  DATA.activeDeals.push({
+    id: 'deal-' + Date.now(),
+    category: d.category,
+    name: d.name.replace(/\n/g, ' '),
+    icon: d.category.split(' ')[0],
+    origPrice: 100000, nowPrice: 70000,
+    participants: 0, badges: ['신규'],
+  });
+  DATA.negoDeals.splice(i, 1);
+  save();
+  alert('✅ 공동구매로 오픈되었습니다! 가격은 공동구매 관리에서 수정해주세요.');
+}
+function deleteNego(i) {
+  if (!confirm('삭제하시겠습니까?')) return;
+  DATA.negoDeals.splice(i, 1);
+  save();
+}
+
+function renderDeals() {
+  document.getElementById('main').innerHTML = `
+    <div class="page-head">
+      <div><div class="page-title">공동구매 관리</div><div class="page-sub">현재 판매 중인 ${DATA.activeDeals.length}건</div></div>
+      <div class="page-actions"><button class="btn primary" onclick="addDeal()">+ 공동구매 추가</button></div>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>카테고리</th><th>딜명</th><th>정가</th><th>판매가</th><th>할인율</th><th>참여</th><th>작업</th></tr></thead>
+        <tbody>${DATA.activeDeals.map((d,i) => `
+          <tr>
+            <td>${d.icon} ${d.category}</td>
+            <td><b>${d.name}</b></td>
+            <td>${fmt(d.origPrice)}원</td>
+            <td><b style="color:var(--coral-dark)">${fmt(d.nowPrice)}원</b></td>
+            <td>${Math.round((1 - d.nowPrice / d.origPrice) * 100)}%</td>
+            <td>${d.participants}명</td>
+            <td>
+              <button class="btn sm" onclick="editDeal(${i})">수정</button>
+              <button class="btn sm danger" onclick="deleteDeal(${i})">삭제</button>
+            </td>
+          </tr>`).join('')}</tbody>
+      </table>
+    </div>
+  `;
+}
+function addDeal() {
+  openModal(`
+    <div class="modal-title">공동구매 추가</div>
+    <div class="form-row">
+      <div><label>이모지</label><input class="editable" id="dI" placeholder="📱"></div>
+      <div><label>카테고리</label><input class="editable" id="dC" placeholder="삼성 · 실매장"></div>
+      <div class="full"><label>딜명</label><input class="editable" id="dN" placeholder="갤럭시 S25 공구"></div>
+      <div><label>정가</label><input class="editable" id="dOp" type="number" placeholder="1000000"></div>
+      <div><label>판매가</label><input class="editable" id="dNp" type="number" placeholder="700000"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">취소</button>
+      <button class="btn primary" onclick="saveNewDeal()">추가</button>
+    </div>
+  `);
+}
+function saveNewDeal() {
+  DATA.activeDeals.push({
+    id: 'deal-' + Date.now(),
+    icon: document.getElementById('dI').value || '🛍️',
+    category: document.getElementById('dC').value,
+    name: document.getElementById('dN').value,
+    origPrice: +document.getElementById('dOp').value,
+    nowPrice: +document.getElementById('dNp').value,
+    participants: 0, badges: ['신규'],
+  });
+  save(); closeModal();
+}
+function editDeal(i) {
+  const d = DATA.activeDeals[i];
+  openModal(`
+    <div class="modal-title">공동구매 수정</div>
+    <div class="form-row">
+      <div><label>이모지</label><input class="editable" id="dI" value="${d.icon}"></div>
+      <div><label>카테고리</label><input class="editable" id="dC" value="${d.category}"></div>
+      <div class="full"><label>딜명</label><input class="editable" id="dN" value="${d.name.replace(/"/g, '&quot;')}"></div>
+      <div><label>정가</label><input class="editable" id="dOp" type="number" value="${d.origPrice}"></div>
+      <div><label>판매가</label><input class="editable" id="dNp" type="number" value="${d.nowPrice}"></div>
+      <div><label>참여 수</label><input class="editable" id="dP" type="number" value="${d.participants}"></div>
+      <div><label>배지 (쉼표)</label><input class="editable" id="dB" value="${d.badges.join(',')}"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">취소</button>
+      <button class="btn primary" onclick="saveEditDeal(${i})">저장</button>
+    </div>
+  `);
+}
+function saveEditDeal(i) {
+  const d = DATA.activeDeals[i];
+  d.icon = document.getElementById('dI').value;
+  d.category = document.getElementById('dC').value;
+  d.name = document.getElementById('dN').value;
+  d.origPrice = +document.getElementById('dOp').value;
+  d.nowPrice = +document.getElementById('dNp').value;
+  d.participants = +document.getElementById('dP').value;
+  d.badges = document.getElementById('dB').value.split(',').map(s => s.trim()).filter(Boolean);
+  save(); closeModal();
+}
+function deleteDeal(i) {
+  if (!confirm('삭제하시겠습니까?')) return;
+  DATA.activeDeals.splice(i, 1);
+  save();
+}
+
+function renderOrders() {
+  document.getElementById('main').innerHTML = `
+    <div class="page-head">
+      <div><div class="page-title">주문·배송 관리</div><div class="page-sub">전체 ${DATA.orders.length}건</div></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">주문 처리</div><div class="card-sub">상태 변경시 자동 알림</div></div>
+      <table>
+        <thead><tr><th>주문번호</th><th>회원</th><th>상품</th><th>금액</th><th>주문일</th><th>수령방법</th><th>상태</th><th>작업</th></tr></thead>
+        <tbody>${DATA.orders.map((o,i) => `
+          <tr>
+            <td><b>${o.id}</b></td>
+            <td>${o.member}</td>
+            <td>${o.deal}</td>
+            <td>${fmt(o.amount)}원</td>
+            <td>${o.date}</td>
+            <td>
+              <select class="editable" style="max-width:160px" onchange="updatePickup(${i}, this.value)">
+                <option ${o.pickup.includes('본점') ? 'selected' : ''}>모딜 본점</option>
+                <option ${o.pickup.includes('단원구청') ? 'selected' : ''}>단원구청 거점</option>
+                <option ${o.pickup.includes('고잔동') ? 'selected' : ''}>고잔동 거점</option>
+                <option ${o.pickup.includes('상록구청') ? 'selected' : ''}>상록구청 거점</option>
+                <option ${o.pickup === '택배발송' ? 'selected' : ''}>택배발송</option>
+                <option ${o.pickup.includes('카톡') ? 'selected' : ''}>카톡 즉시발송</option>
+              </select>
+            </td>
+            <td>${statusPill(o.status)}</td>
+            <td>
+              <select class="editable" style="max-width:120px" onchange="updateOrderStatus(${i}, this.value)">
+                <option value="preparing" ${o.status === 'preparing' ? 'selected' : ''}>준비중</option>
+                <option value="pickup_ready" ${o.status === 'pickup_ready' ? 'selected' : ''}>픽업대기</option>
+                <option value="shipped" ${o.status === 'shipped' ? 'selected' : ''}>배송중</option>
+                <option value="completed" ${o.status === 'completed' ? 'selected' : ''}>완료</option>
+              </select>
+            </td>
+          </tr>`).join('')}</tbody>
+      </table>
+    </div>
+  `;
+}
+function updatePickup(i, v) { DATA.orders[i].pickup = v; save(); }
+function updateOrderStatus(i, v) { DATA.orders[i].status = v; save(); }
+
+function renderCoupons() {
+  document.getElementById('main').innerHTML = `
+    <div class="page-head">
+      <div><div class="page-title">쿠폰 관리</div><div class="page-sub">발행·사용·만료 통합 관리</div></div>
+      <div class="page-actions"><button class="btn primary" onclick="addCoupon()">+ 쿠폰 발행</button></div>
+    </div>
+    <div class="kpi-row">
+      <div class="kpi-card"><div class="kpi-label">총 발행</div><div class="kpi-value">${DATA.coupons.reduce((s,c) => s + c.sent, 0)}</div></div>
+      <div class="kpi-card"><div class="kpi-label">사용 완료</div><div class="kpi-value">${DATA.coupons.reduce((s,c) => s + c.used, 0)}</div></div>
+      <div class="kpi-card"><div class="kpi-label">미사용 잔여</div><div class="kpi-value">${DATA.coupons.reduce((s,c) => s + c.remaining, 0)}</div></div>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>쿠폰명</th><th>발행</th><th>사용</th><th>잔여</th><th>사용률</th><th>만료일</th><th>작업</th></tr></thead>
+        <tbody>${DATA.coupons.map((c,i) => `
+          <tr>
+            <td><b>${c.name}</b></td>
+            <td>${c.sent}</td>
+            <td>${c.used}</td>
+            <td>${c.remaining}</td>
+            <td>${Math.round(c.used / c.sent * 100)}%</td>
+            <td>${c.expiry}</td>
+            <td>
+              <button class="btn sm primary" onclick="sendKakaoForCoupon(${i})">📤 카톡</button>
+              <button class="btn sm danger" onclick="deleteCoupon(${i})">삭제</button>
+            </td>
+          </tr>`).join('')}</tbody>
+      </table>
+    </div>
+  `;
+}
+function addCoupon() {
+  openModal(`
+    <div class="modal-title">쿠폰 발행</div>
+    <div class="form-row">
+      <div class="full"><label>쿠폰명</label><input class="editable" id="cN" placeholder="CGV 영화권"></div>
+      <div><label>발행 수량</label><input class="editable" id="cQ" type="number" placeholder="100"></div>
+      <div><label>만료일</label><input class="editable" id="cE" type="date" value="2025-12-31"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">취소</button>
+      <button class="btn primary" onclick="saveNewCoupon()">발행</button>
+    </div>
+  `);
+}
+function saveNewCoupon() {
+  const q = +document.getElementById('cQ').value;
+  DATA.coupons.push({
+    id: 'C-' + Date.now().toString().slice(-3),
+    name: document.getElementById('cN').value,
+    sent: q, used: 0, remaining: q,
+    expiry: document.getElementById('cE').value,
+  });
+  save(); closeModal();
+}
+function deleteCoupon(i) {
+  if (!confirm('삭제하시겠습니까?')) return;
+  DATA.coupons.splice(i, 1);
+  save();
+}
+function sendKakaoForCoupon(i) {
+  goTo('kakao');
+  setTimeout(() => {
+    document.getElementById('kkName').value = DATA.coupons[i].name + ' 쿠폰 발송 안내';
+    document.getElementById('kkMsg').value = `[모딜 🐴]\n${DATA.coupons[i].name} 쿠폰이 발송되었어요!\n\n📅 사용기한: ${DATA.coupons[i].expiry}\n\n모딜 앱에서 확인하세요.`;
+    previewKakao();
+  }, 100);
+}
+
+function renderKakao() {
+  document.getElementById('main').innerHTML = `
+    <div class="page-head">
+      <div><div class="page-title">카카오톡 쿠폰발송</div><div class="page-sub">알림톡 / 친구톡 발송</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 360px;gap:1.5rem">
+      <div class="card">
+        <div class="card-head"><div class="card-title">메시지 작성</div></div>
+        <div class="form-row">
+          <div class="full"><label>발송 대상</label>
+            <select class="editable" id="kkTo">
+              <option>전체 회원 (${DATA.members.length}명)</option>
+              <option>VIP 회원만 (${DATA.members.filter(m => m.status === 'vip').length}명)</option>
+              <option>최근 30일 신규 회원</option>
+              <option>특정 딜 참여자</option>
+            </select>
+          </div>
+          <div class="full"><label>템플릿명</label><input class="editable" id="kkName" placeholder="CGV 쿠폰 발송 안내" oninput="previewKakao()"></div>
+          <div class="full"><label>메시지 본문</label>
+            <textarea class="editable" id="kkMsg" rows="8" placeholder="[모딜 🐴]&#10;쿠폰이 발송되었어요!" oninput="previewKakao()" style="resize:vertical;height:140px"></textarea>
+          </div>
+          <div class="full"><label>버튼 텍스트</label><input class="editable" id="kkBtn" value="쿠폰 사용하기" oninput="previewKakao()"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:1rem">
+          <button class="btn" onclick="document.getElementById('kkMsg').value=''">초기화</button>
+          <button class="btn primary" onclick="sendKakao()">📤 카카오톡 발송</button>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:12px;color:var(--ink3);margin-bottom:8px;font-weight:600">미리보기</div>
+        <div class="kakao-preview">
+          <div class="kkk-head">💬 알림톡</div>
+          <div id="kkPreviewMsg">메시지를 입력하세요.</div>
+          <div class="kkk-link" id="kkPreviewBtn">버튼 텍스트</div>
+        </div>
+        <div style="font-size:12px;color:var(--ink3);margin-top:1rem;font-weight:600">발송 기록 (최근 5건)</div>
+        <div class="card" style="margin-top:8px;padding:1rem">
+          <div style="font-size:12px;line-height:2"><b>2025-05-30</b> · CGV 쿠폰 (198건)<br><b>2025-05-25</b> · 스타벅스 쿠폰 (74건)<br><b>2025-05-20</b> · 키즈카페 쿠폰 (150건)<br><b>2025-05-15</b> · 신규딜 안내 (1,240건)<br><b>2025-05-10</b> · 뷰티샵 쿠폰 (80건)</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+function previewKakao() {
+  document.getElementById('kkPreviewMsg').innerText = document.getElementById('kkMsg').value || '메시지를 입력하세요.';
+  document.getElementById('kkPreviewBtn').innerText = document.getElementById('kkBtn').value || '버튼 텍스트';
+}
+function sendKakao() {
+  const msg = document.getElementById('kkMsg').value;
+  if (!msg) { alert('메시지를 입력해주세요.'); return; }
+  alert('✅ 카카오톡 알림톡이 발송되었습니다!\n\n(실제 운영 시 카카오 비즈니스 API와 연동됩니다)');
+}
+
+function renderSpots() {
+  document.getElementById('main').innerHTML = `
+    <div class="page-head">
+      <div><div class="page-title">17개 거점 관리</div><div class="page-sub">픽업 거점·운영시간</div></div>
+      <div class="page-actions"><button class="btn primary" onclick="addSpot()">+ 거점 추가</button></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title">거점 목록</div><div class="card-sub">단원구 ${DATA.pickupSpots.filter(s => s.district === '단원구').length}곳, 상록구 ${DATA.pickupSpots.filter(s => s.district === '상록구').length}곳</div></div>
+      <table>
+        <thead><tr><th>거점명</th><th>지역</th><th>동</th><th>주소</th><th>좌표(X,Y)</th><th>운영시간</th><th>연락처</th><th>작업</th></tr></thead>
+        <tbody>${DATA.pickupSpots.map((s,i) => `
+          <tr>
+            <td><b>${s.name}</b></td>
+            <td><span class="pill orange">${s.district}</span></td>
+            <td>${s.dong || '-'}</td>
+            <td>${s.address}</td>
+            <td>${s.x != null ? s.x + ', ' + s.y : '-'}</td>
+            <td>${s.hours}</td>
+            <td>${s.phone}</td>
+            <td>
+              <button class="btn sm" onclick="editSpot(${i})">수정</button>
+              <button class="btn sm danger" onclick="deleteSpot(${i})">삭제</button>
+            </td>
+          </tr>`).join('')}</tbody>
+      </table>
+    </div>
+  `;
+}
+function addSpot() {
+  openModal(`
+    <div class="modal-title">거점 추가</div>
+    <div class="form-row">
+      <div><label>거점명</label><input class="editable" id="sN" placeholder="OO동 거점"></div>
+      <div><label>지역</label><select class="editable" id="sD"><option>단원구</option><option>상록구</option></select></div>
+      <div><label>동 (검색용)</label><input class="editable" id="sDong" placeholder="고잔동"></div>
+      <div class="full"><label>주소</label><input class="editable" id="sA"></div>
+      <div><label>지도 X (0–100)</label><input class="editable" id="sX" type="number" placeholder="50"></div>
+      <div><label>지도 Y (0–100)</label><input class="editable" id="sY" type="number" placeholder="50"></div>
+      <div><label>운영시간</label><input class="editable" id="sH" placeholder="평일 10-19"></div>
+      <div><label>연락처</label><input class="editable" id="sP" placeholder="031-000-0000"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">취소</button>
+      <button class="btn primary" onclick="saveNewSpot()">추가</button>
+    </div>
+  `);
+}
+function saveNewSpot() {
+  DATA.pickupSpots.push({
+    id: 'spot-' + Date.now().toString().slice(-4),
+    name: document.getElementById('sN').value,
+    district: document.getElementById('sD').value,
+    dong: document.getElementById('sDong').value,
+    address: document.getElementById('sA').value,
+    x: +document.getElementById('sX').value || 50,
+    y: +document.getElementById('sY').value || 50,
+    hours: document.getElementById('sH').value,
+    phone: document.getElementById('sP').value,
+  });
+  save(); closeModal();
+}
+function editSpot(i) {
+  const s = DATA.pickupSpots[i];
+  openModal(`
+    <div class="modal-title">거점 수정 — ${s.name}</div>
+    <div class="form-row">
+      <div><label>거점명</label><input class="editable" id="sN" value="${s.name}"></div>
+      <div><label>지역</label><select class="editable" id="sD"><option ${s.district === '단원구' ? 'selected' : ''}>단원구</option><option ${s.district === '상록구' ? 'selected' : ''}>상록구</option></select></div>
+      <div><label>동 (검색용)</label><input class="editable" id="sDong" value="${s.dong || ''}"></div>
+      <div class="full"><label>주소</label><input class="editable" id="sA" value="${s.address}"></div>
+      <div><label>지도 X (0–100)</label><input class="editable" id="sX" type="number" value="${s.x != null ? s.x : 50}"></div>
+      <div><label>지도 Y (0–100)</label><input class="editable" id="sY" type="number" value="${s.y != null ? s.y : 50}"></div>
+      <div><label>운영시간</label><input class="editable" id="sH" value="${s.hours}"></div>
+      <div><label>연락처</label><input class="editable" id="sP" value="${s.phone}"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">취소</button>
+      <button class="btn primary" onclick="saveEditSpot(${i})">저장</button>
+    </div>
+  `);
+}
+function saveEditSpot(i) {
+  const s = DATA.pickupSpots[i];
+  s.name = document.getElementById('sN').value;
+  s.district = document.getElementById('sD').value;
+  s.dong = document.getElementById('sDong').value;
+  s.address = document.getElementById('sA').value;
+  s.x = +document.getElementById('sX').value;
+  s.y = +document.getElementById('sY').value;
+  s.hours = document.getElementById('sH').value;
+  s.phone = document.getElementById('sP').value;
+  save(); closeModal();
+}
+function deleteSpot(i) {
+  if (!confirm('삭제하시겠습니까?')) return;
+  DATA.pickupSpots.splice(i, 1);
+  save();
+}
+
+function renderSite() {
+  const s = DATA.site;
+  document.getElementById('main').innerHTML = `
+    <div class="page-head">
+      <div><div class="page-title">사이트 설정</div><div class="page-sub">브랜드·연락처·통계 일괄 수정</div></div>
+      <div class="page-actions">
+        <button class="btn danger" onclick="resetAllData()">기본값으로 초기화</button>
+        <button class="btn primary" onclick="saveSite()">설정 저장</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">브랜드 정보</div></div>
+      <div class="form-row">
+        <div><label>브랜드명 (한글)</label><input class="editable" id="sBrand" value="${s.brand}"></div>
+        <div><label>브랜드명 (영문)</label><input class="editable" id="sBrandEn" value="${s.brandEn}"></div>
+        <div><label>지역명</label><input class="editable" id="sRegion" value="${s.region}"></div>
+        <div><label>마스코트명</label><input class="editable" id="sMascot" value="${s.mascot}"></div>
+        <div class="full"><label>슬로건</label><input class="editable" id="sSlogan" value="${s.slogan}"></div>
+        <div class="full"><label>태그라인</label><input class="editable" id="sTagline" value="${s.tagline}"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">연락처</div></div>
+      <div class="form-row">
+        <div class="full"><label>이메일</label><input class="editable" id="sEmail" value="${s.contactEmail}"></div>
+        <div class="full"><label>주소</label><input class="editable" id="sAddr" value="${s.contactAddress}"></div>
+        <div class="full"><label>운영시간</label><input class="editable" id="sHours" value="${s.contactHours}"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-title">메인 페이지 통계</div></div>
+      <div class="form-row">
+        <div><label>성사된 딜</label><input class="editable" id="stD" type="number" value="${DATA.stats.successDeals}"></div>
+        <div><label>함께한 친구</label><input class="editable" id="stM" type="number" value="${DATA.stats.totalMembers}"></div>
+        <div><label>만족도 %</label><input class="editable" id="stS" type="number" value="${DATA.stats.satisfaction}"></div>
+        <div><label>진행 중 네고</label><input class="editable" id="stN" type="number" value="${DATA.stats.activeNego}"></div>
+      </div>
+    </div>
+  `;
+}
+function saveSite() {
+  DATA.site.brand = document.getElementById('sBrand').value;
+  DATA.site.brandEn = document.getElementById('sBrandEn').value;
+  DATA.site.region = document.getElementById('sRegion').value;
+  DATA.site.mascot = document.getElementById('sMascot').value;
+  DATA.site.slogan = document.getElementById('sSlogan').value;
+  DATA.site.tagline = document.getElementById('sTagline').value;
+  DATA.site.contactEmail = document.getElementById('sEmail').value;
+  DATA.site.contactAddress = document.getElementById('sAddr').value;
+  DATA.site.contactHours = document.getElementById('sHours').value;
+  DATA.stats.successDeals = +document.getElementById('stD').value;
+  DATA.stats.totalMembers = +document.getElementById('stM').value;
+  DATA.stats.satisfaction = +document.getElementById('stS').value;
+  DATA.stats.activeNego = +document.getElementById('stN').value;
+  save();
+  alert('✅ 설정이 저장되었습니다!');
+}
+function resetAllData() {
+  if (!confirm('모든 데이터를 기본값으로 되돌리시겠습니까?\n작업하신 내용이 모두 사라집니다.')) return;
+  DATA = resetData();
+  save();
+  alert('✅ 데이터가 초기화되었습니다.');
+}
+
+renderDashboard();
+</script>
+
+</body>
+</html>
