@@ -232,7 +232,9 @@
     var ti = $('composerInput'), ca = $('composerCat');
     var title = (ti.value || '').trim();
     if (!title) { ti.focus(); toast('어떤 딜을 열고 싶은지 적어주세요 🐴'); return; }
-    var np = { id: 'mine-' + Date.now(), ava: ME[Math.floor(Math.random() * 3)], nick: plaza.me, lvl: 'LV.1',
+    if (!currentUser()) { toast('딜을 올리려면 먼저 가입해 주세요 🙋'); mOpenAuth(); return; }
+    var u = currentUser();
+    var np = { id: 'mine-' + Date.now(), ava: u.av || ME[Math.floor(Math.random() * 3)], nick: u.name, lvl: 'LV.1',
       ago: 0, cat: ca.value, likes: 1, lols: 0, liked: true, mine: true, fresh: true, title: esc(title) };
     plaza.posts.unshift(np);
     if (plaza.posts.length > 12) plaza.posts = plaza.posts.slice(0, 12);
@@ -413,14 +415,20 @@
     $('authBody').innerHTML = sheetXTop('mCloseAuth') +
       '<div class="auth-sosik"><img src="sosik.png" alt="소식이"></div>' +
       '<div class="auth-h"><div class="auth-t1">모딜 시작하기 🐴</div>' +
-      '<div class="auth-t2">3초 만에 가입하고, 우리 동네 딜을<br>내 카톡으로 받아보세요</div></div>' +
+      '<div class="auth-t2">닉네임을 정하고 우리 동네 딜을 시작해요!</div></div>' +
       (pendingPay ? '<div class="auth-note" style="color:var(--coral-dark);font-weight:700;margin:12px 0 0">🛒 공동구매 참여를 위해 가입이 필요해요</div>' : '') +
+      '<div style="margin:12px 0 8px">' +
+        '<input id="signupNick" type="text" maxlength="12" placeholder="닉네임 입력 (최대 12자)" ' +
+        'style="width:100%;padding:12px 14px;border:1.5px solid var(--line2);border-radius:12px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box" ' +
+        'oninput="this.style.borderColor=this.value?\'var(--coral)\':\' var(--line2)\'" />' +
+      '</div>' +
       '<div class="auth-btns">' +
         '<button class="auth-btn kakao" onclick="mSignup(\'kakao\')"><span class="ai">💬</span>카카오톡으로 시작하기</button>' +
         '<button class="auth-btn naver" onclick="mSignup(\'naver\')"><span class="ai">N</span>네이버로 시작하기</button>' +
         '<button class="auth-btn insta" onclick="mSignup(\'instagram\')"><span class="ai">📷</span>인스타그램으로 시작하기</button>' +
       '</div>' +
       '<div class="auth-note">가입 시 <a href="#">이용약관</a> · <a href="#">개인정보처리방침</a>에 동의합니다</div>';
+    setTimeout(function () { var el = document.getElementById('signupNick'); if (el) el.focus(); }, 200);
   }
   function renderProfile(u) {
     var mm = DATA.members.find(function (m) { return m.name === u.name; });
@@ -436,7 +444,12 @@
       '<button class="prof-logout" onclick="mLogout()">로그아웃</button>';
   }
   window.mSignup = function (channel) {
-    var nick = NICKS[Math.floor(Math.random() * NICKS.length)] + (Math.floor(Math.random() * 90) + 10);
+    var nickInput = document.getElementById('signupNick');
+    var typed = nickInput ? nickInput.value.trim() : '';
+    var nick = typed || (NICKS[Math.floor(Math.random() * NICKS.length)] + (Math.floor(Math.random() * 90) + 10));
+    // 중복 닉네임 처리
+    var exists = DATA.members.find(function (m) { return m.name === nick; });
+    if (exists) { nick = nick + (Math.floor(Math.random() * 90) + 10); }
     var av = AVS[Math.floor(Math.random() * AVS.length)];
     var u = { name: nick, av: av, channel: channel };
     DATA.members.unshift({ id: 'M-' + Date.now(), name: nick, phone: '소셜가입', joinDate: today(),
