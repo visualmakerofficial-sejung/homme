@@ -277,6 +277,8 @@ body {
 .fc-lvl { font-size: 8px; font-weight: 700; color: var(--coral-dark); background: var(--coral-bg); padding: 1px 5px; border-radius: 100px; margin-left: 4px; }
 .fc-time { font-size: 9px; color: var(--ink3); margin-left: auto; flex-shrink: 0; }
 .fc-fresh { font-size: 8.5px; font-weight: 800; color: var(--gold); margin-left: auto; }
+.fc-pin { font-size: 8.5px; font-weight: 800; color: #fff; background: var(--coral-dark); padding: 1px 6px; border-radius: 100px; margin-left: auto; }
+.fcard.pinned { border-left: 3px solid var(--coral-dark); }
 .fc-cat { font-size: 8.5px; font-weight: 700; color: var(--coral-dark); }
 .fc-title {
   font-size: 12px; color: var(--ink); line-height: 1.4; word-break: keep-all;

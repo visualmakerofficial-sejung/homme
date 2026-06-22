@@ -257,6 +257,7 @@ input.editable:focus, select.editable:focus, textarea.editable:focus {
   <div class="sb-link" data-page="nego"><span class="sb-icon">🤝</span>네고딜 관리</div>
   <div class="sb-link" data-page="deals"><span class="sb-icon">🛒</span>공동구매 관리</div>
   <div class="sb-link" data-page="orders"><span class="sb-icon">📦</span>주문·배송 관리</div>
+  <div class="sb-link" data-page="plaza"><span class="sb-icon">📢</span>딜 광장 관리</div>
 
   <div class="sb-section">고객 발송</div>
   <div class="sb-link" data-page="coupons"><span class="sb-icon">🎟️</span>쿠폰 관리</div>
@@ -326,6 +327,7 @@ function renderPage() {
   if (currentPage === 'kakao') return renderKakao();
   if (currentPage === 'spots') return renderSpots();
   if (currentPage === 'site') return renderSite();
+  if (currentPage === 'plaza') return renderPlaza();
 }
 
 function renderDashboard() {
@@ -475,6 +477,60 @@ function renderMembers() {
       </table>
     </div>
   `;
+}
+
+const PLZ_KEY = 'modilMobilePlaza_v1';
+function loadPlazaAdmin() {
+  try { const s = localStorage.getItem(PLZ_KEY); if (s) return JSON.parse(s); } catch(e) {}
+  return { posts: [] };
+}
+function savePlazaAdmin(p) { try { localStorage.setItem(PLZ_KEY, JSON.stringify(p)); } catch(e) {} }
+
+function renderPlaza() {
+  const p = loadPlazaAdmin();
+  const sorted = p.posts.slice().sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+  document.getElementById('main').innerHTML = `
+    <div class="page-head">
+      <div><div class="page-title">딜 광장 관리</div><div class="page-sub">총 ${sorted.length}개 포스트</div></div>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>상태</th><th>닉네임</th><th>카테고리</th><th>내용</th><th>좋아요</th><th>게시시간</th><th>작업</th></tr></thead>
+        <tbody>${sorted.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:24px">포스트 없음</td></tr>' :
+          sorted.map((post, i) => `
+          <tr style="${post.pinned ? 'background:#fff8f5' : ''}">
+            <td>${post.pinned ? '<span class="pill orange">📌 고정</span>' : '<span class="pill gray">일반</span>'}</td>
+            <td><b>${post.nick || '(익명)'}</b></td>
+            <td><span class="pill gray">${post.cat || '-'}</span></td>
+            <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${post.title || ''}</td>
+            <td>👍 ${post.likes || 0} / 😂 ${post.lols || 0}</td>
+            <td style="font-size:11px;color:#888">${post.ago != null ? (post.ago < 1 ? '방금' : post.ago < 60 ? post.ago + '분 전' : Math.floor(post.ago/60) + '시간 전') : '-'}</td>
+            <td>
+              <button class="btn sm ${post.pinned ? 'danger' : 'primary'}" onclick="togglePin('${post.id}')">${post.pinned ? '📌 고정 해제' : '📌 상단 고정'}</button>
+              <button class="btn sm danger" onclick="deletePlazaPost('${post.id}')">삭제</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function togglePin(id) {
+  const p = loadPlazaAdmin();
+  const post = p.posts.find(x => x.id === id);
+  if (!post) return;
+  post.pinned = !post.pinned;
+  savePlazaAdmin(p);
+  renderPlaza();
+}
+
+function deletePlazaPost(id) {
+  if (!confirm('이 포스트를 삭제하시겠습니까?')) return;
+  const p = loadPlazaAdmin();
+  p.posts = p.posts.filter(x => x.id !== id);
+  savePlazaAdmin(p);
+  renderPlaza();
 }
 
 function addMember() {
