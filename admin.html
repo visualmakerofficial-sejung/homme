@@ -968,14 +968,14 @@ function renderOrders() {
     <div class="card">
       <div class="card-head"><div class="card-title">주문 처리</div><div class="card-sub">상태 변경시 자동 알림</div></div>
       <table>
-        <thead><tr><th>주문번호</th><th>회원</th><th>상품</th><th>금액</th><th>결제수단</th><th>결제상태</th><th>주문일</th><th>수령방법</th><th>처리상태</th><th>작업</th></tr></thead>
+        <thead><tr><th>주문번호</th><th>회원</th><th>상품</th><th>금액</th><th>가상계좌</th><th>결제상태</th><th>주문일</th><th>수령방법</th><th>처리상태</th><th>문자</th><th>작업</th></tr></thead>
         <tbody>${DATA.orders.map((o,i) => `
           <tr>
             <td><b style="font-size:10px">${o.id}</b></td>
             <td>${o.member}</td>
             <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.deal}</td>
             <td><b>${fmt(o.amount)}원</b></td>
-            <td><span class="pill gray">${o.method || '-'}</span></td>
+            <td style="font-size:11px;font-weight:700;color:#1c4ea0">${o.vaccount || '-'}</td>
             <td>${payStatusPill(o.payStatus || (o.status === 'pending_transfer' ? '입금대기' : '결제완료'))}</td>
             <td style="font-size:11px">${o.date}</td>
             <td>
@@ -997,9 +997,14 @@ function renderOrders() {
                 <option value="completed" ${o.status === 'completed' ? 'selected' : ''}>완료</option>
               </select>
             </td>
-            <td>
-              ${o.payStatus !== '결제취소' ? `<button class="btn sm" onclick="confirmPayment(${i})">입금확인</button>
-              <button class="btn sm danger" onclick="cancelOrder(${i})">취소/환불</button>` : '<span style="color:#aaa;font-size:11px">취소완료</span>'}
+            <td style="white-space:nowrap">
+              ${o.payStatus !== '결제취소' ? `
+              <button class="btn sm" onclick="confirmPayment(${i})">입금확인</button>
+              <button class="btn sm" style="background:#e8f5e9;color:#2e7d32" onclick="sendSms(${i})">
+                ${o.smsStatus === '발송완료' ? '✅ 문자완료' : '📱 문자발송'}
+              </button>
+              <button class="btn sm danger" onclick="cancelOrder(${i})">취소</button>
+              ` : '<span style="color:#aaa;font-size:11px">취소완료</span>'}
             </td>
           </tr>`).join('')}</tbody>
       </table>
@@ -1024,6 +1029,39 @@ function cancelOrder(i) {
   DATA.orders[i].status = 'cancelled';
   save();
 }
+function sendSms(i) {
+  const o = DATA.orders[i];
+  const isDeposit = o.payStatus === '입금대기';
+  const vacc = o.vaccount || '신한 3333-XXXX-XXXXXX';
+  let msg = '';
+  if (isDeposit) {
+    msg = `[모딜] ${o.member}님, 주문이 접수됐습니다!\n상품: ${o.deal}\n입금계좌: ${vacc}\n예금주: 주식회사 모딜\n금액: ${o.amount.toLocaleString('ko-KR')}원\n입금자명: ${o.member}\n입금 확인 후 연락드릴게요. 문의: hi@modil.kr`;
+  } else if (o.status === 'pickup_ready') {
+    msg = `[모딜] ${o.member}님, 상품이 준비됐습니다!\n상품: ${o.deal}\n수령: ${o.pickup}\n픽업 가능합니다. 문의: hi@modil.kr`;
+  } else if (o.status === 'shipped') {
+    msg = `[모딜] ${o.member}님, 상품이 배송됐습니다!\n상품: ${o.deal}\n배송 후 도착 안내 드릴게요. 문의: hi@modil.kr`;
+  } else if (o.status === 'completed') {
+    msg = `[모딜] ${o.member}님, 수령이 완료됐습니다! 이용해 주셔서 감사합니다 🐴 다음 딜도 기대해 주세요!`;
+  } else {
+    msg = `[모딜] ${o.member}님, 주문(${o.id}) 관련 안내입니다.\n문의: hi@modil.kr`;
+  }
+  openModal(`
+    <div class="modal-title">📱 안내 문자 발송</div>
+    <div style="font-size:12px;color:#888;margin-bottom:12px">아래 문자를 고객에게 발송하세요. 발송 후 완료 처리 버튼을 눌러주세요.</div>
+    <div style="background:#f5f5f5;border-radius:12px;padding:14px;font-size:13px;line-height:1.8;white-space:pre-wrap;word-break:break-all">${msg}</div>
+    <div style="font-size:11px;color:#aaa;margin-top:8px">수신: ${o.phone || o.member} · 문자 앱에서 직접 발송해 주세요</div>
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button class="btn primary" onclick="markSmsSent(${i})">✅ 발송 완료 처리</button>
+      <button class="btn" onclick="navigator.clipboard&&navigator.clipboard.writeText(${JSON.stringify(msg)}).then(function(){alert('복사됐어요!')})">📋 복사</button>
+      <button class="btn" onclick="closeModal()">닫기</button>
+    </div>
+  `);
+}
+function markSmsSent(i) {
+  DATA.orders[i].smsStatus = '발송완료';
+  save(); closeModal();
+}
+
 function payStatusPill(s) {
   const map = { '입금대기': 'orange', '결제완료': 'green', '결제취소': 'red' };
   return `<span class="pill ${map[s] || 'gray'}">${s || '-'}</span>`;

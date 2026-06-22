@@ -169,19 +169,24 @@
   }
   function savePlaza() { try { localStorage.setItem(PLZ_KEY, JSON.stringify(plaza)); } catch (e) {} }
 
+  function isMyPost(p) { var u = currentUser(); return u && u.name === p.nick; }
   function fcardHTML(p) {
+    var mine = isMyPost(p);
     return '<div class="fcard' + (p.fresh ? ' fresh' : '') + (p.pinned ? ' pinned' : '') + '" id="fc-' + p.id + '">' +
       '<div class="fc-head"><div class="fc-ava">' + (p.ava || '🙂') + '</div>' +
-        '<div><span class="fc-nick">' + esc(p.nick) + '</span><span class="fc-lvl">' + esc(p.lvl || 'LV.1') + '</span></div>' +
+        '<div><span class="fc-nick">' + esc(p.nick) + '</span><span class="fc-lvl">' + esc(p.lvl || 'LV.1') + '</span>' +
+        (mine ? '<span class="fc-mine">내 글</span>' : '') + '</div>' +
         (p.pinned ? '<span class="fc-pin">📌 상단고정</span>' : '') +
         (p.fresh ? '<span class="fc-fresh">방금 ✨</span>' : '<span class="fc-time">' + agoText(p.ago || 0) + '</span>') +
       '</div>' +
-      '<div class="fc-cat">#' + esc(p.cat) + (p.mine ? ' · 🎁 성사되면 내가 공짜' : '') + '</div>' +
-      '<div class="fc-title">' + p.title + '</div>' +
+      '<div class="fc-cat">#' + esc(p.cat) + (p.mine || mine ? ' · 🎁 성사되면 내가 공짜' : '') + '</div>' +
+      '<div class="fc-title" id="fct-' + p.id + '">' + p.title + '</div>' +
       '<div class="fc-foot">' +
         '<button class="fc-btn ' + (p.liked ? 'on' : '') + '" onclick="mLike(\'' + p.id + '\',this)">👍 <span>' + num(p.likes) + '</span></button>' +
         '<button class="fc-btn ' + (p.lolled ? 'on' : '') + '" onclick="mLol(\'' + p.id + '\',this)">😂 <span>' + num(p.lols) + '</span></button>' +
-        '<button class="fc-btn kakao" onclick="mSummon(\'' + p.id + '\')">💬 친구 소환</button>' +
+        '<button class="fc-btn share" onclick="mSummon(\'' + p.id + '\')">📤 추천</button>' +
+        (mine ? '<button class="fc-btn edit" onclick="mEditPost(\'' + p.id + '\')">✏️</button>' +
+                '<button class="fc-btn del" onclick="mDeletePost(\'' + p.id + '\')">🗑️</button>' : '') +
       '</div></div>';
   }
   function agoText(m) { if (m < 1) return '방금 전'; if (m < 60) return m + '분 전'; return Math.floor(m / 60) + '시간 전'; }
@@ -231,6 +236,40 @@
       toast('📋 게시물 링크가 복사됐어요! 카톡에 붙여넣기 하세요 💬');
     }
   };
+  window.mEditPost = function (id) {
+    var u = currentUser(); if (!u) return;
+    var p = findP(id); if (!p || p.nick !== u.name) { toast('본인 글만 수정할 수 있어요'); return; }
+    var rawTitle = p.title.replace(/<[^>]+>/g, '');
+    var titleEl = document.getElementById('fct-' + id); if (!titleEl) return;
+    titleEl.innerHTML =
+      '<textarea id="edt-' + id + '" style="width:100%;border:1.5px solid var(--coral);border-radius:8px;padding:7px 9px;font-size:12px;font-family:inherit;resize:none;line-height:1.5;box-sizing:border-box">' + rawTitle + '</textarea>' +
+      '<div style="display:flex;gap:6px;margin-top:5px">' +
+        '<button onclick="mSaveEdit(\'' + id + '\')" style="flex:1;padding:7px;background:var(--coral);color:#fff;border:none;border-radius:8px;font-weight:800;font-size:12px;cursor:pointer">저장</button>' +
+        '<button onclick="renderFeed()" style="padding:7px 11px;background:var(--bg2);border:none;border-radius:8px;font-size:12px;cursor:pointer">취소</button>' +
+      '</div>';
+    var ta = document.getElementById('edt-' + id);
+    if (ta) { ta.style.height = ta.scrollHeight + 'px'; ta.focus(); }
+  };
+  window.mSaveEdit = function (id) {
+    var ta = document.getElementById('edt-' + id); if (!ta) return;
+    var val = ta.value.trim(); if (!val) { toast('내용을 입력해 주세요'); return; }
+    var p = findP(id); if (!p) return;
+    p.title = esc(val); savePlaza(); renderFeed();
+    toast('게시물이 수정됐어요 ✅');
+  };
+  window.mDeletePost = function (id) {
+    var u = currentUser(); if (!u) return;
+    var p = findP(id); if (!p || p.nick !== u.name) { toast('본인 글만 삭제할 수 있어요'); return; }
+    var card = document.getElementById('fc-' + id); if (!card) return;
+    card.style.transition = 'opacity .3s,transform .3s';
+    card.style.opacity = '0'; card.style.transform = 'scale(.95)';
+    setTimeout(function () {
+      plaza.posts = plaza.posts.filter(function (x) { return x.id !== id; });
+      savePlaza(); renderFeed();
+      toast('게시물이 삭제됐어요 🗑️');
+    }, 300);
+  };
+
   window.mPostDeal = function () {
     var ti = $('composerInput'), ca = $('composerCat');
     var title = (ti.value || '').trim();
@@ -455,17 +494,86 @@
   }
   function renderProfile(u) {
     var mm = DATA.members.find(function (m) { return m.name === u.name; });
-    var myOrders = DATA.orders.filter(function (o) { return o.member === u.name; }).length;
+    var myOrders = DATA.orders.filter(function (o) { return o.member === u.name; });
+    var myPosts  = plaza.posts.filter(function (p) { return p.nick === u.name; });
     $('authBody').innerHTML = sheetXTop('mCloseAuth') +
       '<div class="prof-card"><div class="prof-av">' + u.av + '</div>' +
         '<div><div class="prof-nm">' + esc(u.name) + '</div><div class="prof-ch">' + (CH[u.channel] ? CH[u.channel].label : '직접') + ' 가입 · 모딜 회원</div></div></div>' +
       '<div class="prof-stats">' +
-        '<div class="prof-stat"><b>' + (mm ? mm.deals : 0) + '</b><span>참여 딜</span></div>' +
-        '<div class="prof-stat"><b>' + myOrders + '</b><span>결제 내역</span></div>' +
+        '<div class="prof-stat clickable" onclick="mMyOrders()"><b>' + myOrders.length + '</b><span>구매 내역</span></div>' +
+        '<div class="prof-stat clickable" onclick="mMyPosts()"><b>' + myPosts.length + '</b><span>내 게시물</span></div>' +
         '<div class="prof-stat"><b>' + plaza.lottery.myEntries + '</b><span>응모권</span></div>' +
       '</div>' +
+      '<button class="prof-menu-btn" onclick="mMyOrders()">📦 내 구매 내역 · 배송 추적</button>' +
+      '<button class="prof-menu-btn" onclick="mMyPosts()">✍️ 내가 올린 딜 보기</button>' +
       '<button class="prof-logout" onclick="mLogout()">로그아웃</button>';
   }
+
+  window.mMyOrders = function () {
+    var u = currentUser(); if (!u) { mOpenAuth(); return; }
+    var orders = DATA.orders.filter(function (o) { return o.member === u.name; });
+    var statusStep = { pending_transfer: 0, preparing: 1, pickup_ready: 2, shipped: 2, completed: 3, cancelled: -1 };
+    var stepLabel = ['입금확인중', '상품준비중', orders.length && orders[0].pickup === '택배발송' ? '배송중' : '픽업대기', '완료'];
+    function orderCard(o) {
+      var step = statusStep[o.status] !== undefined ? statusStep[o.status] : 1;
+      var cancelled = o.status === 'cancelled';
+      var pickIcon = (o.pickup || '').includes('택배') ? '📦' : '📍';
+      var vacc = o.vaccount ? o.vaccount : '';
+      return '<div class="my-order-card">' +
+        '<div class="moc-head">' +
+          '<span class="moc-id">' + o.id + '</span>' +
+          '<span class="moc-date">' + (o.date || '') + '</span>' +
+        '</div>' +
+        '<div class="moc-deal">' + esc(o.deal) + '</div>' +
+        '<div class="moc-meta">' + pickIcon + ' ' + esc(o.pickup || '') + ' · ' + esc(o.method || '') + ' · <b>' + fmt(o.amount) + '원</b></div>' +
+        (vacc && o.payStatus === '입금대기' ? '<div class="moc-vacc">🏦 입금계좌: <b>' + vacc + '</b> (예금주: 주식회사 모딜)</div>' : '') +
+        (cancelled ? '<div class="moc-cancelled">❌ 주문 취소됨</div>' :
+          '<div class="moc-track">' + (function () {
+            var labels = ['입금확인', '준비중', (o.pickup || '').includes('택배') ? '배송중' : '픽업대기', '완료'];
+            var html = '';
+            for (var si = 0; si < labels.length; si++) {
+              html += '<div class="moc-step' + (si < step ? ' done' : si === step ? ' cur' : '') + '">' +
+                '<div class="moc-dot"></div><div class="moc-lbl">' + labels[si] + '</div></div>';
+              if (si < labels.length - 1) html += '<div class="moc-line' + (si < step ? ' done' : '') + '"></div>';
+            }
+            return html;
+          })() + '</div>') +
+      '</div>';
+    }
+    $('authBody').innerHTML =
+      '<div class="sheet-grab"></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">' +
+        '<button onclick="renderProfile(currentUser())" style="background:none;border:none;font-size:20px;cursor:pointer;padding:0">←</button>' +
+        '<div style="font-size:17px;font-weight:900">📦 내 구매 내역</div></div>' +
+      (orders.length === 0
+        ? '<div style="text-align:center;color:#aaa;padding:40px 0;font-size:14px">아직 구매 내역이 없어요<br><span style="font-size:24px">🛒</span></div>'
+        : orders.map(orderCard).join(''));
+  };
+
+  window.mMyPosts = function () {
+    var u = currentUser(); if (!u) { mOpenAuth(); return; }
+    var posts = plaza.posts.filter(function (p) { return p.nick === u.name; });
+    $('authBody').innerHTML =
+      '<div class="sheet-grab"></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">' +
+        '<button onclick="renderProfile(currentUser())" style="background:none;border:none;font-size:20px;cursor:pointer;padding:0">←</button>' +
+        '<div style="font-size:17px;font-weight:900">✍️ 내가 올린 딜</div></div>' +
+      (posts.length === 0
+        ? '<div style="text-align:center;color:#aaa;padding:40px 0;font-size:14px">올린 글이 없어요<br><span style="font-size:24px">✍️</span></div>'
+        : posts.map(function (p) {
+            return '<div class="my-post-card">' +
+              '<div class="mpc-cat">#' + esc(p.cat) + '</div>' +
+              '<div class="mpc-title">' + p.title + '</div>' +
+              '<div class="mpc-foot">' +
+                '<span>👍 ' + num(p.likes) + '</span><span>😂 ' + num(p.lols) + '</span>' +
+                '<button class="mpc-btn edit" onclick="mCloseAuth();mEditPost(\'' + p.id + '\')">✏️ 수정</button>' +
+                '<button class="mpc-btn del" onclick="mDeleteFromMyPosts(\'' + p.id + '\')">🗑️ 삭제</button>' +
+              '</div></div>';
+          }).join(''));
+  };
+  window.mDeleteFromMyPosts = function (id) {
+    plaza.posts = plaza.posts.filter(function (x) { return x.id !== id; });
+    savePlaza(); mMyPosts();
+    toast('게시물이 삭제됐어요 🗑️');
+  };
   function _finishSocialSignup(channel, name, avatar, email) {
     var nick = name || (NICKS[Math.floor(Math.random() * NICKS.length)] + (Math.floor(Math.random() * 90) + 10));
     var exists = DATA.members.find(function (m) { return m.name === nick; });
@@ -555,25 +663,29 @@
 
   /* ----- 결제 ----- */
   var payState = null;
+  function genVAccount() {
+    var ts = String(Date.now()).slice(-9);
+    return '신한 3333-' + ts.slice(0, 4) + '-' + ts.slice(4);
+  }
   function openPay(d) {
-    payState = { deal: d, qty: 1, method: 'kakaopay', pickup: '거점' };
+    payState = { deal: d, qty: 1, method: 'vaccount', pickup: '거점' };
     renderPay(); $('paySheet').classList.add('show');
   }
   window.mClosePay = function () { $('paySheet').classList.remove('show'); };
   var PAYM = [
-    { k: 'kakaopay', i: '💬', t: '카카오페이' },
-    { k: 'naverpay', i: 'N', t: '네이버페이' },
-    { k: 'card',     i: '💳', t: '신용·체크카드' },
-    { k: 'transfer', i: '🏦', t: '무통장 입금' },
+    { k: 'vaccount', i: '🏦', t: '가상계좌 입금', on: true },
+    { k: 'kakaopay', i: '💬', t: '카카오페이',    on: false },
+    { k: 'naverpay', i: 'N',  t: '네이버페이',    on: false },
+    { k: 'card',     i: '💳', t: '신용·체크카드', on: false },
   ];
   function renderPay() {
     var ps = payState, d = ps.deal;
-    var total = d.nowPrice * ps.qty;
     var disc = Math.round((1 - d.nowPrice / d.origPrice) * 100);
-    var grand = total + (ps.pickup === '택배' ? 3000 : 0);
+    var grand = d.nowPrice * ps.qty + (ps.pickup === '택배' ? 3000 : 0);
+    if (!ps.vaccount) ps.vaccount = genVAccount();
     $('payBody').innerHTML = sheetXTop('mClosePay') +
       '<div class="sheet-head" style="margin-bottom:4px"><div class="sheet-ic" style="background:var(--coral-bg)">💳</div>' +
-        '<div><div class="sheet-t1">공동구매 결제</div><div class="sheet-t2">네고 성공가로 안전하게 참여하세요</div></div></div>' +
+        '<div><div class="sheet-t1">공동구매 참여 신청</div><div class="sheet-t2">가상계좌로 입금하시면 참여가 확정돼요</div></div></div>' +
       '<div class="pay-deal"><div class="pay-thumb">' + (d.icon || '🛍️') + '</div>' +
         '<div><div class="pay-dname">' + esc(d.name) + '</div><div class="pay-dcat">' + esc(d.category) + ' · ' + disc + '% 할인 · ' + fmt(d.nowPrice) + '원</div></div></div>' +
       '<div class="pay-block"><div class="qty-row"><div class="pay-block-t" style="margin:0">수량</div>' +
@@ -582,20 +694,26 @@
         pickOpt('거점', '📍', '거점 픽업 (무료)') + pickOpt('택배', '📦', '택배 발송 (+3,000원)') + '</div></div>' +
       '<div class="pay-block"><div class="pay-block-t">결제 수단</div><div class="pay-opts">' +
         PAYM.map(function (m) {
-          return '<div class="pay-opt' + (ps.method === m.k ? ' on' : '') + '" onclick="mPayMethod(\'' + m.k + '\')"><span class="pi">' + m.i + '</span>' + m.t + '<span class="pr"></span></div>';
+          var sel = ps.method === m.k;
+          var disabled = !m.on;
+          return '<div class="pay-opt' + (sel ? ' on' : '') + (disabled ? ' soon' : '') + '" ' +
+            (disabled ? '' : 'onclick="mPayMethod(\'' + m.k + '\')"') + '>' +
+            '<span class="pi">' + m.i + '</span>' + m.t +
+            (disabled ? '<span class="pay-soon-badge">PG 준비중</span>' : '<span class="pr"></span>') +
+            '</div>';
         }).join('') + '</div></div>' +
-      (ps.method === 'transfer' ?
-        '<div class="pay-block pay-transfer-info"><div class="pay-block-t">무통장 입금 계좌</div>' +
-        '<div class="transfer-acc"><span class="tacc-bank">신한은행</span><span class="tacc-num">110-123-456789</span><span class="tacc-name">주식회사 모딜</span></div>' +
-        '<div class="transfer-note">입금자명을 <b>닉네임</b>과 동일하게 입력해 주세요.<br>확인 후 참여 처리됩니다.</div></div>' : '') +
-      '<div class="pay-total"><span>총 결제금액</span><b>' + fmt(grand) + '원</b></div>' +
-      '<button class="pay-go" onclick="mDoPay()">' + (ps.method === 'transfer' ? '입금 신청하기' : fmt(grand) + '원 결제하기') + '</button>';
+      '<div class="pay-block pay-transfer-info"><div class="pay-block-t">🏦 입금 가상계좌 (1회용)</div>' +
+        '<div class="transfer-acc"><span class="tacc-bank">신한</span><span class="tacc-num">' + ps.vaccount + '</span></div>' +
+        '<div class="transfer-note">예금주: <b>주식회사 모딜</b> · 입금자명을 <b>닉네임</b>과 동일하게 입력해 주세요.<br>입금 확인 후 참여가 처리되며, 관리자가 문자로 안내드립니다.</div>' +
+      '</div>' +
+      '<div class="pay-total"><span>총 입금금액</span><b>' + fmt(grand) + '원</b></div>' +
+      '<button class="pay-go" onclick="mDoPay()">입금 신청하기 🏦</button>';
   }
   function pickOpt(key, ic, label) {
     return '<div class="pay-opt' + (payState.pickup === key ? ' on' : '') + '" onclick="mPayPickup(\'' + key + '\')"><span class="pi">' + ic + '</span>' + label + '<span class="pr"></span></div>';
   }
   window.mQty = function (d) { payState.qty = Math.max(1, Math.min(20, payState.qty + d)); renderPay(); };
-  window.mPayMethod = function (k) { payState.method = k; renderPay(); };
+  window.mPayMethod = function (k) { var m = PAYM.find(function(x){ return x.k === k; }); if (!m || !m.on) return; payState.method = k; renderPay(); };
   window.mPayPickup = function (k) { payState.pickup = k; renderPay(); };
 
   window.mDoPay = function () {
@@ -603,48 +721,47 @@
     if (!u) { mClosePay(); mOpenAuth(); return; }
     var grand = d.nowPrice * ps.qty + (ps.pickup === '택배' ? 3000 : 0);
     var pickupLabel = ps.pickup === '택배' ? '택배발송' : '거점 픽업';
-    var isTransfer = ps.method === 'transfer';
     var orderId = 'O-' + Date.now();
-    var methodLabel = { kakaopay: '카카오페이', naverpay: '네이버페이', card: '신용카드', transfer: '무통장입금' }[ps.method] || ps.method;
-
-    /* PG 연동 전 — 처리 중 애니메이션 후 완료 처리 */
     var btn = $('payBody').querySelector('.pay-go');
-    if (btn) { btn.disabled = true; btn.textContent = '처리 중...'; }
-
+    if (btn) { btn.disabled = true; btn.textContent = '신청 중...'; }
     setTimeout(function () {
-      DATA.orders.unshift({ id: orderId, member: u.name,
+      var order = { id: orderId, member: u.name, phone: u.email || '',
         deal: d.name + (ps.qty > 1 ? ' ×' + ps.qty : ''), amount: grand,
-        status: isTransfer ? 'pending_transfer' : 'preparing',
-        payStatus: isTransfer ? '입금대기' : '결제완료',
-        pickup: pickupLabel, date: today(), method: methodLabel });
+        status: 'pending_transfer', payStatus: '입금대기',
+        pickup: pickupLabel, date: today(), method: '가상계좌',
+        vaccount: ps.vaccount, smsStatus: '' };
+      DATA.orders.unshift(order);
       d.participants += ps.qty;
       var mm = DATA.members.find(function (m) { return m.name === u.name; });
-      if (mm) mm.deals += 1;
+      if (mm) { mm.deals += 1; if (u.email) mm.phone = u.email; }
       saveData(DATA); renderDeals();
       $('paySheet').classList.remove('show');
-      showReceipt(orderId, d, ps, grand, isTransfer);
+      showReceipt(orderId, d, ps, grand);
       confetti(70);
-    }, 1200);
+    }, 1000);
   };
 
-  function showReceipt(orderId, d, ps, grand, isTransfer) {
-    var methodLabel = { kakaopay: '카카오페이', naverpay: '네이버페이', card: '신용·체크카드', transfer: '무통장 입금' }[ps.method] || ps.method;
+  function showReceipt(orderId, d, ps, grand) {
     var overlay = document.createElement('div');
     overlay.id = 'receiptOverlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
     overlay.innerHTML =
-      '<div style="background:#fff;border-radius:24px 24px 0 0;padding:28px 24px 40px;width:100%;max-width:480px;animation:fcardIn .35s ease">' +
-        '<div style="text-align:center;font-size:40px;margin-bottom:4px">' + (isTransfer ? '🏦' : '✅') + '</div>' +
-        '<div style="text-align:center;font-size:19px;font-weight:900;margin-bottom:2px">' + (isTransfer ? '입금 신청 완료!' : '결제 완료!') + '</div>' +
-        '<div style="text-align:center;font-size:12px;color:#888;margin-bottom:20px">' + (isTransfer ? '입금 확인 후 참여 처리됩니다' : '공동구매 참여가 확정됐어요 🎉') + '</div>' +
+      '<div style="background:#fff;border-radius:24px 24px 0 0;padding:28px 24px 48px;width:100%;max-width:480px;animation:fcardIn .35s ease;overflow-y:auto;max-height:90vh">' +
+        '<div style="text-align:center;font-size:44px;margin-bottom:4px">🏦</div>' +
+        '<div style="text-align:center;font-size:19px;font-weight:900;margin-bottom:2px">입금 신청 완료!</div>' +
+        '<div style="text-align:center;font-size:12px;color:#888;margin-bottom:20px">아래 계좌로 입금하시면 참여가 확정돼요</div>' +
+        '<div style="background:#fffbe6;border:1.5px solid #ffe58f;border-radius:14px;padding:16px;margin-bottom:14px;font-size:13px">' +
+          '<div style="font-weight:900;margin-bottom:8px;font-size:14px">🏦 입금 계좌 (이 주문 전용)</div>' +
+          '<div style="font-size:18px;font-weight:900;letter-spacing:.5px;color:#1c4ea0">' + (ps.vaccount || '') + '</div>' +
+          '<div style="color:#888;font-size:12px;margin-top:4px">예금주: 주식회사 모딜 · 입금자명: <b>' + esc(currentUser() ? currentUser().name : '') + '</b></div>' +
+        '</div>' +
         '<div style="background:#fafafa;border-radius:14px;padding:16px;font-size:13px;line-height:2">' +
           '<div style="display:flex;justify-content:space-between"><span style="color:#888">주문번호</span><b style="font-size:11px">' + orderId + '</b></div>' +
           '<div style="display:flex;justify-content:space-between"><span style="color:#888">상품</span><span>' + esc(d.name) + (ps.qty > 1 ? ' ×' + ps.qty : '') + '</span></div>' +
-          '<div style="display:flex;justify-content:space-between"><span style="color:#888">결제수단</span><span>' + methodLabel + '</span></div>' +
-          '<div style="display:flex;justify-content:space-between"><span style="color:#888">수령방법</span><span>' + (ps.pickup === '택배' ? '📦 택배발송' : '📍 거점픽업') + '</span></div>' +
-          (isTransfer ? '<div style="display:flex;justify-content:space-between"><span style="color:#888">입금계좌</span><b>신한 110-123-456789</b></div>' : '') +
-          '<div style="display:flex;justify-content:space-between;margin-top:6px;padding-top:10px;border-top:1px solid #eee"><span style="font-weight:800">총 결제금액</span><b style="color:var(--coral-dark);font-size:16px">' + fmt(grand) + '원</b></div>' +
+          '<div style="display:flex;justify-content:space-between"><span style="color:#888">수령방법</span><span>' + (ps.pickup === '택배' ? '📦 택배' : '📍 거점픽업') + '</span></div>' +
+          '<div style="display:flex;justify-content:space-between;margin-top:6px;padding-top:10px;border-top:1px solid #eee"><span style="font-weight:800">입금금액</span><b style="color:var(--coral-dark);font-size:16px">' + fmt(grand) + '원</b></div>' +
         '</div>' +
+        '<div style="font-size:11.5px;color:#888;margin-top:12px;line-height:1.7;text-align:center">입금 확인 후 관리자가 안내 문자를 보내드려요.<br>내 계정 → 구매 내역에서 진행상황을 확인할 수 있어요.</div>' +
         '<button onclick="document.getElementById(\'receiptOverlay\').remove()" ' +
           'style="margin-top:18px;width:100%;padding:16px;background:var(--coral);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:900;cursor:pointer">확인</button>' +
       '</div>';
