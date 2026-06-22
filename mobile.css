@@ -609,6 +609,7 @@ body {
 .auth-btn .ai { font-size: 18px; }
 .auth-btn.kakao { background: #FEE500; color: #3C1E1E; }
 .auth-btn.naver { background: #03C75A; color: #fff; }
+.auth-btn.google { background: #fff; color: #3c4043; border: 1.5px solid #dadce0; }
 .auth-btn.insta { background: linear-gradient(105deg, #F58529, #DD2A7B 55%, #8134AF); color: #fff; }
 .auth-note { font-size: 10.5px; color: var(--ink3); text-align: center; line-height: 1.6; margin-top: 8px; }
 .auth-note a { color: var(--ink2); }
