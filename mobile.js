@@ -218,16 +218,17 @@
   window.mSummon = function (id) {
     var p = findP(id); if (!p) return;
     p.likes += 1; savePlaza(); renderFeed();
-    var shareUrl = 'https://visualmakerofficial-sejung.github.io/homme/';
-    var msg = '🐴 모딜에서 같이 딜해요!\n[' + p.cat + '] ' + p.title + '\n' + shareUrl;
+    var shareUrl = SITE_URL + '#post-' + id;
+    var shareTitle = '[' + p.cat + '] ' + p.title;
+    var msg = '🐴 모딜에서 같이 딜해요!\n' + shareTitle + '\n' + shareUrl;
     if (navigator.share) {
-      navigator.share({ title: '모딜 — 같이 딜 하자!', text: msg, url: shareUrl })
+      navigator.share({ title: shareTitle, text: msg, url: shareUrl })
         .catch(function () {});
     } else {
       var t = document.createElement('textarea');
       t.value = msg; document.body.appendChild(t); t.select();
       document.execCommand('copy'); document.body.removeChild(t);
-      toast('📋 링크가 복사됐어요! 카톡에 붙여넣기 하세요 💬');
+      toast('📋 게시물 링크가 복사됐어요! 카톡에 붙여넣기 하세요 💬');
     }
   };
   window.mPostDeal = function () {
@@ -562,7 +563,8 @@
   var PAYM = [
     { k: 'kakaopay', i: '💬', t: '카카오페이' },
     { k: 'naverpay', i: 'N', t: '네이버페이' },
-    { k: 'card', i: '💳', t: '신용·체크카드' },
+    { k: 'card',     i: '💳', t: '신용·체크카드' },
+    { k: 'transfer', i: '🏦', t: '무통장 입금' },
   ];
   function renderPay() {
     var ps = payState, d = ps.deal;
@@ -582,8 +584,12 @@
         PAYM.map(function (m) {
           return '<div class="pay-opt' + (ps.method === m.k ? ' on' : '') + '" onclick="mPayMethod(\'' + m.k + '\')"><span class="pi">' + m.i + '</span>' + m.t + '<span class="pr"></span></div>';
         }).join('') + '</div></div>' +
+      (ps.method === 'transfer' ?
+        '<div class="pay-block pay-transfer-info"><div class="pay-block-t">무통장 입금 계좌</div>' +
+        '<div class="transfer-acc"><span class="tacc-bank">신한은행</span><span class="tacc-num">110-123-456789</span><span class="tacc-name">주식회사 모딜</span></div>' +
+        '<div class="transfer-note">입금자명을 <b>닉네임</b>과 동일하게 입력해 주세요.<br>확인 후 참여 처리됩니다.</div></div>' : '') +
       '<div class="pay-total"><span>총 결제금액</span><b>' + fmt(grand) + '원</b></div>' +
-      '<button class="pay-go" onclick="mDoPay()">' + fmt(grand) + '원 결제하기</button>';
+      '<button class="pay-go" onclick="mDoPay()">' + (ps.method === 'transfer' ? '입금 신청하기' : fmt(grand) + '원 결제하기') + '</button>';
   }
   function pickOpt(key, ic, label) {
     return '<div class="pay-opt' + (payState.pickup === key ? ' on' : '') + '" onclick="mPayPickup(\'' + key + '\')"><span class="pi">' + ic + '</span>' + label + '<span class="pr"></span></div>';
@@ -591,21 +597,59 @@
   window.mQty = function (d) { payState.qty = Math.max(1, Math.min(20, payState.qty + d)); renderPay(); };
   window.mPayMethod = function (k) { payState.method = k; renderPay(); };
   window.mPayPickup = function (k) { payState.pickup = k; renderPay(); };
+
   window.mDoPay = function () {
     var ps = payState, d = ps.deal, u = currentUser();
     if (!u) { mClosePay(); mOpenAuth(); return; }
-    var total = d.nowPrice * ps.qty + (ps.pickup === '택배' ? 3000 : 0);
+    var grand = d.nowPrice * ps.qty + (ps.pickup === '택배' ? 3000 : 0);
     var pickupLabel = ps.pickup === '택배' ? '택배발송' : '거점 픽업';
-    DATA.orders.unshift({ id: 'O-' + Date.now(), member: u.name,
-      deal: d.name + (ps.qty > 1 ? ' ×' + ps.qty : ''), amount: total,
-      status: 'preparing', pickup: pickupLabel, date: today(), method: ps.method });
-    d.participants += ps.qty;
-    var mm = DATA.members.find(function (m) { return m.name === u.name; });
-    if (mm) mm.deals += 1;
-    saveData(DATA); renderDeals();
-    mClosePay(); confetti(70);
-    toast('💳 결제 완료! 픽업/배송 안내를 카톡으로 보냈어요 🎉');
+    var isTransfer = ps.method === 'transfer';
+    var orderId = 'O-' + Date.now();
+    var methodLabel = { kakaopay: '카카오페이', naverpay: '네이버페이', card: '신용카드', transfer: '무통장입금' }[ps.method] || ps.method;
+
+    /* PG 연동 전 — 처리 중 애니메이션 후 완료 처리 */
+    var btn = $('payBody').querySelector('.pay-go');
+    if (btn) { btn.disabled = true; btn.textContent = '처리 중...'; }
+
+    setTimeout(function () {
+      DATA.orders.unshift({ id: orderId, member: u.name,
+        deal: d.name + (ps.qty > 1 ? ' ×' + ps.qty : ''), amount: grand,
+        status: isTransfer ? 'pending_transfer' : 'preparing',
+        payStatus: isTransfer ? '입금대기' : '결제완료',
+        pickup: pickupLabel, date: today(), method: methodLabel });
+      d.participants += ps.qty;
+      var mm = DATA.members.find(function (m) { return m.name === u.name; });
+      if (mm) mm.deals += 1;
+      saveData(DATA); renderDeals();
+      $('paySheet').classList.remove('show');
+      showReceipt(orderId, d, ps, grand, isTransfer);
+      confetti(70);
+    }, 1200);
   };
+
+  function showReceipt(orderId, d, ps, grand, isTransfer) {
+    var methodLabel = { kakaopay: '카카오페이', naverpay: '네이버페이', card: '신용·체크카드', transfer: '무통장 입금' }[ps.method] || ps.method;
+    var overlay = document.createElement('div');
+    overlay.id = 'receiptOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+    overlay.innerHTML =
+      '<div style="background:#fff;border-radius:24px 24px 0 0;padding:28px 24px 40px;width:100%;max-width:480px;animation:fcardIn .35s ease">' +
+        '<div style="text-align:center;font-size:40px;margin-bottom:4px">' + (isTransfer ? '🏦' : '✅') + '</div>' +
+        '<div style="text-align:center;font-size:19px;font-weight:900;margin-bottom:2px">' + (isTransfer ? '입금 신청 완료!' : '결제 완료!') + '</div>' +
+        '<div style="text-align:center;font-size:12px;color:#888;margin-bottom:20px">' + (isTransfer ? '입금 확인 후 참여 처리됩니다' : '공동구매 참여가 확정됐어요 🎉') + '</div>' +
+        '<div style="background:#fafafa;border-radius:14px;padding:16px;font-size:13px;line-height:2">' +
+          '<div style="display:flex;justify-content:space-between"><span style="color:#888">주문번호</span><b style="font-size:11px">' + orderId + '</b></div>' +
+          '<div style="display:flex;justify-content:space-between"><span style="color:#888">상품</span><span>' + esc(d.name) + (ps.qty > 1 ? ' ×' + ps.qty : '') + '</span></div>' +
+          '<div style="display:flex;justify-content:space-between"><span style="color:#888">결제수단</span><span>' + methodLabel + '</span></div>' +
+          '<div style="display:flex;justify-content:space-between"><span style="color:#888">수령방법</span><span>' + (ps.pickup === '택배' ? '📦 택배발송' : '📍 거점픽업') + '</span></div>' +
+          (isTransfer ? '<div style="display:flex;justify-content:space-between"><span style="color:#888">입금계좌</span><b>신한 110-123-456789</b></div>' : '') +
+          '<div style="display:flex;justify-content:space-between;margin-top:6px;padding-top:10px;border-top:1px solid #eee"><span style="font-weight:800">총 결제금액</span><b style="color:var(--coral-dark);font-size:16px">' + fmt(grand) + '원</b></div>' +
+        '</div>' +
+        '<button onclick="document.getElementById(\'receiptOverlay\').remove()" ' +
+          'style="margin-top:18px;width:100%;padding:16px;background:var(--coral);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:900;cursor:pointer">확인</button>' +
+      '</div>';
+    document.body.appendChild(overlay);
+  }
 
   /* ---------- 가로 캐러셀: 드래그 + 화살표 + 터치 ---------- */
   function animScrollTo(el, target, dur) {

@@ -445,6 +445,8 @@ function statusPill(s) {
     pickup_ready: { c: 'blue', t: '픽업대기' },
     shipped:      { c: 'blue', t: '배송중' },
     completed:    { c: 'green', t: '완료' },
+    cancelled:    { c: 'red',   t: '취소' },
+    pending_transfer: { c: 'orange', t: '입금대기' },
   };
   const m = map[s] || { c: 'gray', t: s };
   return `<span class="pill ${m.c}">${m.t}</span>`;
@@ -966,16 +968,18 @@ function renderOrders() {
     <div class="card">
       <div class="card-head"><div class="card-title">주문 처리</div><div class="card-sub">상태 변경시 자동 알림</div></div>
       <table>
-        <thead><tr><th>주문번호</th><th>회원</th><th>상품</th><th>금액</th><th>주문일</th><th>수령방법</th><th>상태</th><th>작업</th></tr></thead>
+        <thead><tr><th>주문번호</th><th>회원</th><th>상품</th><th>금액</th><th>결제수단</th><th>결제상태</th><th>주문일</th><th>수령방법</th><th>처리상태</th><th>작업</th></tr></thead>
         <tbody>${DATA.orders.map((o,i) => `
           <tr>
-            <td><b>${o.id}</b></td>
+            <td><b style="font-size:10px">${o.id}</b></td>
             <td>${o.member}</td>
-            <td>${o.deal}</td>
-            <td>${fmt(o.amount)}원</td>
-            <td>${o.date}</td>
+            <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.deal}</td>
+            <td><b>${fmt(o.amount)}원</b></td>
+            <td><span class="pill gray">${o.method || '-'}</span></td>
+            <td>${payStatusPill(o.payStatus || (o.status === 'pending_transfer' ? '입금대기' : '결제완료'))}</td>
+            <td style="font-size:11px">${o.date}</td>
             <td>
-              <select class="editable" style="max-width:160px" onchange="updatePickup(${i}, this.value)">
+              <select class="editable" style="max-width:130px" onchange="updatePickup(${i}, this.value)">
                 <option ${o.pickup.includes('본점') ? 'selected' : ''}>모딜 본점</option>
                 <option ${o.pickup.includes('단원구청') ? 'selected' : ''}>단원구청 거점</option>
                 <option ${o.pickup.includes('고잔동') ? 'selected' : ''}>고잔동 거점</option>
@@ -984,14 +988,18 @@ function renderOrders() {
                 <option ${o.pickup.includes('카톡') ? 'selected' : ''}>카톡 즉시발송</option>
               </select>
             </td>
-            <td>${statusPill(o.status)}</td>
             <td>
-              <select class="editable" style="max-width:120px" onchange="updateOrderStatus(${i}, this.value)">
+              <select class="editable" style="max-width:110px" onchange="updateOrderStatus(${i}, this.value)">
+                <option value="pending_transfer" ${o.status === 'pending_transfer' ? 'selected' : ''}>입금대기</option>
                 <option value="preparing" ${o.status === 'preparing' ? 'selected' : ''}>준비중</option>
                 <option value="pickup_ready" ${o.status === 'pickup_ready' ? 'selected' : ''}>픽업대기</option>
                 <option value="shipped" ${o.status === 'shipped' ? 'selected' : ''}>배송중</option>
                 <option value="completed" ${o.status === 'completed' ? 'selected' : ''}>완료</option>
               </select>
+            </td>
+            <td>
+              ${o.payStatus !== '결제취소' ? `<button class="btn sm" onclick="confirmPayment(${i})">입금확인</button>
+              <button class="btn sm danger" onclick="cancelOrder(${i})">취소/환불</button>` : '<span style="color:#aaa;font-size:11px">취소완료</span>'}
             </td>
           </tr>`).join('')}</tbody>
       </table>
@@ -999,7 +1007,27 @@ function renderOrders() {
   `;
 }
 function updatePickup(i, v) { DATA.orders[i].pickup = v; save(); }
-function updateOrderStatus(i, v) { DATA.orders[i].status = v; save(); }
+function updateOrderStatus(i, v) {
+  DATA.orders[i].status = v;
+  if (v === 'pending_transfer') DATA.orders[i].payStatus = '입금대기';
+  else if (v !== 'cancelled') DATA.orders[i].payStatus = DATA.orders[i].payStatus || '결제완료';
+  save();
+}
+function confirmPayment(i) {
+  DATA.orders[i].payStatus = '결제완료';
+  if (DATA.orders[i].status === 'pending_transfer') DATA.orders[i].status = 'preparing';
+  save();
+}
+function cancelOrder(i) {
+  if (!confirm('주문을 취소하고 환불 처리하시겠습니까?')) return;
+  DATA.orders[i].payStatus = '결제취소';
+  DATA.orders[i].status = 'cancelled';
+  save();
+}
+function payStatusPill(s) {
+  const map = { '입금대기': 'orange', '결제완료': 'green', '결제취소': 'red' };
+  return `<span class="pill ${map[s] || 'gray'}">${s || '-'}</span>`;
+}
 
 function renderCoupons() {
   document.getElementById('main').innerHTML = `
