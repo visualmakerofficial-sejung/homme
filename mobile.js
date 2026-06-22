@@ -170,9 +170,10 @@
   function savePlaza() { try { localStorage.setItem(PLZ_KEY, JSON.stringify(plaza)); } catch (e) {} }
 
   function fcardHTML(p) {
-    return '<div class="fcard' + (p.fresh ? ' fresh' : '') + '" id="fc-' + p.id + '">' +
+    return '<div class="fcard' + (p.fresh ? ' fresh' : '') + (p.pinned ? ' pinned' : '') + '" id="fc-' + p.id + '">' +
       '<div class="fc-head"><div class="fc-ava">' + (p.ava || '🙂') + '</div>' +
         '<div><span class="fc-nick">' + esc(p.nick) + '</span><span class="fc-lvl">' + esc(p.lvl || 'LV.1') + '</span></div>' +
+        (p.pinned ? '<span class="fc-pin">📌 상단고정</span>' : '') +
         (p.fresh ? '<span class="fc-fresh">방금 ✨</span>' : '<span class="fc-time">' + agoText(p.ago || 0) + '</span>') +
       '</div>' +
       '<div class="fc-cat">#' + esc(p.cat) + (p.mine ? ' · 🎁 성사되면 내가 공짜' : '') + '</div>' +
@@ -187,7 +188,8 @@
 
   function renderFeed() {
     var el = $('feed'); if (!el) return;
-    var show = plaza.expanded ? plaza.posts : plaza.posts.slice(0, 5);
+    var sorted = plaza.posts.slice().sort(function (a, b) { return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0); });
+    var show = plaza.expanded ? sorted : sorted.slice(0, 5);
     el.innerHTML = show.map(fcardHTML).join('');
     if ($('plazaWatch')) $('plazaWatch').textContent = num(plaza.watching);
     var more = $('feedMore');
