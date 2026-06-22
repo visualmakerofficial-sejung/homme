@@ -386,9 +386,25 @@
   var NICKS = ['알뜰소비러', '동네딜러', '공구마스터', '모딜이웃', '단골친구', '소식이팬', '안산토박이', '실속러'];
   var AVS = ['🦊', '🐧', '🐻', '🐰', '🐱', '🐨', '🦝', '🐹', '🐤', '🦦'];
   var CH = {
-    kakao: { label: '💬 카카오', kakao: 'connected' },
-    naver: { label: '🟢 네이버', kakao: 'pending' },
-    instagram: { label: '📷 인스타그램', kakao: 'pending' },
+    kakao:  { label: '💬 카카오', icon: '💬' },
+    google: { label: '🔵 구글',   icon: 'G'  },
+    naver:  { label: '🟢 네이버', icon: 'N'  },
+  };
+
+  /* ---- 소셜 로그인 설정 (키 발급 후 여기에 입력) ---- */
+  var SOCIAL_CFG = {
+    KAKAO_JS_KEY:   '',   // developers.kakao.com → 내 애플리케이션 → JavaScript 키
+    GOOGLE_CLIENT:  '',   // console.cloud.google.com → API 및 서비스 → OAuth 클라이언트 ID
+    NAVER_CLIENT:   '',   // developers.naver.com → 애플리케이션 → Client ID
+  };
+  var SITE_URL = 'https://visualmakerofficial-sejung.github.io/homme/';
+
+  /* ---- 구글 GSI 콜백 (전역 등록) ---- */
+  window.handleGoogleCredential = function (response) {
+    try {
+      var payload = JSON.parse(atob(response.credential.split('.')[1]));
+      _finishSocialSignup('google', payload.name || payload.email, payload.picture || '', payload.email);
+    } catch (e) { toast('구글 로그인 실패. 다시 시도해 주세요.'); }
   };
   function today() { return new Date().toISOString().slice(0, 10); }
   function currentUser() { try { var s = localStorage.getItem(USER_KEY); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
@@ -412,23 +428,27 @@
     return '<div class="sheet-grab"></div><div style="display:flex"><button class="sheet-x" style="margin-left:auto" onclick="' + close + '()">×</button></div>';
   }
   function renderSignup() {
+    var hasKakao  = !!SOCIAL_CFG.KAKAO_JS_KEY;
+    var hasGoogle = !!SOCIAL_CFG.GOOGLE_CLIENT;
+    var hasNaver  = !!SOCIAL_CFG.NAVER_CLIENT;
+    var anyReal   = hasKakao || hasGoogle || hasNaver;
     $('authBody').innerHTML = sheetXTop('mCloseAuth') +
       '<div class="auth-sosik"><img src="sosik.png" alt="소식이"></div>' +
       '<div class="auth-h"><div class="auth-t1">모딜 시작하기 🐴</div>' +
-      '<div class="auth-t2">닉네임을 정하고 우리 동네 딜을 시작해요!</div></div>' +
-      (pendingPay ? '<div class="auth-note" style="color:var(--coral-dark);font-weight:700;margin:12px 0 0">🛒 공동구매 참여를 위해 가입이 필요해요</div>' : '') +
-      '<div style="margin:12px 0 8px">' +
-        '<input id="signupNick" type="text" maxlength="12" placeholder="닉네임 입력 (최대 12자)" ' +
-        'style="width:100%;padding:12px 14px;border:1.5px solid var(--line2);border-radius:12px;font-size:14px;font-family:inherit;outline:none;box-sizing:border-box" ' +
-        'oninput="this.style.borderColor=this.value?\'var(--coral)\':\' var(--line2)\'" />' +
-      '</div>' +
+      '<div class="auth-t2">소셜 계정으로 빠르게 가입하세요!</div></div>' +
+      (pendingPay ? '<div class="auth-note" style="color:var(--coral-dark);font-weight:700;margin:8px 0">🛒 공동구매 참여를 위해 가입이 필요해요</div>' : '') +
       '<div class="auth-btns">' +
-        '<button class="auth-btn kakao" onclick="mSignup(\'kakao\')"><span class="ai">💬</span>카카오톡으로 시작하기</button>' +
-        '<button class="auth-btn naver" onclick="mSignup(\'naver\')"><span class="ai">N</span>네이버로 시작하기</button>' +
-        '<button class="auth-btn insta" onclick="mSignup(\'instagram\')"><span class="ai">📷</span>인스타그램으로 시작하기</button>' +
+        '<button class="auth-btn kakao"  onclick="mSocialLogin(\'kakao\')"><span class="ai">💬</span>카카오톡으로 시작하기</button>' +
+        '<button class="auth-btn google" onclick="mSocialLogin(\'google\')"><span class="ai" style="font-style:normal;font-weight:900;color:#4285F4">G</span>구글로 시작하기</button>' +
+        '<button class="auth-btn naver"  onclick="mSocialLogin(\'naver\')"><span class="ai">N</span>네이버로 시작하기</button>' +
       '</div>' +
-      '<div class="auth-note">가입 시 <a href="#">이용약관</a> · <a href="#">개인정보처리방침</a>에 동의합니다</div>';
-    setTimeout(function () { var el = document.getElementById('signupNick'); if (el) el.focus(); }, 200);
+      (!anyReal ? '<div class="auth-note" style="color:var(--coral-dark);margin-top:8px">⚠️ 소셜 키 미설정 — 닉네임으로 임시 체험 가능</div>' +
+        '<div style="display:flex;gap:8px;margin-top:8px">' +
+          '<input id="signupNick" type="text" maxlength="12" placeholder="닉네임 입력" ' +
+          'style="flex:1;padding:10px 12px;border:1.5px solid var(--line2);border-radius:12px;font-size:13px;font-family:inherit;outline:none" />' +
+          '<button onclick="mDemoSignup()" style="padding:10px 14px;background:var(--coral);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:13px;cursor:pointer">체험</button>' +
+        '</div>' : '') +
+      '<div class="auth-note" style="margin-top:10px">가입 시 <a href="#">이용약관</a> · <a href="#">개인정보처리방침</a>에 동의합니다</div>';
   }
   function renderProfile(u) {
     var mm = DATA.members.find(function (m) { return m.name === u.name; });
@@ -443,30 +463,86 @@
       '</div>' +
       '<button class="prof-logout" onclick="mLogout()">로그아웃</button>';
   }
-  window.mSignup = function (channel) {
-    var nickInput = document.getElementById('signupNick');
-    var typed = nickInput ? nickInput.value.trim() : '';
-    var nick = typed || (NICKS[Math.floor(Math.random() * NICKS.length)] + (Math.floor(Math.random() * 90) + 10));
-    // 중복 닉네임 처리
+  function _finishSocialSignup(channel, name, avatar, email) {
+    var nick = name || (NICKS[Math.floor(Math.random() * NICKS.length)] + (Math.floor(Math.random() * 90) + 10));
     var exists = DATA.members.find(function (m) { return m.name === nick; });
     if (exists) { nick = nick + (Math.floor(Math.random() * 90) + 10); }
-    var av = AVS[Math.floor(Math.random() * AVS.length)];
-    var u = { name: nick, av: av, channel: channel };
-    DATA.members.unshift({ id: 'M-' + Date.now(), name: nick, phone: '소셜가입', joinDate: today(),
-      status: 'active', deals: 0, kakao: CH[channel].kakao, channel: channel });
+    var av = avatar || AVS[Math.floor(Math.random() * AVS.length)];
+    var u = { name: nick, av: av, channel: channel, email: email || '' };
+    DATA.members.unshift({ id: 'M-' + Date.now(), name: nick, phone: email || '소셜가입', joinDate: today(),
+      status: 'active', deals: 0, channel: channel });
     DATA.stats.totalMembers += 1;
     saveData(DATA);
     setUser(u);
-    toast('🎉 ' + CH[channel].label.split(' ')[1] + '로 가입 완료! 환영해요 ' + nick + '님');
+    var chLabel = (CH[channel] && CH[channel].label) ? CH[channel].label : channel;
+    toast('🎉 ' + chLabel + '로 가입 완료! 환영해요 ' + nick + '님');
     confetti(40);
     if (pendingPay) {
-      var id = pendingPay; pendingPay = null;
+      var pid = pendingPay; pendingPay = null;
       $('authSheet').classList.remove('show');
-      var d = DATA.activeDeals.find(function (x) { return x.id === id; });
-      if (d) setTimeout(function () { openPay(d); }, 350);
+      var pd = DATA.activeDeals.find(function (x) { return x.id === pid; });
+      if (pd) setTimeout(function () { openPay(pd); }, 350);
     } else {
       renderProfile(u);
     }
+  }
+
+  window.mSocialLogin = function (channel) {
+    if (channel === 'google') {
+      if (SOCIAL_CFG.GOOGLE_CLIENT) {
+        google.accounts.id.initialize({ client_id: SOCIAL_CFG.GOOGLE_CLIENT, callback: window.handleGoogleCredential });
+        google.accounts.id.prompt();
+      } else {
+        toast('🔵 구글 로그인 키 미설정 — 아래 닉네임으로 체험해 보세요');
+      }
+    } else if (channel === 'kakao') {
+      if (SOCIAL_CFG.KAKAO_JS_KEY) {
+        if (!Kakao.isInitialized()) Kakao.init(SOCIAL_CFG.KAKAO_JS_KEY);
+        Kakao.Auth.login({
+          success: function (auth) {
+            Kakao.API.request({ url: '/v2/user/me',
+              success: function (res) {
+                var p = res.kakao_account && res.kakao_account.profile;
+                var name = p ? p.nickname : '카카오유저';
+                var img = p ? (p.profile_image_url || '') : '';
+                _finishSocialSignup('kakao', name, img, (res.kakao_account && res.kakao_account.email) || '');
+              },
+              fail: function () { _finishSocialSignup('kakao', '카카오유저', '', ''); }
+            });
+          },
+          fail: function () { toast('카카오 로그인 취소됨'); }
+        });
+      } else {
+        toast('💬 카카오 앱 키 미설정 — 아래 닉네임으로 체험해 보세요');
+      }
+    } else if (channel === 'naver') {
+      if (SOCIAL_CFG.NAVER_CLIENT) {
+        var naverUrl = 'https://nid.naver.com/oauth2.0/authorize?response_type=token' +
+          '&client_id=' + encodeURIComponent(SOCIAL_CFG.NAVER_CLIENT) +
+          '&redirect_uri=' + encodeURIComponent(SITE_URL) +
+          '&state=' + Math.random().toString(36).slice(2);
+        var popup = window.open(naverUrl, 'naver_login', 'width=500,height=600');
+        var timer = setInterval(function () {
+          try {
+            if (popup.closed) { clearInterval(timer); return; }
+            var hash = popup.location.hash;
+            if (hash && hash.indexOf('access_token') !== -1) {
+              clearInterval(timer); popup.close();
+              _finishSocialSignup('naver', '네이버유저', '', '');
+            }
+          } catch (e) {}
+        }, 500);
+      } else {
+        toast('🟢 네이버 클라이언트 ID 미설정 — 아래 닉네임으로 체험해 보세요');
+      }
+    }
+  };
+
+  window.mDemoSignup = function () {
+    var nickInput = document.getElementById('signupNick');
+    var typed = nickInput ? nickInput.value.trim() : '';
+    if (!typed) { toast('닉네임을 입력해 주세요 😊'); if (nickInput) nickInput.focus(); return; }
+    _finishSocialSignup('demo', typed, AVS[Math.floor(Math.random() * AVS.length)], '');
   };
   window.mLogout = function () {
     try { localStorage.removeItem(USER_KEY); } catch (e) {}
