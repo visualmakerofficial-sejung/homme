@@ -656,4 +656,47 @@ body {
 .tacc-num { font-size: 15px; font-weight: 900; letter-spacing: .5px; }
 .tacc-name { font-size: 11px; color: var(--ink3); }
 .transfer-note { font-size: 11.5px; color: var(--ink2); line-height: 1.7; }
+.pay-opt.soon { opacity: .55; cursor: not-allowed; }
+.pay-soon-badge { margin-left: auto; font-size: 9px; font-weight: 800; background: var(--bg2); color: var(--ink3); padding: 2px 7px; border-radius: 100px; }
+
+/* 피드 카드 — 내 글 / 추천 / 수정·삭제 버튼 */
+.fc-mine { font-size: 8px; font-weight: 800; color: var(--coral); background: var(--coral-bg); padding: 1px 5px; border-radius: 100px; margin-left: 4px; }
+.fc-btn.share { background: #e8f5e9; color: #2e7d32; }
+.fc-btn.edit  { background: #e3f2fd; color: #1565c0; padding: 4px 7px; }
+.fc-btn.del   { background: #fce4ec; color: #c62828; padding: 4px 7px; }
+
+/* 프로필 메뉴 버튼 */
+.prof-stat.clickable { cursor: pointer; transition: background .15s; }
+.prof-stat.clickable:hover { background: var(--coral-bg); }
+.prof-menu-btn { display: flex; align-items: center; width: 100%; padding: 13px 16px; background: var(--paper); border: 1.5px solid var(--line); border-radius: 13px; font-size: 13.5px; font-weight: 700; color: var(--ink2); cursor: pointer; margin-bottom: 9px; text-align: left; box-shadow: var(--shadow-sm); }
+
+/* 내 구매 내역 카드 */
+.my-order-card { background: var(--paper); border-radius: 16px; padding: 15px 16px; box-shadow: var(--shadow-sm); margin-bottom: 12px; }
+.moc-head { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.moc-id { font-size: 10px; color: var(--ink3); font-weight: 700; }
+.moc-date { font-size: 10px; color: var(--ink3); }
+.moc-deal { font-size: 14px; font-weight: 900; color: var(--ink); margin-bottom: 4px; }
+.moc-meta { font-size: 11.5px; color: var(--ink3); margin-bottom: 10px; }
+.moc-vacc { font-size: 11.5px; background: #fffbe6; border: 1px solid #ffe58f; border-radius: 8px; padding: 7px 10px; margin-bottom: 10px; color: var(--ink2); line-height: 1.6; }
+.moc-cancelled { text-align: center; font-size: 12px; color: #aaa; padding: 8px 0; }
+
+/* 배송 추적 스텝퍼 */
+.moc-track { display: flex; align-items: flex-start; justify-content: space-between; padding: 10px 0 0; }
+.moc-step { display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; }
+.moc-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--line2); border: 2.5px solid var(--line2); flex-shrink: 0; }
+.moc-step.done .moc-dot { background: var(--coral); border-color: var(--coral); }
+.moc-step.cur  .moc-dot { background: #fff; border-color: var(--coral); box-shadow: 0 0 0 3px var(--coral-bg); }
+.moc-lbl { font-size: 9px; color: var(--ink3); margin-top: 5px; text-align: center; line-height: 1.3; }
+.moc-step.done .moc-lbl, .moc-step.cur .moc-lbl { color: var(--coral-dark); font-weight: 800; }
+.moc-line { flex: 1; height: 2.5px; background: var(--line2); margin-top: 6px; }
+.moc-line.done { background: var(--coral); }
+
+/* 내 게시물 카드 */
+.my-post-card { background: var(--paper); border-radius: 14px; padding: 13px 14px; box-shadow: var(--shadow-sm); margin-bottom: 10px; }
+.mpc-cat { font-size: 9px; font-weight: 800; color: var(--coral-dark); margin-bottom: 4px; }
+.mpc-title { font-size: 13px; color: var(--ink); line-height: 1.5; margin-bottom: 8px; }
+.mpc-foot { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--ink3); }
+.mpc-btn { padding: 4px 10px; border: none; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; }
+.mpc-btn.edit { background: #e3f2fd; color: #1565c0; }
+.mpc-btn.del  { background: #fce4ec; color: #c62828; margin-left: auto; }
 
