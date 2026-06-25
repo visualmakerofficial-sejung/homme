@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>텍스트 → 영상 스튜디오 🎬</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Black+Han+Sans&family=Jua&family=Do+Hyeon&family=Gaegu:wght@400;700&family=Nanum+Pen+Script&family=Gowun+Dodum&family=Poppins:wght@400;600;800&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Nanum+Gothic:wght@400;700;800&family=Black+Han+Sans&family=Jua&family=Do+Hyeon&family=Gugi&family=Yeon+Sung&family=Gowun+Dodum&family=Gowun+Batang:wght@400;700&family=Nanum+Myeongjo:wght@400;700;800&family=Song+Myung&family=Gaegu:wght@400;700&family=Nanum+Pen+Script&family=Nanum+Brush+Script&family=Gamja+Flower&family=Dongle:wght@400;700&family=Hi+Melody&family=Kirang+Haerang&family=Dokdo&family=Cute+Font&family=Poppins:wght@400;600;800&family=Bebas+Neue&family=Anton&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="studio.css">
 </head>
 <body>
@@ -25,15 +25,37 @@
     <div class="field">
       <label>② 폰트</label>
       <select id="font">
-        <option value="Black Han Sans">블랙한산스 (굵은 임팩트)</option>
-        <option value="Noto Sans KR">노토 산스 (고딕)</option>
-        <option value="Jua">주아 (둥글둥글)</option>
-        <option value="Do Hyeon">도현</option>
-        <option value="Gowun Dodum">고운돋움</option>
-        <option value="Gaegu">개구 (손글씨)</option>
-        <option value="Nanum Pen Script">나눔 펜 (손글씨)</option>
-        <option value="Poppins">Poppins (영문)</option>
-        <option value="Bebas Neue">Bebas Neue (영문)</option>
+        <optgroup label="고딕 / 임팩트">
+          <option value="Black Han Sans">블랙한산스 (굵은 임팩트)</option>
+          <option value="Noto Sans KR">노토 산스 (기본 고딕)</option>
+          <option value="Nanum Gothic">나눔고딕</option>
+          <option value="Do Hyeon">도현</option>
+          <option value="Jua">주아 (둥글둥글)</option>
+          <option value="Yeon Sung">연성 (둥근 굵은)</option>
+          <option value="Gugi">구기 (레트로 임팩트)</option>
+          <option value="Gowun Dodum">고운돋움</option>
+        </optgroup>
+        <optgroup label="명조 / 세리프">
+          <option value="Nanum Myeongjo">나눔명조</option>
+          <option value="Gowun Batang">고운바탕</option>
+          <option value="Song Myung">송명 (우아한 세리프)</option>
+        </optgroup>
+        <optgroup label="손글씨 / 붓글씨">
+          <option value="Gaegu">개구 (손글씨)</option>
+          <option value="Nanum Pen Script">나눔 펜 (손글씨)</option>
+          <option value="Gamja Flower">감자꽃 (귀여운)</option>
+          <option value="Dongle">동글 (말랑 둥근)</option>
+          <option value="Hi Melody">하이멜로디</option>
+          <option value="Cute Font">큐트 (귀여운)</option>
+          <option value="Kirang Haerang">기랑해랑 (붓 느낌)</option>
+          <option value="Nanum Brush Script">나눔 붓글씨</option>
+          <option value="Dokdo">독도 (거친 손글씨)</option>
+        </optgroup>
+        <optgroup label="영문">
+          <option value="Poppins">Poppins</option>
+          <option value="Bebas Neue">Bebas Neue</option>
+          <option value="Anton">Anton</option>
+        </optgroup>
       </select>
     </div>
 

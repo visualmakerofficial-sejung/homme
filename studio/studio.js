@@ -45,6 +45,7 @@
   var E = {
     outCubic: function (x) { return 1 - Math.pow(1 - x, 3); },
     outBack: function (x) { var c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); },
+    outExpo: function (x) { return x >= 1 ? 1 : 1 - Math.pow(2, -10 * x); },
     outBounce: function (x) {
       var n1 = 7.5625, d1 = 2.75;
       if (x < 1 / d1) return n1 * x * x;
@@ -54,6 +55,7 @@
     },
   };
   function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+  function commas(s) { return String(s).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
 
   function roundRect(c, x, y, w, h, r) {
     if (w < 0) { x += w; w = -w; }
@@ -153,7 +155,7 @@
       },
     },
     boxExpand: {
-      label: '⬜ 박스 확장 등장', loop: false,
+      label: '⬜ 박스 확장 등장', loop: false, lineH: 1.95,
       renderLine: function (ctx, line, g) {
         var D = g.state.duration;
         var start = line.idx * (D * 0.55 / Math.max(1, g.totalLines));
@@ -161,7 +163,7 @@
         if (bp <= 0) return;
         var e = E.outBack(bp);
         var cx = line.cx, cy = line.chars.length ? line.chars[0].y : g.state.h / 2;
-        var padX = g.state.size * 0.55, padY = g.state.size * 0.34;
+        var padX = g.state.size * 0.55, padY = g.state.size * 0.3;
         var fullW = line.lineW + padX * 2, fullH = g.state.size + padY * 2;
         var bw = fullW * Math.max(0, e), bh = fullH * clamp01(e * 1.3);
         ctx.save();
@@ -196,7 +198,44 @@
         }
       },
     },
+    countUp: {
+      label: '🔢 숫자 카운트업 (0→입력값)', loop: false, count: true,
+    },
   };
+
+  // 입력 텍스트에서 숫자를 찾아 0→목표까지 세는 효과
+  function renderCounter(t) {
+    var D = state.duration;
+    var raw = state.text;
+    var nm = raw.match(/\d[\d,]*\.?\d*/);   // 첫 숫자 (콤마/소수점 허용)
+    var display;
+    if (!nm) {
+      display = raw;
+    } else {
+      var numStr = nm[0];
+      var prefix = raw.slice(0, nm.index);
+      var suffix = raw.slice(nm.index + numStr.length);
+      var hasComma = numStr.indexOf(',') >= 0;
+      var clean = numStr.replace(/,/g, '');
+      var dec = clean.indexOf('.') >= 0 ? clean.split('.')[1].length : 0;
+      var target = parseFloat(clean) || 0;
+      var eased = E.outExpo(clamp01(D > 0 ? t / D : 1));
+      var cur = target * eased;
+      var curStr;
+      if (dec > 0) curStr = cur.toFixed(dec);
+      else { var n = Math.round(cur); curStr = (hasComma || target >= 1000) ? commas(n) : String(n); }
+      display = prefix + curStr + suffix;
+    }
+    // 숫자 문자열을 일반 텍스트처럼 배치해서 그리기 (살짝 팝)
+    var saved = state.text;
+    state.text = display;
+    var L = layout();
+    state.text = saved;
+    var pulse = 1 + 0.06 * (1 - E.outCubic(clamp01(D > 0 ? t / D : 1)));
+    L.lines.forEach(function (line) {
+      line.chars.forEach(function (c) { drawChar(c, { scale: pulse }); });
+    });
+  }
 
   function fontStr() { return state.weight + ' ' + state.size + 'px "' + state.font + '"'; }
 
@@ -204,7 +243,8 @@
   function layout() {
     ctx.font = fontStr();
     var lines = state.text.split('\n');
-    var lineHeight = state.size * 1.42;
+    var lhFactor = (ANIMS[state.anim] && ANIMS[state.anim].lineH) || 1.42;
+    var lineHeight = state.size * lhFactor;
     var totalH = lines.length * lineHeight;
     var margin = state.size * 0.5;
 
@@ -297,6 +337,7 @@
   function render(t) {
     drawBg(t);
     var anim = ANIMS[state.anim];
+    if (anim.count) { renderCounter(t); return; }
     var L = layout();
     var D = state.duration;
     var g = { t: t, state: state, fontStr: fontStr(), totalChars: L.total, totalLines: L.lines.length };
