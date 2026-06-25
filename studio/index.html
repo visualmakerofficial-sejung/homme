@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>텍스트 → 영상 스튜디오 🎬</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Black+Han+Sans&family=Jua&family=Do+Hyeon&family=Gaegu:wght@400;700&family=Nanum+Pen+Script&family=Gowun+Dodum&family=Poppins:wght@400;600;800&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="studio.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- 컨트롤 패널 -->
+  <aside class="panel">
+    <h1>텍스트 → 영상 🎬</h1>
+    <div class="sub">내용·폰트·움직임을 정하고 영상으로 내보내세요.</div>
+
+    <!-- 1. 내용 -->
+    <div class="field">
+      <label>① 내용 <span style="font-weight:400">(Enter 로 줄바꿈)</span></label>
+      <textarea id="text" rows="3"></textarea>
+    </div>
+
+    <!-- 2. 폰트 -->
+    <div class="field">
+      <label>② 폰트</label>
+      <select id="font">
+        <option value="Black Han Sans">블랙한산스 (굵은 임팩트)</option>
+        <option value="Noto Sans KR">노토 산스 (고딕)</option>
+        <option value="Jua">주아 (둥글둥글)</option>
+        <option value="Do Hyeon">도현</option>
+        <option value="Gowun Dodum">고운돋움</option>
+        <option value="Gaegu">개구 (손글씨)</option>
+        <option value="Nanum Pen Script">나눔 펜 (손글씨)</option>
+        <option value="Poppins">Poppins (영문)</option>
+        <option value="Bebas Neue">Bebas Neue (영문)</option>
+      </select>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>두께</label>
+        <select id="weight">
+          <option value="300">가늘게</option>
+          <option value="400" selected>보통</option>
+          <option value="700">굵게</option>
+          <option value="900">아주굵게</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>글자색</label>
+        <input type="color" id="color">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>크기 <span class="val" id="sizeVal">150</span></label>
+      <input type="range" id="size" min="40" max="360" step="2">
+    </div>
+
+    <!-- 3. 애니메이션 -->
+    <div class="field">
+      <label>③ 움직이는 방식</label>
+      <select id="anim"></select>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>배경색</label>
+        <select id="bg">
+          <option value="cream">크림</option>
+          <option value="white">흰색</option>
+          <option value="black">검정</option>
+          <option value="olive">올리브 그라데</option>
+          <option value="sunset">노을 그라데</option>
+          <option value="night">밤하늘 그라데</option>
+          <option value="sky">하늘 그라데</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>비율</label>
+        <select id="ratio">
+          <option value="1:1">1:1 (정사각)</option>
+          <option value="9:16">9:16 (릴스/쇼츠)</option>
+          <option value="16:9">16:9 (유튜브)</option>
+          <option value="4:5">4:5 (피드)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 배경 이미지 -->
+    <div class="field">
+      <label>배경 이미지 <span class="val" id="bgImgName" style="font-weight:400;color:var(--ink2)">없음</span></label>
+      <div class="row2" style="grid-template-columns:1fr auto auto;gap:8px;align-items:stretch">
+        <label class="filebtn">📷 이미지 선택<input type="file" id="bgImg" accept="image/*" hidden></label>
+        <select id="bgFit" style="width:auto">
+          <option value="cover">꽉 채움</option>
+          <option value="contain">전체 보임</option>
+        </select>
+        <button type="button" id="bgImgClear" class="minibtn">제거</button>
+      </div>
+    </div>
+
+    <!-- 글씨 위치 -->
+    <div class="field">
+      <label>글씨 위치</label>
+      <div class="row2">
+        <select id="alignH">
+          <option value="left">⬅ 왼쪽</option>
+          <option value="center" selected>↔ 가운데</option>
+          <option value="right">오른쪽 ➡</option>
+        </select>
+        <select id="alignV">
+          <option value="top">⬆ 위</option>
+          <option value="middle" selected>↕ 가운데</option>
+          <option value="bottom">⬇ 아래</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>← 좌우 미세조정 →</label>
+        <input type="range" id="offX" min="-600" max="600" step="5" value="0">
+      </div>
+      <div class="field">
+        <label>↑ 상하 미세조정 ↓</label>
+        <input type="range" id="offY" min="-900" max="900" step="5" value="0">
+      </div>
+    </div>
+    <div class="field">
+      <label class="check"><input type="checkbox" id="shadow"> 글씨 그림자 (사진 위 가독성 ↑)</label>
+    </div>
+
+    <div class="field">
+      <label>길이 <span class="val" id="durVal">3초</span></label>
+      <input type="range" id="dur" min="1" max="10" step="1">
+    </div>
+
+    <!-- 4. 내보내기 -->
+    <div class="btns">
+      <button class="btn-replay" id="replay">↻ 다시재생</button>
+      <button class="btn-export" id="export">④ 영상으로 내보내기</button>
+    </div>
+    <div class="status" id="status"></div>
+
+    <div class="tip">
+      💡 미리보기는 자동 반복돼요. <b>내보내기</b>를 누르면 설정한 길이만큼 녹화해<br>
+      영상 파일이 다운로드됩니다. (크롬: webm, 사파리: mp4)
+    </div>
+  </aside>
+
+  <!-- 미리보기 -->
+  <main class="preview">
+    <div class="stage-wrap">
+      <canvas id="stage" width="1080" height="1080"></canvas>
+    </div>
+    <div class="hint">미리보기</div>
+  </main>
+
+</div>
+<script src="studio.js"></script>
+</body>
+</html>
