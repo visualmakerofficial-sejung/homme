@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash image-to-video/setup.sh 2>&1 || true"
+          }
+        ]
+      }
+    ]
+  }
+}

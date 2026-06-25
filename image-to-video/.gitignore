@@ -1,12 +1,13 @@
-# 결과물 / 임시 파일
+# 결과물 / 임시 파일 (재생성 가능)
 output/*.mp4
 output/*.png
 work/
 __pycache__/
 *.pyc
 
-# 사용자 에셋(캐릭터/제품 이미지) — 개인 자료라 커밋 제외
-briefs/assets/*.png
-briefs/assets/*.jpg
-briefs/assets/*.jpeg
-assets/*.m4a
+# 데모 합성 음악(재생성 가능)
+assets/demo_bgm.m4a
+
+# NOTE: 캐릭터/제품 이미지(briefs/assets/*.png)는 일부러 커밋합니다.
+#       새 세션에서도 이어서 작업하려면 이미지가 저장소에 남아 있어야 합니다.
+#       민감한 이미지는 커밋하지 말고 로컬에만 두세요.
