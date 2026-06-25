@@ -69,6 +69,23 @@ input[type="color"] {
 
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
+.filebtn {
+  display: flex; align-items: center; justify-content: center;
+  border: 1px dashed var(--olive); border-radius: 10px; padding: 10px 8px;
+  font-size: 13px; font-weight: 700; color: var(--olive-d); cursor: pointer;
+  background: #fafbf4; text-align: center;
+}
+.filebtn:hover { background: #f2f5e6; }
+.minibtn {
+  flex: none; background: #f0f0ea; color: var(--ink2); border-radius: 10px;
+  padding: 0 12px; font-size: 12.5px; font-weight: 700;
+}
+.check {
+  display: flex !important; align-items: center; gap: 8px; cursor: pointer;
+  font-size: 13px; font-weight: 500 !important; color: var(--ink) !important;
+}
+.check input { width: auto; accent-color: var(--olive); transform: scale(1.15); }
+
 .btns { display: flex; gap: 10px; margin-top: 8px; }
 button {
   flex: 1; font-family: inherit; font-weight: 700; font-size: 14px;

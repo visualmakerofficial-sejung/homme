@@ -66,7 +66,7 @@
 
     <div class="row2">
       <div class="field">
-        <label>배경</label>
+        <label>배경색</label>
         <select id="bg">
           <option value="cream">크림</option>
           <option value="white">흰색</option>
@@ -86,6 +86,49 @@
           <option value="4:5">4:5 (피드)</option>
         </select>
       </div>
+    </div>
+
+    <!-- 배경 이미지 -->
+    <div class="field">
+      <label>배경 이미지 <span class="val" id="bgImgName" style="font-weight:400;color:var(--ink2)">없음</span></label>
+      <div class="row2" style="grid-template-columns:1fr auto auto;gap:8px;align-items:stretch">
+        <label class="filebtn">📷 이미지 선택<input type="file" id="bgImg" accept="image/*" hidden></label>
+        <select id="bgFit" style="width:auto">
+          <option value="cover">꽉 채움</option>
+          <option value="contain">전체 보임</option>
+        </select>
+        <button type="button" id="bgImgClear" class="minibtn">제거</button>
+      </div>
+    </div>
+
+    <!-- 글씨 위치 -->
+    <div class="field">
+      <label>글씨 위치</label>
+      <div class="row2">
+        <select id="alignH">
+          <option value="left">⬅ 왼쪽</option>
+          <option value="center" selected>↔ 가운데</option>
+          <option value="right">오른쪽 ➡</option>
+        </select>
+        <select id="alignV">
+          <option value="top">⬆ 위</option>
+          <option value="middle" selected>↕ 가운데</option>
+          <option value="bottom">⬇ 아래</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>← 좌우 미세조정 →</label>
+        <input type="range" id="offX" min="-600" max="600" step="5" value="0">
+      </div>
+      <div class="field">
+        <label>↑ 상하 미세조정 ↓</label>
+        <input type="range" id="offY" min="-900" max="900" step="5" value="0">
+      </div>
+    </div>
+    <div class="field">
+      <label class="check"><input type="checkbox" id="shadow"> 글씨 그림자 (사진 위 가독성 ↑)</label>
     </div>
 
     <div class="field">
