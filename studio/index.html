@@ -54,6 +54,11 @@
     </div>
 
     <div class="field">
+      <label>강조색 <span style="font-weight:400;color:var(--ink2)">(하이라이트·박스·밑줄)</span></label>
+      <input type="color" id="accent">
+    </div>
+
+    <div class="field">
       <label>크기 <span class="val" id="sizeVal">150</span></label>
       <input type="range" id="size" min="40" max="360" step="2">
     </div>
@@ -99,6 +104,16 @@
         </select>
         <button type="button" id="bgImgClear" class="minibtn">제거</button>
       </div>
+    </div>
+
+    <div class="field">
+      <label>이미지 움직임</label>
+      <select id="imgAnim">
+        <option value="none">없음 (고정)</option>
+        <option value="zoomIn">천천히 확대</option>
+        <option value="forward">중앙에서 앞으로 등장</option>
+        <option value="kenBurns">확대 + 이동 (켄번스)</option>
+      </select>
     </div>
 
     <!-- 글씨 위치 -->
