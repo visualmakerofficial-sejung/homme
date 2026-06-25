@@ -1,0 +1,9 @@
+# 필수
+Pillow>=10.0
+
+# 선택: 한국어 TTS 내레이션을 쓰려면 설치 (인터넷 필요)
+# gTTS>=2.5
+
+# 시스템 의존성 (pip 아님):
+#   ffmpeg, ffprobe   ->  apt-get install ffmpeg
+#   한국어 폰트        ->  apt-get install fonts-nanum

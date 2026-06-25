@@ -1,0 +1,5 @@
+# 결과물 / 임시 파일
+output/*.mp4
+output/*.png
+__pycache__/
+*.pyc

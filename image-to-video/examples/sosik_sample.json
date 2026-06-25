@@ -1,0 +1,47 @@
+{
+  "title": "소식이 가맹점 모집",
+  "width": 1080,
+  "height": 1920,
+  "fps": 30,
+  "transition": "fade",
+  "transition_dur": 0.4,
+
+  "background": {
+    "type": "gradient",
+    "colors": ["#FFE082", "#FF8A65"],
+    "direction": "diagonal"
+  },
+
+  "character": {
+    "image": "../assets/sosik.png",
+    "scale": 0.6,
+    "y": 0.42,
+    "anim": "bob",
+    "shadow": true
+  },
+
+  "caption": {
+    "position": 0.76,
+    "font_size": 84,
+    "color": "#FFFFFF",
+    "stroke_color": "#222222",
+    "stroke_width": 10,
+    "box": true,
+    "box_color": "#000000AA",
+    "max_chars_per_line": 11
+  },
+
+  "tts": false,
+  "music_volume": 0.5,
+
+  "scenes": [
+    { "text": "안녕하세요!\n저는 소식이예요", "duration": 2.6, "emphasis": true },
+    { "text": "오늘은 좋은 소식을\n가져왔어요", "duration": 2.8 },
+    {
+      "text": "지금 가맹점을\n모집하고 있어요!",
+      "duration": 3.0,
+      "background": { "type": "gradient", "colors": ["#80DEEA", "#26A69A"], "direction": "vertical" }
+    },
+    { "text": "자세한 내용은\n프로필 링크 확인!", "duration": 3.0, "emphasis": true }
+  ]
+}
