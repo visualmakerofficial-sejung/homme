@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>타이핑 효과 ✍️</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="typing.css">
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- 히어로: 스크롤 없이 바로 타이핑 + 루프 문구 -->
+  <section class="hero">
+    <div class="eyebrow" data-typing data-speed="55">TYPING EFFECT</div>
+    <h1 class="big" data-typing data-speed="90" data-start-delay="700">속부터 맑아지는</h1>
+    <div class="loop-line"
+         data-loop="대마종자유|올리브오일|코코넛오일"
+         data-speed="100" data-loop-pause="1200"></div>
+    <div class="scroll-hint">아래로 스크롤 해보세요 ↓</div>
+  </section>
+
+  <!-- 섹션 1: 그룹 — 위에서 아래로 차례대로 타이핑 -->
+  <section class="demo-section">
+    <div class="eyebrow" data-group="s1" data-typing data-speed="50">STEP 01</div>
+    <h2 class="mid" data-group="s1" data-typing data-speed="80">트렌드에 따라</h2>
+    <div class="line"></div>
+    <p class="lead" data-group="s1" data-typing data-speed="32">
+      스크롤해서 화면에 들어오는 순간, 글씨가 위에서부터 한 줄씩 차례대로 타이핑됩니다.
+    </p>
+  </section>
+
+  <!-- 섹션 2: 큰 제목 한 방 -->
+  <section class="demo-section">
+    <h1 class="big" data-typing data-speed="120">오일 갈아타기는</h1>
+    <p class="lead" data-typing data-speed="30" data-start-delay="900">
+      data-typing 만 붙이면 끝. 속도·시작 지연·커서까지 속성으로 조절할 수 있어요.
+    </p>
+  </section>
+
+  <!-- 섹션 3: 커서 유지 + 강조 태그 -->
+  <section class="demo-section">
+    <div class="eyebrow">FORMULA</div>
+    <h2 class="mid" data-typing data-speed="70">Balanced Formula</h2>
+    <div class="tag" data-typing data-speed="90" data-start-delay="600" data-keep-cursor="true">of 3 Oils │</div>
+    <p class="lead" data-typing data-speed="30" data-start-delay="1400" data-once="false">
+      이 문단은 data-once="false" 라서, 화면 밖으로 나갔다 다시 들어오면 또 타이핑됩니다. 위로 스크롤했다 내려와 보세요.
+    </p>
+  </section>
+
+  <div class="footer">
+    HTML에 <code>data-typing</code> 만 붙이면 자동 타이핑 ✨<br>
+    옵션은 <code>typing.js</code> 상단 주석을 참고하세요.
+  </div>
+
+</div>
+
+<script src="typing.js"></script>
+</body>
+</html>
