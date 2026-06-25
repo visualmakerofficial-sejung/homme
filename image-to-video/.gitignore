@@ -1,5 +1,12 @@
 # 결과물 / 임시 파일
 output/*.mp4
 output/*.png
+work/
 __pycache__/
 *.pyc
+
+# 사용자 에셋(캐릭터/제품 이미지) — 개인 자료라 커밋 제외
+briefs/assets/*.png
+briefs/assets/*.jpg
+briefs/assets/*.jpeg
+assets/*.m4a

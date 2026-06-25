@@ -1,0 +1,68 @@
+{
+  "title": "매직 헤어브러시 광고",
+  "language": "ko",
+  "width": 1080, "height": 1920, "fps": 30, "aspect": "9:16",
+
+  "character": {
+    "image": "assets/character.png",
+    "name": "꼬마",
+    "description": "a cute chubby 3D Pixar-style little kid with big sparkly eyes and round cheeks"
+  },
+  "product": {
+    "image": "assets/product.png",
+    "name": "매직 헤어브러시",
+    "description": "a pink magic hairbrush with soft bristles"
+  },
+
+  "video_model": "seedance_2_0",
+  "image_model": "nano_banana",
+  "resolution": "1080p",
+  "style": "cute chunky 3D Pixar/Disney style, big sparkly eyes, soft studio lighting, glossy render, vertical 9:16",
+
+  "voice_mode": "tts",
+  "voice_lang": null,
+  "music": null,
+  "music_volume": 0.35,
+  "voice_volume": 1.0,
+  "transition": "fade",
+  "transition_dur": 0.35,
+
+  "scenes": [
+    {
+      "beat": "problem",
+      "use_product": false,
+      "duration": 4,
+      "image_prompt": "the kid just woke up and looks into a bathroom mirror in the morning, hair is a wild tangled bird-nest mess, gloomy disappointed face, soft morning light",
+      "motion_prompt": "the kid slowly rubs sleepy eyes, then looks shocked and sad at the messy hair in the mirror, shoulders drooping",
+      "caption": { "ko": "아침에 일어났더니\n머리가 산발...", "en": "Woke up with\ncrazy bed hair..." },
+      "narration": { "ko": "아침에 일어났더니 머리가 완전 엉망이에요.", "en": "I woke up and my hair was a total mess." }
+    },
+    {
+      "beat": "product",
+      "use_product": true,
+      "duration": 3.5,
+      "image_prompt": "the kid suddenly gets an idea and happily holds up the pink magic hairbrush next to the face, eyes lighting up with a spark",
+      "motion_prompt": "the kid's face lights up with an idea, raises the hairbrush into view with a hopeful smile",
+      "caption": { "ko": "그때 생각난\n매직 헤어브러시!", "en": "Then I remembered...\nthe Magic Hairbrush!" },
+      "narration": { "ko": "그때 이 매직 헤어브러시가 생각났어요.", "en": "Then I remembered this magic hairbrush." }
+    },
+    {
+      "beat": "use",
+      "use_product": true,
+      "duration": 3.5,
+      "image_prompt": "the kid brushes the messy hair with the pink magic hairbrush in one smooth stroke, sparkles trailing from the brush",
+      "motion_prompt": "the kid brushes down through the hair in one satisfying smooth motion, magic sparkles follow the brush",
+      "caption": { "ko": "한 번 슥-\n빗었더니", "en": "One smooth\nbrush stroke..." },
+      "narration": { "ko": "한 번 쓱 빗었더니요.", "en": "I gave it one smooth brush." }
+    },
+    {
+      "beat": "result",
+      "use_product": false,
+      "duration": 4,
+      "image_prompt": "the kid now has perfectly styled glossy smooth hair, huge happy smile, sparkling clean look, confident pose, sparkles around",
+      "motion_prompt": "the kid flips the perfectly styled shiny hair and beams a big confident smile at the camera, sparkles popping",
+      "caption": { "ko": "완벽한 스타일링\n완성!", "en": "Perfect styling,\ndone!" },
+      "narration": { "ko": "완벽한 스타일링 완성! 여러분도 써보세요.", "en": "Perfect styling, done! You should try it too." }
+    }
+  ]
+}

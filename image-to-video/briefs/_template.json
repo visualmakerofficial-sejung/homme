@@ -1,0 +1,70 @@
+{
+  "_help": "이 파일을 복사해 새 광고를 만드세요. image_prompt/motion_prompt 는 영문이 품질이 좋습니다. caption/narration 은 ko/en 둘 다 적어두면 영상마다 언어를 골라 쓸 수 있습니다.",
+
+  "title": "제품명 광고",
+  "language": "ko",
+  "width": 1080, "height": 1920, "fps": 30, "aspect": "9:16",
+
+  "character": {
+    "image": "assets/character.png",
+    "name": "캐릭터 이름",
+    "description": "영문 캐릭터 묘사 (예: a cute 3D Pixar-style girl with big eyes)"
+  },
+  "product": {
+    "image": "assets/product.png",
+    "name": "제품명",
+    "description": "영문 제품 묘사 (예: a sleek white skincare bottle)"
+  },
+
+  "video_model": "seedance_2_0",
+  "image_model": "nano_banana",
+  "resolution": "1080p",
+  "style": "cute chunky 3D Pixar/Disney style, big sparkly eyes, soft studio lighting, glossy render, vertical 9:16",
+
+  "voice_mode": "tts",
+  "voice_lang": null,
+  "music": null,
+  "music_volume": 0.35,
+  "voice_volume": 1.0,
+  "transition": "fade",
+  "transition_dur": 0.35,
+
+  "scenes": [
+    {
+      "beat": "problem",
+      "use_product": false,
+      "duration": 4,
+      "image_prompt": "캐릭터가 겪는 문제 상황 (영문)",
+      "motion_prompt": "그 장면에서의 움직임/표정 (영문)",
+      "caption": { "ko": "문제 상황 자막", "en": "problem caption" },
+      "narration": { "ko": "문제 상황 내레이션", "en": "problem narration" }
+    },
+    {
+      "beat": "product",
+      "use_product": true,
+      "duration": 3.5,
+      "image_prompt": "제품이 등장하는 장면 (영문)",
+      "motion_prompt": "제품을 들어올리는 동작 등 (영문)",
+      "caption": { "ko": "제품 등장 자막", "en": "product caption" },
+      "narration": { "ko": "제품 소개 내레이션", "en": "product narration" }
+    },
+    {
+      "beat": "use",
+      "use_product": true,
+      "duration": 3.5,
+      "image_prompt": "제품을 사용하는 장면 (영문)",
+      "motion_prompt": "사용 동작 (영문)",
+      "caption": { "ko": "사용 자막", "en": "use caption" },
+      "narration": { "ko": "사용 내레이션", "en": "use narration" }
+    },
+    {
+      "beat": "result",
+      "use_product": false,
+      "duration": 4,
+      "image_prompt": "만족스러운 결과 장면 (영문)",
+      "motion_prompt": "기뻐하는 동작 (영문)",
+      "caption": { "ko": "결과 자막 ✨", "en": "result caption ✨" },
+      "narration": { "ko": "결과 + 콜투액션 내레이션", "en": "result + call to action" }
+    }
+  ]
+}
