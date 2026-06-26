@@ -215,7 +215,43 @@
     countUp: {
       label: '🔢 숫자 카운트업 (0→입력값)', loop: false, count: true,
     },
+    emphasize: {
+      label: '✨ 키워드 강조 등장 (*별표*)', loop: false, emphasis: true,
+    },
   };
+
+  // *별표* 로 감싼 글자를 강조색으로. clean 텍스트 + 강조 글자 index 집합 반환.
+  function parseEmphasis(raw) {
+    var arr = Array.from(raw), clean = '', emph = {}, on = false, gi = 0;
+    for (var i = 0; i < arr.length; i++) {
+      var ch = arr[i];
+      if (ch === '*') { on = !on; continue; }   // 마커는 화면에서 제거
+      clean += ch;
+      if (ch !== '\n') { if (on) emph[gi] = true; gi++; }
+    }
+    return { clean: clean, emph: emph };
+  }
+
+  // 두 줄(여러 줄) 순차 등장 + 키워드 강조
+  function renderEmphasis(t) {
+    var parsed = parseEmphasis(state.text);
+    var saved = state.text;
+    state.text = parsed.clean;
+    var L = layout();
+    setExtent(L);
+    state.text = saved;
+    var D = state.duration, nLines = Math.max(1, L.lines.length);
+    L.lines.forEach(function (line) {
+      var start = line.idx * (D * 0.5 / nLines);
+      var tp = clamp01((t - start) / (D * 0.32));
+      if (tp <= 0) return;
+      var up = (1 - E.outCubic(tp)) * state.size * 0.5;
+      line.chars.forEach(function (c) {
+        var col = parsed.emph[c.gi] ? state.accent : undefined;  // 강조 글자만 강조색
+        drawChar(c, { alpha: tp, dy: up, color: col });
+      });
+    });
+  }
 
   // 입력 텍스트에서 숫자를 찾아 0→목표까지 세는 효과.
   // 주변 글자는 최종 글자 기준으로 고정 배치 → 흔들리지 않고 "숫자만" 카운팅.
@@ -344,12 +380,16 @@
     ctx.save();
     ctx.globalAlpha = tr.alpha == null ? 1 : tr.alpha;
     ctx.translate(c.x + (tr.dx || 0), c.y + (tr.dy || 0));
-    var fill = tr.color || state.color;
-    if (state.gradient) {
+    var fill;
+    if (tr.color) {                  // 명시적 색(키워드 강조 등)은 그라데이션보다 우선
+      fill = tr.color;
+    } else if (state.gradient) {
       var oy = c.y + (tr.dy || 0);   // 로컬좌표에서 블록 상/하단으로 매핑
       var g = ctx.createLinearGradient(0, gYtop - oy, 0, gYbot - oy);
       g.addColorStop(0, state.gColorTop); g.addColorStop(1, state.gColorBot);
       fill = g;
+    } else {
+      fill = state.color;
     }
     if (tr.rot) ctx.rotate(tr.rot);
     if (tr.scale != null) ctx.scale(tr.scale, tr.scale);
@@ -411,6 +451,7 @@
     drawBg(t);
     var anim = ANIMS[state.anim];
     if (anim.count) { renderCounter(t); return; }
+    if (anim.emphasis) { renderEmphasis(t); return; }
     var L = layout();
     setExtent(L);
     var D = state.duration;
