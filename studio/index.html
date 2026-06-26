@@ -85,6 +85,17 @@
       <input type="range" id="size" min="40" max="360" step="2">
     </div>
 
+    <div class="row2">
+      <div class="field">
+        <label>줄간격 <span class="val" id="lineSpacingVal">1.20</span></label>
+        <input type="range" id="lineSpacing" min="1" max="2.2" step="0.05">
+      </div>
+      <div class="field">
+        <label>밑줄 굵기 <span class="val" id="ulWeightVal">0.05</span></label>
+        <input type="range" id="ulWeight" min="0.02" max="0.16" step="0.01">
+      </div>
+    </div>
+
     <!-- 3. 애니메이션 -->
     <div class="field">
       <label>③ 움직이는 방식</label>
@@ -136,6 +147,20 @@
         <option value="forward">중앙에서 앞으로 등장</option>
         <option value="kenBurns">확대 + 이동 (켄번스)</option>
       </select>
+    </div>
+    <div class="field">
+      <label>이미지 확대 <span class="val" id="imgZoomVal">1.00</span></label>
+      <input type="range" id="imgZoom" min="0.5" max="3" step="0.05">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>← 이미지 좌우 →</label>
+        <input type="range" id="imgX" min="-0.5" max="0.5" step="0.01" value="0">
+      </div>
+      <div class="field">
+        <label>↑ 이미지 상하 ↓</label>
+        <input type="range" id="imgY" min="-0.5" max="0.5" step="0.01" value="0">
+      </div>
     </div>
 
     <!-- 글씨 위치 -->
