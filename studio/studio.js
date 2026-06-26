@@ -155,13 +155,13 @@
         var hp = clamp01((g.t - gi0 * stagger) / (D * 0.35));   // 바가 좌→우로
         var ta = clamp01((g.t - gi0 * stagger - D * 0.04) / (D * 0.2));
         if (line.lineW > 0 && hp > 0) {
-          var padX = g.state.size * 0.14, cy = line.chars[0].y;
+          var padX = g.state.size * 0.14, midY = inkMidY(g, line);
           var bh = g.state.size * 0.92;
           var bx = line.cx - line.lineW / 2 - padX;
           ctx.save();
           ctx.globalAlpha = 0.5;
           ctx.fillStyle = g.state.accent;
-          roundRect(ctx, bx, cy - bh / 2, (line.lineW + padX * 2) * E.outCubic(hp), bh, g.state.size * 0.08);
+          roundRect(ctx, bx, midY - bh / 2, (line.lineW + padX * 2) * E.outCubic(hp), bh, g.state.size * 0.08);
           ctx.fill();
           ctx.restore();
         }
@@ -176,13 +176,13 @@
         var bp = clamp01((g.t - start) / (D * 0.3));
         if (bp <= 0) return;
         var e = E.outBack(bp);
-        var cx = line.cx, cy = line.chars.length ? line.chars[0].y : g.state.h / 2;
+        var cx = line.cx, midY = inkMidY(g, line);
         var padX = g.state.size * 0.55, padY = g.state.size * 0.3;
         var fullW = line.lineW + padX * 2, fullH = g.state.size + padY * 2;
         var bw = fullW * Math.max(0, e), bh = fullH * clamp01(e * 1.3);
         ctx.save();
         ctx.fillStyle = 'rgba(255,255,255,0.93)';
-        roundRect(ctx, cx - bw / 2, cy - bh / 2, bw, bh, g.state.size * 0.2); ctx.fill();
+        roundRect(ctx, cx - bw / 2, midY - bh / 2, bw, bh, g.state.size * 0.2); ctx.fill();
         ctx.lineWidth = Math.max(2, g.state.size * 0.035);
         ctx.strokeStyle = g.state.accent; ctx.stroke();
         ctx.restore();
@@ -328,6 +328,17 @@
   }
 
   function fontStr() { return state.weight + ' ' + state.size + 'px "' + state.font + '"'; }
+
+  // 한 줄 글자의 "실제 잉크" 세로 중심 Y (박스/하이라이트를 글자 중앙에 맞추기 위함)
+  function inkMidY(g, line) {
+    ctx.font = g.fontStr; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    var s = line.chars.map(function (c) { return c.ch; }).join('') || '가';
+    var m = ctx.measureText(s);
+    var asc = (m.actualBoundingBoxAscent != null) ? m.actualBoundingBoxAscent : g.state.size * 0.36;
+    var desc = (m.actualBoundingBoxDescent != null) ? m.actualBoundingBoxDescent : g.state.size * 0.30;
+    var cy = line.chars.length ? line.chars[0].y : g.state.h / 2;
+    return cy + (desc - asc) / 2;   // 기준선 중앙 → 잉크 중앙으로 보정
+  }
 
   // ---- 글자 배치 ----
   function layout() {
