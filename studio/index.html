@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>텍스트 → 영상 스튜디오 🎬</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Nanum+Gothic:wght@400;700;800&family=Black+Han+Sans&family=Jua&family=Do+Hyeon&family=Gugi&family=Yeon+Sung&family=Gowun+Dodum&family=Gowun+Batang:wght@400;700&family=Nanum+Myeongjo:wght@400;700;800&family=Song+Myung&family=Gaegu:wght@400;700&family=Nanum+Pen+Script&family=Nanum+Brush+Script&family=Gamja+Flower&family=Dongle:wght@400;700&family=Hi+Melody&family=Kirang+Haerang&family=Dokdo&family=Cute+Font&family=Poppins:wght@400;600;800&family=Bebas+Neue&family=Anton&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="studio.css?v=6">
+<link rel="stylesheet" href="studio.css?v=7">
 </head>
 <body>
 <div class="app">
@@ -78,6 +78,20 @@
     <div class="field">
       <label>강조색 <span style="font-weight:400;color:var(--ink2)">(하이라이트·박스·밑줄)</span></label>
       <input type="color" id="accent">
+    </div>
+
+    <div class="field">
+      <label class="check"><input type="checkbox" id="gradient"> 글자 세로 그라데이션 (위→아래 색 변화)</label>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>위 색</label>
+        <input type="color" id="gColorTop">
+      </div>
+      <div class="field">
+        <label>아래 색</label>
+        <input type="color" id="gColorBot">
+      </div>
     </div>
 
     <div class="field">
@@ -193,9 +207,19 @@
       <label class="check"><input type="checkbox" id="shadow"> 글씨 그림자 (사진 위 가독성 ↑)</label>
     </div>
 
-    <div class="field">
-      <label>길이 <span class="val" id="durVal">3초</span></label>
-      <input type="range" id="dur" min="1" max="10" step="1">
+    <div class="row2">
+      <div class="field">
+        <label>길이 <span class="val" id="durVal">3초</span></label>
+        <input type="range" id="dur" min="1" max="10" step="1">
+      </div>
+      <div class="field">
+        <label>숫자 속도 <span style="font-weight:400;color:var(--ink2)">(카운트업)</span></label>
+        <select id="countEase">
+          <option value="expo">끝에서 천천히</option>
+          <option value="linear">일정하게</option>
+          <option value="in">점점 빠르게</option>
+        </select>
+      </div>
     </div>
 
     <!-- 4. 내보내기 -->
@@ -220,6 +244,6 @@
   </main>
 
 </div>
-<script src="studio.js?v=6"></script>
+<script src="studio.js?v=7"></script>
 </body>
 </html>

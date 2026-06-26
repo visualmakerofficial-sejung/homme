@@ -18,6 +18,10 @@
     size: 130,
     color: '#2b2b26',
     accent: '#b8924f',   // 하이라이트/박스/밑줄 강조색
+    gradient: false,     // 글자 세로 그라데이션 on/off
+    gColorTop: '#ff7a3c',   // 위 색
+    gColorBot: '#9aa0a6',   // 아래 색
+    countEase: 'expo',   // 숫자 속도 곡선: expo(감속) | linear | in(가속)
     lineSpacing: 1.2,    // 줄간격 배수
     ulWeight: 0.05,      // 밑줄 굵기 (글자크기 대비)
     bg: 'cream',
@@ -245,14 +249,16 @@
     var saved = state.text;
     state.text = prefix + finalNum + suffix;
     var L = layout();
+    setExtent(L);
     state.text = saved;
 
     var pLen = Array.from(prefix).length;
     var nLen = Array.from(finalNum).length;
     var numStartGi = pLen, numEndGi = pLen + nLen;
 
-    // 현재 카운트 값
-    var eased = E.outExpo(clamp01(D > 0 ? t / D : 1));
+    // 현재 카운트 값 (속도 곡선 적용)
+    var p = clamp01(D > 0 ? t / D : 1);
+    var eased = state.countEase === 'linear' ? p : state.countEase === 'in' ? p * p * p : E.outExpo(p);
     var curStr = fmt(target * eased);
 
     // 숫자가 아닌 글자(접두/접미)는 고정 위치에 그대로. 숫자 영역의 범위만 측정.
@@ -273,7 +279,12 @@
     if (left <= right) {
       ctx.save();
       if (state.shadow) { ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = state.size * 0.12; ctx.shadowOffsetY = state.size * 0.04; }
-      ctx.fillStyle = state.color; ctx.font = fontStr();
+      if (state.gradient) {
+        var g2 = ctx.createLinearGradient(0, gYtop, 0, gYbot);
+        g2.addColorStop(0, state.gColorTop); g2.addColorStop(1, state.gColorBot);
+        ctx.fillStyle = g2;
+      } else ctx.fillStyle = state.color;
+      ctx.font = fontStr();
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(curStr, (left + right) / 2, baseY);
       ctx.restore();
@@ -319,15 +330,31 @@
     return { lines: out, total: gi };
   }
 
+  // 글자 블록의 세로 범위 (그라데이션용)
+  var gYtop = 0, gYbot = 0;
+  function setExtent(L) {
+    var mn = Infinity, mx = -Infinity;
+    L.lines.forEach(function (l) { l.chars.forEach(function (c) { mn = Math.min(mn, c.y); mx = Math.max(mx, c.y); }); });
+    if (mn === Infinity) { mn = state.h / 2; mx = state.h / 2; }
+    gYtop = mn - state.size * 0.55; gYbot = mx + state.size * 0.55;
+  }
+
   // ---- 글자 1개 그리기 ----
   function drawChar(c, tr) {
     ctx.save();
     ctx.globalAlpha = tr.alpha == null ? 1 : tr.alpha;
     ctx.translate(c.x + (tr.dx || 0), c.y + (tr.dy || 0));
+    var fill = tr.color || state.color;
+    if (state.gradient) {
+      var oy = c.y + (tr.dy || 0);   // 로컬좌표에서 블록 상/하단으로 매핑
+      var g = ctx.createLinearGradient(0, gYtop - oy, 0, gYbot - oy);
+      g.addColorStop(0, state.gColorTop); g.addColorStop(1, state.gColorBot);
+      fill = g;
+    }
     if (tr.rot) ctx.rotate(tr.rot);
     if (tr.scale != null) ctx.scale(tr.scale, tr.scale);
     if (state.shadow) { ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = state.size * 0.12; ctx.shadowOffsetY = state.size * 0.04; }
-    ctx.fillStyle = tr.color || state.color;
+    ctx.fillStyle = fill;
     ctx.font = fontStr();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -385,6 +412,7 @@
     var anim = ANIMS[state.anim];
     if (anim.count) { renderCounter(t); return; }
     var L = layout();
+    setExtent(L);
     var D = state.duration;
     var g = { t: t, state: state, fontStr: fontStr(), totalChars: L.total, totalLines: L.lines.length };
 
@@ -514,6 +542,14 @@
     $('color').addEventListener('input', function (e) { state.color = e.target.value; });
     $('accent').value = state.accent;
     $('accent').addEventListener('input', function (e) { state.accent = e.target.value; });
+    $('gradient').checked = state.gradient;
+    $('gradient').addEventListener('change', function (e) { state.gradient = e.target.checked; });
+    $('gColorTop').value = state.gColorTop;
+    $('gColorTop').addEventListener('input', function (e) { state.gColorTop = e.target.value; });
+    $('gColorBot').value = state.gColorBot;
+    $('gColorBot').addEventListener('input', function (e) { state.gColorBot = e.target.value; });
+    $('countEase').value = state.countEase;
+    $('countEase').addEventListener('change', function (e) { state.countEase = e.target.value; startTs = null; });
     $('lineSpacing').value = state.lineSpacing; $('lineSpacingVal').textContent = state.lineSpacing.toFixed(2);
     $('lineSpacing').addEventListener('input', function (e) { state.lineSpacing = +e.target.value; $('lineSpacingVal').textContent = state.lineSpacing.toFixed(2); });
     $('ulWeight').value = state.ulWeight; $('ulWeightVal').textContent = state.ulWeight.toFixed(2);
