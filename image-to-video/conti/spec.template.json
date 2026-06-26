@@ -1,0 +1,36 @@
+{
+  "_comment": "콘티 스펙 템플릿 — beat3 + transition2 = 5클립 권장. 복사해서 채우세요.",
+  "output": { "path": "out/final.mp4", "width": 716, "height": 1284, "fps": 24 },
+
+  "clips": [
+    { "file": "clips/01_beatA.mp4",   "role": "beat",       "note": "이미지1 장면" },
+    { "file": "clips/02_transAB.mp4", "role": "transition", "note": "1→2 연결(모핑)" },
+    { "file": "clips/03_beatB.mp4",   "role": "beat",       "note": "이미지2 장면" },
+    { "file": "clips/04_transBC.mp4", "role": "transition", "note": "2→3 연결(모핑/변신)" },
+    { "file": "clips/05_beatC.mp4",   "role": "beat",       "note": "이미지3 장면 + 엔딩" }
+  ],
+
+  "seams": [
+    { "effect": "cut" },
+    { "effect": "cut" },
+    { "effect": "cut" },
+    { "effect": "cut" }
+  ],
+
+  "audio": {
+    "use_native": true,
+    "native_gain": 1.15,
+    "bgm": { "file": "assets/demo_bgm.m4a", "gain": 0.22, "loop": true },
+    "sfx_gain": 0.9,
+    "sfx": [
+      { "at": 0.0, "type": "spark", "gain": 1.0, "note": "원하는 시점/타입으로 채우기" }
+    ],
+    "master_fade_out": 0.85
+  },
+
+  "captions": [
+    { "text": ["브랜드명", "제품명"], "style": "logo", "start": 0.0, "end": 99 }
+  ],
+
+  "video_fades": { "in": 0.3, "out": 0.3 }
+}

@@ -1,0 +1,38 @@
+{
+  "_comment": "오랑이 x 오드실크 선세럼 — 콘티 스펙 예시. clips=5개가 이상적(beat3+transition2). 여기선 변신 모핑 클립 대신 'fadewhite' 효과 전환을 사용한 4클립 버전.",
+  "output": { "path": "out/orangi_final.mp4", "width": 716, "height": 1284, "fps": 24 },
+
+  "clips": [
+    { "file": "clips/01_walk.mp4",     "role": "beat",       "note": "외로운 해변 산책" },
+    { "file": "clips/02_discover.mp4", "role": "transition", "note": "모래 속 선세럼 발견(연결)" },
+    { "file": "clips/03_apply.mp4",    "role": "beat",       "note": "콕 찍고 두 손으로 문지르기" },
+    { "file": "clips/04_hotgirl.mp4",  "role": "beat",       "note": "핫걸 변신 + 제품" }
+  ],
+
+  "seams": [
+    { "effect": "cut" },
+    { "effect": "cut" },
+    { "effect": "fadewhite", "duration": 0.6, "note": "바르기→핫걸: 빛이 확 퍼지는 변신 전환" }
+  ],
+
+  "audio": {
+    "use_native": true,
+    "native_gain": 1.15,
+    "bgm": { "file": "assets/demo_bgm.m4a", "gain": 0.22, "loop": true },
+    "sfx_gain": 0.9,
+    "sfx": [
+      { "at": 6.8,  "type": "spark",   "gain": 1.0, "note": "발견 반짝" },
+      { "at": 12.5, "type": "shimmer", "gain": 0.5, "note": "바르기 윤기" },
+      { "at": 14.25,"type": "whoosh",  "gain": 1.0, "note": "변신 휘릭" },
+      { "at": 14.7, "type": "boom",    "gain": 1.0, "note": "변신 임팩트" },
+      { "at": 15.0, "type": "shimmer", "gain": 1.0, "note": "변신 반짝 샤워" }
+    ],
+    "master_fade_out": 0.85
+  },
+
+  "captions": [
+    { "text": ["EAU DE SILK", "세리신 선세럼"], "style": "logo", "y": 0.42, "start": 17.0, "end": 99 }
+  ],
+
+  "video_fades": { "in": 0.3, "out": 0.3 }
+}

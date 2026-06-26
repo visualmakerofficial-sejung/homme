@@ -1,0 +1,9 @@
+# 생성된 클립/출력/음원은 용량이 커서 커밋 제외 (구조만 유지)
+clips/*.mp4
+clips/*.mov
+out/*.mp4
+assets/*.m4a
+assets/*.mp3
+sfx/
+__pycache__/
+*.pyc
