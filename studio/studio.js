@@ -18,9 +18,14 @@
     size: 130,
     color: '#2b2b26',
     accent: '#b8924f',   // 하이라이트/박스/밑줄 강조색
+    lineSpacing: 1.2,    // 줄간격 배수
+    ulWeight: 0.05,      // 밑줄 굵기 (글자크기 대비)
     bg: 'cream',
     bgImage: null,
     bgFit: 'cover',
+    imgZoom: 1,          // 배경이미지 확대
+    imgX: 0,             // 배경이미지 가로 위치(화면폭 대비 -0.5~0.5)
+    imgY: 0,             // 배경이미지 세로 위치
     imgAnim: 'none',     // none | zoomIn | forward | kenBurns
     alignH: 'center',
     alignV: 'middle',
@@ -103,14 +108,19 @@
       label: '타이핑', loop: false,
       renderLine: function (ctx, line, g) {
         var perChar = (g.state.duration * 0.85) / Math.max(1, g.totalChars);
-        var last = null;
-        line.chars.forEach(function (c) { if (g.t >= c.gi * perChar) { drawChar(c, { alpha: 1 }); last = c; } });
-        if (last && Math.floor(g.t * 2) % 2 === 0) {
-          ctx.save();
-          ctx.fillStyle = g.state.color; ctx.font = g.fontStr;
-          ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-          ctx.fillText('│', last.x + last.w / 2, last.y);
-          ctx.restore();
+        line.chars.forEach(function (c) { if (g.t >= c.gi * perChar) drawChar(c, { alpha: 1 }); });
+        // 커서는 "타이핑 중"에만, 현재 입력 위치 한 곳에만. 다 치면 사라짐.
+        var frontier = Math.floor(g.t / perChar);
+        if (frontier < g.totalChars && Math.floor(g.t * 2) % 2 === 0) {
+          var cur = null;
+          for (var i = 0; i < line.chars.length; i++) if (line.chars[i].gi === frontier) { cur = line.chars[i]; break; }
+          if (cur) {
+            ctx.save();
+            ctx.fillStyle = g.state.color; ctx.font = g.fontStr;
+            ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+            ctx.fillText('│', cur.x + cur.w / 2, cur.y);
+            ctx.restore();
+          }
         }
       },
     },
@@ -188,11 +198,11 @@
         line.chars.forEach(function (c) { drawChar(c, { alpha: tp, dy: up, color: col }); });
         var ulp = clamp01((g.t - start - D * 0.14) / (D * 0.26));
         if (ulp > 0 && line.lineW > 0) {
-          var y = line.chars[0].y + g.state.size * 0.64;
+          var y = line.chars[0].y + g.state.size * 0.52;   // 글자에 더 붙게
           var x0 = line.cx - line.lineW / 2;
           ctx.save();
           ctx.strokeStyle = col; ctx.lineCap = 'round';
-          ctx.lineWidth = Math.max(2, g.state.size * 0.05);
+          ctx.lineWidth = Math.max(2, g.state.size * g.state.ulWeight);
           ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + line.lineW * E.outCubic(ulp), y); ctx.stroke();
           ctx.restore();
         }
@@ -203,38 +213,71 @@
     },
   };
 
-  // 입력 텍스트에서 숫자를 찾아 0→목표까지 세는 효과
+  // 입력 텍스트에서 숫자를 찾아 0→목표까지 세는 효과.
+  // 주변 글자는 최종 글자 기준으로 고정 배치 → 흔들리지 않고 "숫자만" 카운팅.
   function renderCounter(t) {
     var D = state.duration;
     var raw = state.text;
     var nm = raw.match(/\d[\d,]*\.?\d*/);   // 첫 숫자 (콤마/소수점 허용)
-    var display;
-    if (!nm) {
-      display = raw;
-    } else {
-      var numStr = nm[0];
-      var prefix = raw.slice(0, nm.index);
-      var suffix = raw.slice(nm.index + numStr.length);
-      var hasComma = numStr.indexOf(',') >= 0;
-      var clean = numStr.replace(/,/g, '');
-      var dec = clean.indexOf('.') >= 0 ? clean.split('.')[1].length : 0;
-      var target = parseFloat(clean) || 0;
-      var eased = E.outExpo(clamp01(D > 0 ? t / D : 1));
-      var cur = target * eased;
-      var curStr;
-      if (dec > 0) curStr = cur.toFixed(dec);
-      else { var n = Math.round(cur); curStr = (hasComma || target >= 1000) ? commas(n) : String(n); }
-      display = prefix + curStr + suffix;
+
+    if (!nm) {   // 숫자 없으면 그냥 텍스트
+      var L0 = layout();
+      L0.lines.forEach(function (line) { line.chars.forEach(function (c) { drawChar(c, {}); }); });
+      return;
     }
-    // 숫자 문자열을 일반 텍스트처럼 배치해서 그리기 (살짝 팝)
+
+    var numStr = nm[0];
+    var prefix = raw.slice(0, nm.index);
+    var suffix = raw.slice(nm.index + numStr.length);
+    var hasComma = numStr.indexOf(',') >= 0;
+    var clean = numStr.replace(/,/g, '');
+    var dec = clean.indexOf('.') >= 0 ? clean.split('.')[1].length : 0;
+    var target = parseFloat(clean) || 0;
+
+    function fmt(v) {
+      if (dec > 0) return v.toFixed(dec);
+      var n = Math.round(v);
+      return (hasComma || target >= 1000) ? commas(n) : String(n);
+    }
+    var finalNum = fmt(target);
+
+    // 최종 문자열로 레이아웃 → 모든 위치 고정
     var saved = state.text;
-    state.text = display;
+    state.text = prefix + finalNum + suffix;
     var L = layout();
     state.text = saved;
-    var pulse = 1 + 0.06 * (1 - E.outCubic(clamp01(D > 0 ? t / D : 1)));
+
+    var pLen = Array.from(prefix).length;
+    var nLen = Array.from(finalNum).length;
+    var numStartGi = pLen, numEndGi = pLen + nLen;
+
+    // 현재 카운트 값
+    var eased = E.outExpo(clamp01(D > 0 ? t / D : 1));
+    var curStr = fmt(target * eased);
+
+    // 숫자가 아닌 글자(접두/접미)는 고정 위치에 그대로. 숫자 영역의 범위만 측정.
+    var left = Infinity, right = -Infinity, baseY = state.h / 2;
     L.lines.forEach(function (line) {
-      line.chars.forEach(function (c) { drawChar(c, { scale: pulse }); });
+      line.chars.forEach(function (c) {
+        if (c.gi >= numStartGi && c.gi < numEndGi) {
+          left = Math.min(left, c.x - c.w / 2);
+          right = Math.max(right, c.x + c.w / 2);
+          baseY = c.y;
+        } else {
+          drawChar(c, {});
+        }
+      });
     });
+
+    // 현재 숫자를 숫자 영역 중앙에 그리기 (주변 글자는 안 움직임)
+    if (left <= right) {
+      ctx.save();
+      if (state.shadow) { ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = state.size * 0.12; ctx.shadowOffsetY = state.size * 0.04; }
+      ctx.fillStyle = state.color; ctx.font = fontStr();
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(curStr, (left + right) / 2, baseY);
+      ctx.restore();
+    }
   }
 
   function fontStr() { return state.weight + ' ' + state.size + 'px "' + state.font + '"'; }
@@ -243,7 +286,7 @@
   function layout() {
     ctx.font = fontStr();
     var lines = state.text.split('\n');
-    var lhFactor = (ANIMS[state.anim] && ANIMS[state.anim].lineH) || 1.42;
+    var lhFactor = (ANIMS[state.anim] && ANIMS[state.anim].lineH) || state.lineSpacing;
     var lineHeight = state.size * lhFactor;
     var totalH = lines.length * lineHeight;
     var margin = state.size * 0.5;
@@ -319,15 +362,18 @@
       var img = state.bgImage;
       var iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
       if (iw && ih) {
-        var s = state.bgFit === 'contain' ? Math.min(state.w / iw, state.h / ih) : Math.max(state.w / iw, state.h / ih);
+        var fit = state.bgFit === 'contain' ? Math.min(state.w / iw, state.h / ih) : Math.max(state.w / iw, state.h / ih);
+        var s = fit * state.imgZoom;
         var dw = iw * s, dh = ih * s;
+        var ox = (state.w - dw) / 2 + state.imgX * state.w;   // 사용자 위치 조절
+        var oy = (state.h - dh) / 2 + state.imgY * state.h;
         var tr = imageTransform(t);
         ctx.save();
         ctx.globalAlpha = tr.alpha;
         ctx.translate(state.w / 2 + tr.dx, state.h / 2 + tr.dy);
         ctx.scale(tr.scale, tr.scale);
         ctx.translate(-state.w / 2, -state.h / 2);
-        ctx.drawImage(img, (state.w - dw) / 2, (state.h - dh) / 2, dw, dh);
+        ctx.drawImage(img, ox, oy, dw, dh);
         ctx.restore();
       }
     }
@@ -468,6 +514,10 @@
     $('color').addEventListener('input', function (e) { state.color = e.target.value; });
     $('accent').value = state.accent;
     $('accent').addEventListener('input', function (e) { state.accent = e.target.value; });
+    $('lineSpacing').value = state.lineSpacing; $('lineSpacingVal').textContent = state.lineSpacing.toFixed(2);
+    $('lineSpacing').addEventListener('input', function (e) { state.lineSpacing = +e.target.value; $('lineSpacingVal').textContent = state.lineSpacing.toFixed(2); });
+    $('ulWeight').value = state.ulWeight; $('ulWeightVal').textContent = state.ulWeight.toFixed(2);
+    $('ulWeight').addEventListener('input', function (e) { state.ulWeight = +e.target.value; $('ulWeightVal').textContent = state.ulWeight.toFixed(2); });
     $('bg').value = state.bg;
     $('bg').addEventListener('change', function (e) { state.bg = e.target.value; });
 
@@ -482,6 +532,12 @@
     $('bgFit').addEventListener('change', function (e) { state.bgFit = e.target.value; });
     $('imgAnim').value = state.imgAnim;
     $('imgAnim').addEventListener('change', function (e) { state.imgAnim = e.target.value; startTs = null; });
+    $('imgZoom').value = state.imgZoom; $('imgZoomVal').textContent = state.imgZoom.toFixed(2);
+    $('imgZoom').addEventListener('input', function (e) { state.imgZoom = +e.target.value; $('imgZoomVal').textContent = state.imgZoom.toFixed(2); });
+    $('imgX').value = state.imgX;
+    $('imgX').addEventListener('input', function (e) { state.imgX = +e.target.value; });
+    $('imgY').value = state.imgY;
+    $('imgY').addEventListener('input', function (e) { state.imgY = +e.target.value; });
 
     $('alignH').value = state.alignH;
     $('alignH').addEventListener('change', function (e) { state.alignH = e.target.value; });
