@@ -658,9 +658,82 @@
     });
   }
 
+  // ---- MP4 내보내기 (WebCodecs H.264 + mp4-muxer) ----
+  function mp4Supported() {
+    return typeof VideoEncoder !== 'undefined' && typeof VideoFrame !== 'undefined' &&
+      window.Mp4Muxer && window.Mp4Muxer.Muxer;
+  }
+  function exportMp4() {
+    if (gifBusy) return;
+    if (!mp4Supported()) {
+      setStatus('이 브라우저는 MP4를 지원하지 않아요 😢 크롬을 쓰거나 WebM·GIF로 저장하세요.');
+      return;
+    }
+    setStatus('폰트 준비 중…');
+    ensureFontReady().then(function () { runMp4(); }).catch(function () { runMp4(); });
+
+    async function runMp4() {
+      try {
+        var fps = 30, D = state.duration;
+        var W = state.w, H = state.h;
+        var baseFrames = Math.max(1, Math.round(D * fps));
+        var isLoop = !!(ANIMS[state.anim] && ANIMS[state.anim].loop);
+        var hold = isLoop ? 0 : Math.round(fps * 0.6);
+        var total = baseFrames + hold;
+
+        // 지원되는 H.264 코덱 선택
+        var cands = ['avc1.640033', 'avc1.4d0033', 'avc1.640028', 'avc1.42e028', 'avc1.42001f'];
+        var codec = null;
+        for (var k = 0; k < cands.length; k++) {
+          var sup = await VideoEncoder.isConfigSupported({ codec: cands[k], width: W, height: H, bitrate: 1e7, framerate: fps });
+          if (sup && sup.supported) { codec = cands[k]; break; }
+        }
+        if (!codec) { setStatus('MP4 코덱을 지원하지 않아요 😢 (WebM·GIF 사용)'); return; }
+
+        var Muxer = window.Mp4Muxer.Muxer, ABT = window.Mp4Muxer.ArrayBufferTarget;
+        var muxer = new Muxer({ target: new ABT(), video: { codec: 'avc', width: W, height: H }, fastStart: 'in-memory' });
+        var encoder = new VideoEncoder({
+          output: function (chunk, meta) { muxer.addVideoChunk(chunk, meta); },
+          error: function (e) { setStatus('MP4 인코딩 오류: ' + e.message); }
+        });
+        encoder.configure({ codec: codec, width: W, height: H, bitrate: 1e7, framerate: fps, avc: { format: 'avc' } });
+
+        gifBusy = true; document.body.classList.add('rec');
+        setStatus('MP4 만드는 중… 0%');
+
+        for (var i = 0; i < total; i++) {
+          var t = (i < baseFrames) ? i / fps : D;
+          render(t);
+          var frame = new VideoFrame(canvas, { timestamp: Math.round(i * 1e6 / fps), duration: Math.round(1e6 / fps) });
+          encoder.encode(frame, { keyFrame: i % fps === 0 });
+          frame.close();
+          if (i % 5 === 0) {
+            setStatus('MP4 만드는 중… ' + Math.round(i / total * 100) + '%');
+            // 인코더 큐가 너무 쌓이지 않게 잠깐 양보
+            while (encoder.encodeQueueSize > 12) { await new Promise(function (r) { setTimeout(r, 0); }); }
+          }
+        }
+        await encoder.flush();
+        muxer.finalize();
+        var blob = new Blob([muxer.target.buffer], { type: 'video/mp4' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = 'text-anim.mp4';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        setStatus('완료! MP4 다운로드됐어요 ✅ (' + (blob.size / 1048576).toFixed(1) + 'MB)');
+      } catch (e) {
+        setStatus('MP4 만들기 실패: ' + e.message + ' (WebM·GIF로 시도해 보세요)');
+      } finally {
+        gifBusy = false; document.body.classList.remove('rec');
+      }
+    }
+  }
+
   function doExport() {
     if (state.format === 'gif') exportGif();
-    else startRecording();
+    else if (state.format === 'mp4') exportMp4();
+    else startRecording();   // webm
   }
 
   /* ============================================================
