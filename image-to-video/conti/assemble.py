@@ -36,6 +36,13 @@ def probe_dur(path):
     return float(out)
 
 
+def has_audio(path):
+    out = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries",
+         "stream=index", "-of", "csv=p=0", path], capture_output=True, text=True).stdout.strip()
+    return bool(out)
+
+
 # ---------------------------------------------------------------- SFX library
 # 각 효과음은 ffmpeg lavfi 로 합성한다(외부 음원 불필요). 타입을 추가하려면 여기에.
 def sfx_filter(kind):
@@ -110,7 +117,7 @@ def build(spec_path):
     vparts, acc = [], "v0"
     for i in range(n):
         vparts.append(
-            f"[{i}:v]fps={FPS},format=yuv420p,setsar=1,scale={W}:{H},settb=AVTB[v{i}]")
+            f"[{i}:v]fps={FPS},scale={W}:{H},setsar=1,format=yuv420p,settb=AVTB[v{i}]")
     acc_dur = durs[0]
     vchain = []
     for i in range(1, n):
@@ -164,6 +171,17 @@ def build(spec_path):
     aud = spec.get("audio", {})
     native_wav = os.path.join(work, "native.wav")
     if aud.get("use_native", True):
+        # 클립별 오디오 wav를 먼저 만든다 (오디오 없는 클립은 동일 길이 무음으로).
+        seg_wavs = []
+        for i, p in enumerate(paths):
+            sw = os.path.join(work, f"na_{i}.wav")
+            if has_audio(p):
+                run(["ffmpeg", "-y", "-loglevel", "error", "-i", p, "-vn",
+                     "-ac", "2", "-ar", str(AR), sw])
+            else:
+                run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi",
+                     "-i", f"anullsrc=r={AR}:cl=stereo", "-t", f"{durs[i]}", sw])
+            seg_wavs.append(sw)
         aparts = [f"[{i}:a]aformat=channel_layouts=stereo:sample_rates={AR},"
                   f"asetpts=N/SR/TB[a{i}]" for i in range(n)]
         achain, aacc = [], "a0"
@@ -178,8 +196,8 @@ def build(spec_path):
             aacc = nxt
         fc = ";".join(aparts + achain)
         cmd = ["ffmpeg", "-y", "-loglevel", "error"]
-        for p in paths:
-            cmd += ["-i", p]
+        for sw in seg_wavs:
+            cmd += ["-i", sw]
         cmd += ["-filter_complex", fc, "-map", f"[{aacc}]", native_wav]
         run(cmd)
     else:
