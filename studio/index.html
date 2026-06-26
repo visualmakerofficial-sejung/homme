@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>텍스트 → 영상 스튜디오 🎬</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Nanum+Gothic:wght@400;700;800&family=Black+Han+Sans&family=Jua&family=Do+Hyeon&family=Gugi&family=Yeon+Sung&family=Gowun+Dodum&family=Gowun+Batang:wght@400;700&family=Nanum+Myeongjo:wght@400;700;800&family=Song+Myung&family=Gaegu:wght@400;700&family=Nanum+Pen+Script&family=Nanum+Brush+Script&family=Gamja+Flower&family=Dongle:wght@400;700&family=Hi+Melody&family=Kirang+Haerang&family=Dokdo&family=Cute+Font&family=Poppins:wght@400;600;800&family=Bebas+Neue&family=Anton&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="studio.css?v=12">
+<link rel="stylesheet" href="studio.css?v=13">
 </head>
 <body>
 
@@ -242,15 +242,23 @@
     </div>
 
     <!-- 4. 내보내기 -->
+    <div class="field">
+      <label>④ 저장 형식</label>
+      <select id="format">
+        <option value="gif">GIF (자동반복 · 어디서나)</option>
+        <option value="video">동영상 (MP4 / WebM)</option>
+      </select>
+    </div>
     <div class="btns">
       <button class="btn-replay" id="replay">↻ 다시재생</button>
-      <button class="btn-export" id="export">④ 영상으로 내보내기</button>
+      <button class="btn-export" id="export">⬇ 내보내기</button>
     </div>
     <div class="status" id="status"></div>
 
     <div class="tip">
-      💡 미리보기는 자동 반복돼요. <b>내보내기</b>를 누르면 설정한 길이만큼 녹화해<br>
-      영상 파일이 다운로드됩니다. (크롬: webm, 사파리: mp4)
+      💡 미리보기는 자동 반복돼요. <b>내보내기</b>를 누르면 설정한 길이만큼 저장돼요.<br>
+      • <b>GIF</b> — 카톡·문서·PPT 등 어디서나 자동 반복 (용량 큼)<br>
+      • <b>동영상</b> — 크롬은 WebM, 사파리는 MP4로 저장
     </div>
   </aside>
 
@@ -299,6 +307,7 @@
   });
 })();
 </script>
-<script src="studio.js?v=12"></script>
+<script src="gifenc.js?v=13"></script>
+<script src="studio.js?v=13"></script>
 </body>
 </html>

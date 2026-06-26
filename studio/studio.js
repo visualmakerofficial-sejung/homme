@@ -39,6 +39,7 @@
     shadow: false,
     anim: 'highlight',
     duration: 3,
+    format: 'gif',       // gif | video
     w: 1080, h: 1080,
   };
 
@@ -605,6 +606,63 @@
   function finishRecording() { if (!recording) return; recording = false; try { recorder.stop(); } catch (e) {} }
   function setStatus(msg) { var el = document.getElementById('status'); if (el) el.textContent = msg; }
 
+  // ---- GIF 내보내기 (gifenc) ----
+  var gifBusy = false;
+  function exportGif() {
+    if (gifBusy) return;
+    if (!window.gifenc) { setStatus('GIF 모듈을 못 불러왔어요 😢'); return; }
+    var G = window.gifenc;
+    setStatus('폰트 준비 중…');
+    ensureFontReady().then(function () {
+      var fps = 12, D = state.duration;
+      var baseFrames = Math.max(1, Math.round(D * fps));
+      var isLoop = !!(ANIMS[state.anim] && ANIMS[state.anim].loop);
+      var hold = isLoop ? 0 : Math.round(fps * 0.8);     // 인트로형은 끝 프레임 잠깐 유지
+      var total = baseFrames + hold;
+
+      var scale = Math.min(1, 480 / Math.max(state.w, state.h));
+      var gw = Math.round(state.w * scale), gh = Math.round(state.h * scale);
+      var off = document.createElement('canvas'); off.width = gw; off.height = gh;
+      var octx = off.getContext('2d');
+      var gif = G.GIFEncoder();
+      var i = 0, delay = Math.round(1000 / fps);
+      gifBusy = true;
+      document.body.classList.add('rec');
+
+      function step() {
+        var end = Math.min(i + 3, total);
+        for (; i < end; i++) {
+          var t = (i < baseFrames) ? i / fps : D;
+          render(t);
+          octx.drawImage(canvas, 0, 0, gw, gh);
+          var data = octx.getImageData(0, 0, gw, gh).data;
+          var pal = G.quantize(data, 256);
+          var idx = G.applyPalette(data, pal);
+          gif.writeFrame(idx, gw, gh, { palette: pal, delay: delay, repeat: i === 0 ? 0 : -1 });
+        }
+        setStatus('GIF 만드는 중… ' + Math.round(i / total * 100) + '%');
+        if (i < total) { setTimeout(step, 0); return; }
+        gif.finish();
+        var blob = new Blob([gif.bytes()], { type: 'image/gif' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = 'text-anim.gif';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        setStatus('완료! GIF 다운로드됐어요 ✅ (' + (blob.size / 1048576).toFixed(1) + 'MB)');
+        gifBusy = false;
+        document.body.classList.remove('rec');
+      }
+      setStatus('GIF 만드는 중… 0%');
+      setTimeout(step, 30);
+    });
+  }
+
+  function doExport() {
+    if (state.format === 'gif') exportGif();
+    else startRecording();
+  }
+
   /* ============================================================
      캔버스 크기 / UI
      ============================================================ */
@@ -689,8 +747,10 @@
     $('dur').value = state.duration; $('durVal').textContent = state.duration + '초';
     $('dur').addEventListener('input', function (e) { state.duration = +e.target.value; $('durVal').textContent = state.duration + '초'; });
     $('ratio').addEventListener('change', function (e) { setSize(e.target.value); });
+    $('format').value = state.format;
+    $('format').addEventListener('change', function (e) { state.format = e.target.value; });
     $('replay').addEventListener('click', function () { startTs = null; });
-    $('export').addEventListener('click', startRecording);
+    $('export').addEventListener('click', doExport);
   }
 
   setSize('1:1');
