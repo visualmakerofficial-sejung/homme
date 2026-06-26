@@ -21,6 +21,7 @@
     gradient: false,     // 글자 세로 그라데이션 on/off
     gColorTop: '#ff7a3c',   // 위 색
     gColorBot: '#9aa0a6',   // 아래 색
+    coverColor: '#ffffff',  // 하이라이트 와이프가 덮은 글자색
     countEase: 'expo',   // 숫자 속도 곡선: expo(감속) | linear | in(가속)
     lineSpacing: 1.2,    // 줄간격 배수
     ulWeight: 0.05,      // 밑줄 굵기 (글자크기 대비)
@@ -155,7 +156,7 @@
         var hp = clamp01((g.t - gi0 * stagger) / (D * 0.35));   // 바가 좌→우로
         var ta = clamp01((g.t - gi0 * stagger - D * 0.04) / (D * 0.2));
         if (line.lineW > 0 && hp > 0) {
-          var padX = g.state.size * 0.14, midY = inkMidY(g, line);
+          var padX = g.state.size * 0.14, midY = inkMidY(line);
           var bh = g.state.size * 0.92;
           var bx = line.cx - line.lineW / 2 - padX;
           ctx.save();
@@ -176,7 +177,7 @@
         var bp = clamp01((g.t - start) / (D * 0.3));
         if (bp <= 0) return;
         var e = E.outBack(bp);
-        var cx = line.cx, midY = inkMidY(g, line);
+        var cx = line.cx, midY = inkMidY(line);
         var padX = g.state.size * 0.55, padY = g.state.size * 0.3;
         var fullW = line.lineW + padX * 2, fullH = g.state.size + padY * 2;
         var bw = fullW * Math.max(0, e), bh = fullH * clamp01(e * 1.3);
@@ -218,7 +219,50 @@
     emphasize: {
       label: '✨ 키워드 강조 등장 (*별표*)', loop: false, emphasis: true,
     },
+    highlightWipe: {
+      label: '🖍 하이라이트 와이프 (덮으며 글자색 변함, *별표*)', loop: false, wipe: true,
+    },
   };
+
+  // 글자가 올라온 뒤, 강조 구간을 좌→우로 바가 쓸고 지나가며 덮인 글자색이 바뀜
+  function renderHighlightWipe(t) {
+    var parsed = parseEmphasis(state.text);
+    var allEmph = Object.keys(parsed.emph).length === 0;   // 별표 없으면 전체 적용
+    var saved = state.text;
+    state.text = parsed.clean;
+    var L = layout();
+    setExtent(L);
+    state.text = saved;
+    var D = state.duration, nLines = Math.max(1, L.lines.length);
+    var wipeP = clamp01((t - D * 0.5) / (D * 0.42));        // 등장 후반부에 와이프
+    var pad = state.size * 0.06, bh = state.size * 0.95, r = state.size * 0.06;
+
+    L.lines.forEach(function (line) {
+      var start = line.idx * (D * 0.3 / nLines);
+      var tp = clamp01((t - start) / (D * 0.28));            // 줄별 떠오르며 등장
+      if (tp <= 0) return;
+      var up = (1 - E.outCubic(tp)) * state.size * 0.5;
+      var midY = inkMidY(line) + up;
+
+      var em = line.chars.filter(function (c) { return allEmph || parsed.emph[c.gi]; });
+      var hlLeft = Infinity, hlRight = -Infinity;
+      em.forEach(function (c) { hlLeft = Math.min(hlLeft, c.x - c.w / 2); hlRight = Math.max(hlRight, c.x + c.w / 2); });
+      var barRight = (hlLeft <= hlRight) ? hlLeft + (hlRight - hlLeft) * wipeP : -Infinity;
+
+      if (em.length && wipeP > 0) {
+        ctx.save();
+        ctx.fillStyle = state.accent;
+        roundRect(ctx, hlLeft - pad, midY - bh / 2, (barRight - hlLeft) + pad * 2, bh, r);
+        ctx.fill();
+        ctx.restore();
+      }
+      line.chars.forEach(function (c) {
+        var isEm = allEmph || parsed.emph[c.gi];
+        var covered = isEm && wipeP > 0 && barRight >= c.x;
+        drawChar(c, { alpha: tp, dy: up, color: covered ? state.coverColor : undefined });
+      });
+    });
+  }
 
   // *별표* 로 감싼 글자를 강조색으로. clean 텍스트 + 강조 글자 index 집합 반환.
   function parseEmphasis(raw) {
@@ -330,13 +374,13 @@
   function fontStr() { return state.weight + ' ' + state.size + 'px "' + state.font + '"'; }
 
   // 한 줄 글자의 "실제 잉크" 세로 중심 Y (박스/하이라이트를 글자 중앙에 맞추기 위함)
-  function inkMidY(g, line) {
-    ctx.font = g.fontStr; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  function inkMidY(line) {
+    ctx.font = fontStr(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     var s = line.chars.map(function (c) { return c.ch; }).join('') || '가';
     var m = ctx.measureText(s);
-    var asc = (m.actualBoundingBoxAscent != null) ? m.actualBoundingBoxAscent : g.state.size * 0.36;
-    var desc = (m.actualBoundingBoxDescent != null) ? m.actualBoundingBoxDescent : g.state.size * 0.30;
-    var cy = line.chars.length ? line.chars[0].y : g.state.h / 2;
+    var asc = (m.actualBoundingBoxAscent != null) ? m.actualBoundingBoxAscent : state.size * 0.36;
+    var desc = (m.actualBoundingBoxDescent != null) ? m.actualBoundingBoxDescent : state.size * 0.30;
+    var cy = line.chars.length ? line.chars[0].y : state.h / 2;
     return cy + (desc - asc) / 2;   // 기준선 중앙 → 잉크 중앙으로 보정
   }
 
@@ -463,6 +507,7 @@
     var anim = ANIMS[state.anim];
     if (anim.count) { renderCounter(t); return; }
     if (anim.emphasis) { renderEmphasis(t); return; }
+    if (anim.wipe) { renderHighlightWipe(t); return; }
     var L = layout();
     setExtent(L);
     var D = state.duration;
@@ -600,6 +645,8 @@
     $('gColorTop').addEventListener('input', function (e) { state.gColorTop = e.target.value; });
     $('gColorBot').value = state.gColorBot;
     $('gColorBot').addEventListener('input', function (e) { state.gColorBot = e.target.value; });
+    $('coverColor').value = state.coverColor;
+    $('coverColor').addEventListener('input', function (e) { state.coverColor = e.target.value; });
     $('countEase').value = state.countEase;
     $('countEase').addEventListener('change', function (e) { state.countEase = e.target.value; startTs = null; });
     $('lineSpacing').value = state.lineSpacing; $('lineSpacingVal').textContent = state.lineSpacing.toFixed(2);
