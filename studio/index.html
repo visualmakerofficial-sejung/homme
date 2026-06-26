@@ -5,9 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>텍스트 → 영상 스튜디오 🎬</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Nanum+Gothic:wght@400;700;800&family=Black+Han+Sans&family=Jua&family=Do+Hyeon&family=Gugi&family=Yeon+Sung&family=Gowun+Dodum&family=Gowun+Batang:wght@400;700&family=Nanum+Myeongjo:wght@400;700;800&family=Song+Myung&family=Gaegu:wght@400;700&family=Nanum+Pen+Script&family=Nanum+Brush+Script&family=Gamja+Flower&family=Dongle:wght@400;700&family=Hi+Melody&family=Kirang+Haerang&family=Dokdo&family=Cute+Font&family=Poppins:wght@400;600;800&family=Bebas+Neue&family=Anton&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="studio.css?v=10">
+<link rel="stylesheet" href="studio.css?v=11">
 </head>
 <body>
+
+<!-- 🔒 비밀번호 잠금 화면 -->
+<div id="gate">
+  <div class="gate-box">
+    <div class="gate-emoji">🔒</div>
+    <div class="gate-title">텍스트 → 영상 스튜디오</div>
+    <div class="gate-sub">이용하려면 비밀번호를 입력하세요</div>
+    <input type="password" id="gatePw" placeholder="비밀번호" autocomplete="off">
+    <button type="button" id="gateBtn">입장하기</button>
+    <div class="gate-err" id="gateErr"></div>
+  </div>
+</div>
+
 <div class="app">
 
   <!-- 컨트롤 패널 -->
@@ -250,6 +263,42 @@
   </main>
 
 </div>
-<script src="studio.js?v=10"></script>
+<script>
+/* ===== 비밀번호 잠금 (소프트 잠금) =====
+   비밀번호 바꾸려면: 새 비밀번호의 SHA-256 해시로 아래 PW_HASH 를 교체.
+   (해시는 만들기 번거로우니 원하는 비밀번호를 알려주시면 바꿔드립니다.)
+   현재 기본 비밀번호: homme2026
+*/
+(function () {
+  var PW_HASH = '714803b113ed85a4d1b0169f6f038714e4b6ffa2a5e24aaa5a8c989fd54fb8a7';
+  var KEY = 'studioUnlocked';
+  var gate = document.getElementById('gate');
+  function unlock() { gate.style.display = 'none'; }
+  if (localStorage.getItem(KEY) === PW_HASH) { unlock(); return; }
+
+  function sha256(s) {
+    var data = new TextEncoder().encode(s);
+    return crypto.subtle.digest('SHA-256', data).then(function (buf) {
+      return Array.prototype.map.call(new Uint8Array(buf), function (b) {
+        return ('0' + b.toString(16)).slice(-2);
+      }).join('');
+    });
+  }
+  function tryUnlock() {
+    var err = document.getElementById('gateErr');
+    var pw = document.getElementById('gatePw').value;
+    if (!pw) { err.textContent = '비밀번호를 입력하세요'; return; }
+    sha256(pw).then(function (h) {
+      if (h === PW_HASH) { localStorage.setItem(KEY, PW_HASH); unlock(); }
+      else { err.textContent = '비밀번호가 틀렸어요'; document.getElementById('gatePw').value = ''; }
+    }).catch(function () { err.textContent = '브라우저가 지원하지 않아요 (크롬 권장)'; });
+  }
+  document.getElementById('gateBtn').addEventListener('click', tryUnlock);
+  document.getElementById('gatePw').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') tryUnlock();
+  });
+})();
+</script>
+<script src="studio.js?v=11"></script>
 </body>
 </html>

@@ -1,5 +1,35 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* ===== 비밀번호 잠금 화면 ===== */
+#gate {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #6f7d3a, #3a3a5c);
+  font-family: 'Noto Sans KR', sans-serif;
+  padding: 20px;
+}
+#gate .gate-box {
+  background: #fff; border-radius: 20px; padding: 38px 30px;
+  width: 100%; max-width: 340px; text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,.3);
+}
+#gate .gate-emoji { font-size: 44px; margin-bottom: 12px; }
+#gate .gate-title { font-size: 19px; font-weight: 900; color: #2b2b26; letter-spacing: -.02em; }
+#gate .gate-sub { font-size: 13px; color: #777; margin: 8px 0 22px; }
+#gate input {
+  width: 100%; border: 1.5px solid #e3e6d3; border-radius: 12px;
+  padding: 14px 14px; font-size: 16px; font-family: inherit; text-align: center;
+  background: #fbfbf7; outline: none; transition: border-color .15s;
+}
+#gate input:focus { border-color: #6f7d3a; }
+#gate button {
+  width: 100%; margin-top: 12px; border: none; border-radius: 12px;
+  padding: 14px; font-size: 15px; font-weight: 700; font-family: inherit;
+  background: #6f7d3a; color: #fff; cursor: pointer; transition: filter .15s;
+}
+#gate button:hover { filter: brightness(1.08); }
+#gate .gate-err { color: #e0603e; font-size: 13px; font-weight: 500; margin-top: 12px; min-height: 18px; }
+
 :root {
   --bg: #f3f4ee;
   --panel: #ffffff;
