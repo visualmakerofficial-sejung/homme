@@ -32,19 +32,12 @@
       "sfx": [{ "at_rel": 1.5, "type": "shimmer", "gain": 0.6 }], "caption": null
     },
     {
-      "id": "S4", "role": "transition", "title": "흡수·광채 확산",
-      "image_prompt": null,
-      "motion_prompt": "The silk nutrients absorb; a warm silky glow expands across Selly's skin, sparkles bloom, dull skin morphs into radiant dewy glowing skin. Magical beauty glow-up morph.",
-      "video_model": "seedance_2_0", "morph_from": "S3", "morph_to": "S5", "transition_effect": "cut",
-      "sfx": [{ "at_rel": 0.4, "type": "whoosh", "gain": 0.8 }, { "at_rel": 1.3, "type": "shimmer", "gain": 1.0 }],
-      "caption": null
-    },
-    {
-      "id": "S5", "role": "beat", "title": "광채 반전",
+      "id": "S5", "role": "beat", "title": "광채 반전 (S3→S5 화이트 글로우 전환)",
+      "_note": "S4 모핑은 안전필터(nsfw) 반복 차단으로 제외. 대신 S3→S5 사이를 fadewhite 전환으로 '흡수→광채' 표현.",
       "image_prompt": "Selly peeling off the silk mask to reveal incredibly radiant, dewy, glowing glass skin, eyes wide with amazed delight, touching her glowing cheek, sparkles all around. 9:16, cute 3D Pixar style, bright luminous lighting, consistent.",
       "motion_prompt": "Peels off the mask, eyes pop open amazed, touches glowing cheek, beaming.",
-      "video_model": "kling3_0_turbo", "transition_effect": "cut",
-      "sfx": [{ "at_rel": 1.0, "type": "spark", "gain": 1.0 }, { "at_rel": 1.8, "type": "shimmer", "gain": 0.8 }],
+      "video_model": "kling3_0_turbo", "transition_effect": "fadewhite",
+      "sfx": [{ "at_rel": 0.0, "type": "whoosh", "gain": 0.8 }, { "at_rel": 0.4, "type": "shimmer", "gain": 1.0 }, { "at_rel": 1.1, "type": "spark", "gain": 1.0 }, { "at_rel": 1.9, "type": "shimmer", "gain": 0.8 }],
       "caption": null
     },
     {
