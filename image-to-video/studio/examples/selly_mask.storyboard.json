@@ -48,9 +48,9 @@
       "caption": null
     },
     {
-      "id": "S6", "role": "beat", "title": "글로우업 피날레",
-      "image_prompt": "Selly striking a confident cute pose with radiant glowing skin, holding the Eau De Silk Sericin Mask Pack next to her face, winking, the elegant white product clearly featured, soft luxury beauty background with sparkles. 9:16, cute 3D Pixar style, premium beauty-commercial look, consistent.",
-      "motion_prompt": "Confident pose, holds the product up, playful wink and bright smile, sparkles.",
+      "id": "S6", "role": "beat", "title": "에필로그 — 다음엔 어디에?",
+      "image_prompt": "Selly with radiant glowing dewy skin, holding the Eau De Silk Sericin Mask Pack, looking down playfully at her cute round tummy and poking it, mischievous curious grin as if wondering 'should I put it on my belly next?'. Teaser epilogue mood. 9:16, cute 3D Pixar style, soft luxury pastel background with sparkles, consistent.",
+      "motion_prompt": "Glances at the mask pack, then down at her tummy, pokes it, raises an eyebrow with a playful 'hmm... here next?' grin.",
       "video_model": "kling3_0_turbo", "transition_effect": "cut",
       "sfx": [{ "at_rel": 1.5, "type": "spark", "gain": 0.8 }], "caption": null
     }
