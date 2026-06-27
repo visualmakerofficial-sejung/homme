@@ -16,6 +16,14 @@
       "look": "기린무늬 목/머리에 작은 뿔, 분홍 플라밍고 깃털 몸/날개, 긴 분홍 다리, 진주목걸이",
       "element_id": "3b1c7ccc-860b-4c12-9513-583fb870b04c",
       "styling_element_id": null
+    },
+    "selly": {
+      "name": "셀리",
+      "species": "귀여운 통통 3D 소녀 (Eau De Silk 마스코트)",
+      "personality": "뷰티·쇼핑을 좋아하는 사랑스러운 인플루언서",
+      "look": "브라운 단발, 핑크 하트 선글라스, 별 머리핀, 발그레한 볼, 핑크 의상/핸드백",
+      "element_id": "a7b7ac77-9059-4e26-9aac-8fe32d9d7a31",
+      "styling_element_id": null
     }
   }
 }

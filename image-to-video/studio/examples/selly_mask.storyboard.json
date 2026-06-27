@@ -1,0 +1,61 @@
+{
+  "project": "selly_sericin_mask",
+  "character": "selly",
+  "product": {
+    "name": "Eau De Silk 세리신 마스크팩",
+    "info": "실크 시트가 피부에 밀착돼 세리신·나이아신아마이드·아데노신 영양 전달. 1차 자극테스트 통과. 임상: 광채 +569.70%, 진정 +7.46%, 주름 +14.72%, 수분 +95.14%.",
+    "image_refs": ["6824c4f0-2876-4d82-9a86-561b55e7a010"]
+  },
+  "concept": "Selly가 푸석한 피부에 실크 세리신 마스크팩을 하고 광채 피부로 글로우업",
+  "format": { "aspect": "9:16", "clip_seconds": 5 },
+
+  "shots": [
+    {
+      "id": "S1", "role": "beat", "title": "푸석한 피부",
+      "image_prompt": "Selly looking into a vanity mirror in a cozy pastel room at night, her skin looking dull, tired and dry, a slightly sad worried pout, touching her cheek. 9:16, cute 3D Pixar style, soft warm lighting, keep character consistent.",
+      "motion_prompt": "Leans toward the mirror, frowns at her dull skin, sighs and pokes her cheek.",
+      "video_model": "kling3_0_turbo", "transition_effect": "cut",
+      "sfx": [{ "at_rel": 3.0, "type": "pop", "gain": 0.4 }], "caption": null
+    },
+    {
+      "id": "S2", "role": "beat", "title": "택배 개봉",
+      "image_prompt": "Selly happily opening a delivery box on the floor of her cozy room, discovering the Eau De Silk Sericin Mask Pack inside, eyes sparkling with excitement. 9:16, cute 3D Pixar style, keep character and product packaging consistent.",
+      "motion_prompt": "Opens the box, pulls out the mask pack, gasps with delight, holds it up.",
+      "video_model": "kling3_0_turbo", "transition_effect": "cut",
+      "sfx": [{ "at_rel": 2.4, "type": "spark", "gain": 0.9 }], "caption": null
+    },
+    {
+      "id": "S3", "role": "beat", "title": "실크 마스크 부착",
+      "image_prompt": "Selly relaxing with the white silk Eau De Silk sheet mask applied to her face, lying back comfortably, eyes closed peacefully, soft sparkles and a silky glow around her. 9:16, cute 3D Pixar style, spa-like soft lighting, consistent.",
+      "motion_prompt": "Gently pats the silk mask onto her face, settles back, relaxed blissful expression, soft shimmer.",
+      "video_model": "kling3_0_turbo", "transition_effect": "cut",
+      "sfx": [{ "at_rel": 1.5, "type": "shimmer", "gain": 0.6 }], "caption": null
+    },
+    {
+      "id": "S4", "role": "transition", "title": "흡수·광채 확산",
+      "image_prompt": null,
+      "motion_prompt": "The silk nutrients absorb; a warm silky glow expands across Selly's skin, sparkles bloom, dull skin morphs into radiant dewy glowing skin. Magical beauty glow-up morph.",
+      "video_model": "seedance_2_0", "morph_from": "S3", "morph_to": "S5", "transition_effect": "cut",
+      "sfx": [{ "at_rel": 0.4, "type": "whoosh", "gain": 0.8 }, { "at_rel": 1.3, "type": "shimmer", "gain": 1.0 }],
+      "caption": null
+    },
+    {
+      "id": "S5", "role": "beat", "title": "광채 반전",
+      "image_prompt": "Selly peeling off the silk mask to reveal incredibly radiant, dewy, glowing glass skin, eyes wide with amazed delight, touching her glowing cheek, sparkles all around. 9:16, cute 3D Pixar style, bright luminous lighting, consistent.",
+      "motion_prompt": "Peels off the mask, eyes pop open amazed, touches glowing cheek, beaming.",
+      "video_model": "kling3_0_turbo", "transition_effect": "cut",
+      "sfx": [{ "at_rel": 1.0, "type": "spark", "gain": 1.0 }, { "at_rel": 1.8, "type": "shimmer", "gain": 0.8 }],
+      "caption": null
+    },
+    {
+      "id": "S6", "role": "beat", "title": "글로우업 피날레",
+      "image_prompt": "Selly striking a confident cute pose with radiant glowing skin, holding the Eau De Silk Sericin Mask Pack next to her face, winking, the elegant white product clearly featured, soft luxury beauty background with sparkles. 9:16, cute 3D Pixar style, premium beauty-commercial look, consistent.",
+      "motion_prompt": "Confident pose, holds the product up, playful wink and bright smile, sparkles.",
+      "video_model": "kling3_0_turbo", "transition_effect": "cut",
+      "sfx": [{ "at_rel": 1.5, "type": "spark", "gain": 0.8 }], "caption": null
+    }
+  ],
+
+  "audio": { "use_native": true, "native_gain": 1.1, "bgm": "assets/demo_bgm.m4a", "bgm_gain": 0.22 },
+  "ending_logo": ["EAU DE SILK", "Sericin Mask"]
+}
