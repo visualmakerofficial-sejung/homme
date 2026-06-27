@@ -1,0 +1,63 @@
+{
+  "project": "girabird_housetherapy",
+  "character": "girabird",
+  "product": {
+    "name": "House Therapy Aroma Spray",
+    "info": "반려동물용 아로마/탈취 스프레이. 향기로 공간과 마음을 치유.",
+    "image_refs": ["3b1c7ccc-860b-4c12-9513-583fb870b04c"]
+  },
+  "concept": "못 나는 기린새가 제품을 뿌리고 향기와 함께 하늘로 승천",
+  "format": { "aspect": "9:16", "clip_seconds": 5 },
+
+  "shots": [
+    {
+      "id": "S1", "role": "beat", "title": "넘어짐",
+      "image_prompt": "Girabird (giraffe-flamingo hybrid) on a glossy pink neon runway with a blurred audience, having stumbled and fallen, dejected sad look, pink feathers floating. 9:16, 3D Pixar style, keep character consistent.",
+      "motion_prompt": "Struts then trips over its long legs and tumbles down, feathers scattering, embarrassed.",
+      "video_model": "kling3_0_turbo",
+      "transition_effect": "cut",
+      "sfx": [{ "at_rel": 2.6, "type": "boom", "gain": 0.5 }],
+      "caption": null
+    },
+    {
+      "id": "S2", "role": "transition", "title": "관객 핸드오프",
+      "image_prompt": "A human hand from the audience offers the House Therapy Aroma Spray bottle to the fallen Girabird, who looks up hopefully. Pink neon runway. 9:16, 3D Pixar style.",
+      "motion_prompt": "Hand extends the spray; Girabird reaches out and takes it, hopeful.",
+      "video_model": "kling3_0_turbo",
+      "transition_effect": "cut",
+      "sfx": [{ "at_rel": 2.3, "type": "spark", "gain": 0.9 }],
+      "caption": null
+    },
+    {
+      "id": "S3", "role": "beat", "title": "칙— 스프레이",
+      "image_prompt": "Girabird sprays the House Therapy Aroma Spray over itself, sparkling aromatic mist, feathers fluffing and shimmering, delighted energized. Pink neon. 9:16, 3D Pixar style, product label consistent.",
+      "motion_prompt": "Sprays itself, mist swirls, eyes light up, happy shiver.",
+      "video_model": "kling3_0_turbo",
+      "transition_effect": "cut",
+      "sfx": [{ "at_rel": 1.0, "type": "whoosh", "gain": 0.7 }, { "at_rel": 1.7, "type": "shimmer", "gain": 0.6 }],
+      "caption": null
+    },
+    {
+      "id": "S4", "role": "transition", "title": "향기→승천",
+      "image_prompt": null,
+      "motion_prompt": "Aromatic mist expands and lifts Girabird off the runway; body lightens, wings spread, rises as pink runway dissolves into bright sky. Magical ascension morph.",
+      "video_model": "seedance_2_0",
+      "morph_from": "S3", "morph_to": "S5",
+      "transition_effect": "cut",
+      "sfx": [{ "at_rel": 0.3, "type": "whoosh", "gain": 1.0 }, { "at_rel": 1.2, "type": "shimmer", "gain": 1.0 }],
+      "caption": null
+    },
+    {
+      "id": "S5", "role": "beat", "title": "하늘 비상",
+      "image_prompt": "Girabird soaring high in a bright sky with clouds, wings spread wide, joyful free, the House Therapy Aroma Spray featured. 9:16, 3D Pixar style, uplifting, consistent.",
+      "motion_prompt": "Soars and ascends, wings flapping, feathers streaming, radiant.",
+      "video_model": "kling3_0_turbo",
+      "transition_effect": "cut",
+      "sfx": [{ "at_rel": 1.9, "type": "spark", "gain": 0.8 }],
+      "caption": null
+    }
+  ],
+
+  "audio": { "use_native": true, "native_gain": 1.1, "bgm": "assets/demo_bgm.m4a", "bgm_gain": 0.22 },
+  "ending_logo": ["House Therapy", "Aroma Spray for Pet"]
+}

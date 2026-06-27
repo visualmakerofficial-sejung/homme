@@ -1,0 +1,114 @@
+{
+  "_generated_from": "girabird_housetherapy",
+  "output": {
+    "path": "out/girabird_housetherapy.mp4",
+    "width": 720,
+    "height": 1280,
+    "fps": 24
+  },
+  "clips": [
+    {
+      "file": "clips/S1.mp4",
+      "role": "beat",
+      "note": "넘어짐"
+    },
+    {
+      "file": "clips/S2.mp4",
+      "role": "transition",
+      "note": "관객 핸드오프"
+    },
+    {
+      "file": "clips/S3.mp4",
+      "role": "beat",
+      "note": "칙— 스프레이"
+    },
+    {
+      "file": "clips/S4.mp4",
+      "role": "transition",
+      "note": "향기→승천"
+    },
+    {
+      "file": "clips/S5.mp4",
+      "role": "beat",
+      "note": "하늘 비상"
+    }
+  ],
+  "seams": [
+    {
+      "effect": "cut"
+    },
+    {
+      "effect": "cut"
+    },
+    {
+      "effect": "cut"
+    },
+    {
+      "effect": "cut"
+    }
+  ],
+  "audio": {
+    "use_native": true,
+    "native_gain": 1.1,
+    "bgm": {
+      "file": "assets/demo_bgm.m4a",
+      "gain": 0.22,
+      "loop": true
+    },
+    "sfx_gain": 0.9,
+    "sfx": [
+      {
+        "at": 2.6,
+        "type": "boom",
+        "gain": 0.5
+      },
+      {
+        "at": 7.3,
+        "type": "spark",
+        "gain": 0.9
+      },
+      {
+        "at": 11.0,
+        "type": "whoosh",
+        "gain": 0.7
+      },
+      {
+        "at": 11.7,
+        "type": "shimmer",
+        "gain": 0.6
+      },
+      {
+        "at": 15.3,
+        "type": "whoosh",
+        "gain": 1.0
+      },
+      {
+        "at": 16.2,
+        "type": "shimmer",
+        "gain": 1.0
+      },
+      {
+        "at": 21.9,
+        "type": "spark",
+        "gain": 0.8
+      }
+    ],
+    "master_fade_out": 0.9
+  },
+  "captions": [
+    {
+      "text": [
+        "House Therapy",
+        "Aroma Spray for Pet"
+      ],
+      "style": "logo",
+      "y": 0.4,
+      "start": 22.3,
+      "end": 99
+    }
+  ],
+  "video_fades": {
+    "in": 0.3,
+    "out": 0.3
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "_comment": "미리 만들어둔 캐릭터 레지스트리. element_id = 힉스필드 reference element (일관성 유지용). 새 캐릭터는 여기에 추가.",
+  "characters": {
+    "orangi": {
+      "name": "오랑이",
+      "species": "아기 오랑우탄",
+      "personality": "사람 따라하는 따라쟁이, 칭찬에 약함, 한 박자 늦음",
+      "look": "붉은갈색 털, 크림색 얼굴/배, 큰 입술, 둥근 몸",
+      "element_id": "89e8729a-a1de-4aea-98a1-c0075854a121",
+      "styling_element_id": "95947483-f4b3-4352-b49e-189b483d4fff"
+    },
+    "girabird": {
+      "name": "기린새",
+      "species": "기린-플라밍고 하이브리드",
+      "personality": "날지 못해 소심하지만 결국 날아오르는",
+      "look": "기린무늬 목/머리에 작은 뿔, 분홍 플라밍고 깃털 몸/날개, 긴 분홍 다리, 진주목걸이",
+      "element_id": "3b1c7ccc-860b-4c12-9513-583fb870b04c",
+      "styling_element_id": null
+    }
+  }
+}
