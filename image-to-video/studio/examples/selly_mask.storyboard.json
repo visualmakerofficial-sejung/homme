@@ -48,9 +48,9 @@
       "caption": null
     },
     {
-      "id": "S6", "role": "beat", "title": "에필로그 — 다음엔 어디에?",
-      "image_prompt": "Selly with radiant glowing dewy skin, holding the Eau De Silk Sericin Mask Pack, looking down playfully at her cute round tummy and poking it, mischievous curious grin as if wondering 'should I put it on my belly next?'. Teaser epilogue mood. 9:16, cute 3D Pixar style, soft luxury pastel background with sparkles, consistent.",
-      "motion_prompt": "Glances at the mask pack, then down at her tummy, pokes it, raises an eyebrow with a playful 'hmm... here next?' grin.",
+      "id": "S6", "role": "beat", "title": "에필로그 — 배에 붙이고 외출",
+      "image_prompt": "Funny epilogue. Selly, fully dressed in her pink outfit with glowing skin, has comically stuck the white silk sheet mask onto the front of her clothes over her tummy, cheerfully walking out the open front door, waving with a proud playful grin, as if she loved it so much she wears it everywhere. 9:16, cute 3D Pixar style, soft warm lighting with sparkles, consistent.",
+      "motion_prompt": "Sticks the sheet onto her clothed tummy, strikes a proud pose, then waves and walks out the door with a playful grin.",
       "video_model": "kling3_0_turbo", "transition_effect": "cut",
       "sfx": [{ "at_rel": 1.5, "type": "spark", "gain": 0.8 }], "caption": null
     }
