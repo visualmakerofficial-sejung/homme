@@ -1,0 +1,68 @@
+:root{
+  --pink:#ff6fa5; --pink-d:#e85590; --ink:#2c2c38; --muted:#8a8a9a;
+  --bg:#fff6fb; --card:#ffffff; --line:#ffe0ee;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"NanumSquareRound","Apple SD Gothic Neo",system-ui,sans-serif;
+  background:linear-gradient(180deg,#fff6fb,#fdf0f6);color:var(--ink)}
+header{display:flex;justify-content:space-between;align-items:center;
+  padding:16px 28px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+.brand{font-weight:800;font-size:20px;color:var(--pink-d)}
+.brand span{color:var(--muted);font-weight:600;font-size:14px}
+.status{font-size:13px;color:var(--muted)}
+.status b{color:var(--pink-d)}
+main{max-width:860px;margin:0 auto;padding:24px}
+.steps{display:flex;gap:6px;list-style:none;padding:0;margin:0 0 22px;flex-wrap:wrap}
+.steps li{font-size:13px;color:var(--muted);background:#fff;border:1px solid var(--line);
+  padding:7px 12px;border-radius:20px}
+.steps li.active{background:var(--pink);color:#fff;border-color:var(--pink);font-weight:700}
+.steps li.done{background:#ffe9f3;color:var(--pink-d)}
+.panel{display:none;background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:24px;box-shadow:0 6px 24px rgba(255,111,165,.07)}
+.panel.active{display:block}
+h2{margin:0 0 6px;font-size:20px}
+.hint{color:var(--muted);font-size:13px;margin:4px 0 16px;line-height:1.5}
+label{display:block;margin:12px 0;font-weight:700;font-size:14px}
+label.inline{display:inline-flex;align-items:center;gap:8px;font-weight:600}
+input,textarea{width:100%;margin-top:6px;padding:11px 13px;border:1px solid var(--line);
+  border-radius:10px;font-size:14px;font-family:inherit;background:#fffafd}
+input:focus,textarea:focus{outline:none;border-color:var(--pink)}
+.row{display:flex;gap:10px;align-items:center;margin-top:20px;flex-wrap:wrap}
+button{cursor:pointer;border:none;border-radius:10px;padding:11px 18px;font-size:14px;
+  font-weight:700;font-family:inherit}
+button.primary{background:var(--pink);color:#fff;margin-left:auto}
+button.primary:hover{background:var(--pink-d)}
+button.back{background:#f3f3f7;color:var(--ink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.card{background:#fffafd;border:1px solid var(--line);border-radius:14px;padding:14px;cursor:pointer;
+  transition:.15s}
+.card:hover{border-color:var(--pink);transform:translateY(-2px)}
+.card.sel{border-color:var(--pink);box-shadow:0 0 0 3px #ffd6e8}
+.card h3{margin:0 0 4px;font-size:15px}
+.card .sp{color:var(--pink-d);font-size:12px;font-weight:700}
+.card .ds{color:var(--muted);font-size:12px;line-height:1.45;margin-top:6px}
+.card img,.card video{width:100%;border-radius:10px;display:block;background:#f0f0f5;aspect-ratio:9/16;object-fit:cover}
+.card .cap{font-size:12px;color:var(--muted);margin-top:8px}
+.card .dl{display:inline-block;margin-top:8px;font-size:12px;color:var(--pink-d);font-weight:700;text-decoration:none}
+.shots{display:flex;flex-direction:column;gap:10px}
+.shot{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fffafd}
+.shot .t{font-weight:800;color:var(--pink-d);font-size:13px}
+.shot .ti{font-weight:700;margin-left:6px}
+.shot .p{font-size:13px;color:#555;margin-top:6px;line-height:1.5}
+.shot .badge{font-size:11px;background:#ffe9f3;color:var(--pink-d);padding:2px 8px;border-radius:10px;margin-left:6px}
+.meta{font-size:13px;color:var(--muted);margin-bottom:12px;line-height:1.6}
+.meta b{color:var(--ink)}
+pre{background:#1e1e28;color:#e6e6f0;padding:14px;border-radius:10px;overflow:auto;font-size:12px;line-height:1.5}
+details{margin-top:14px}
+summary{cursor:pointer;color:var(--pink-d);font-weight:700;font-size:13px}
+.overlay{position:fixed;inset:0;background:rgba(255,246,251,.85);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:16px;z-index:100}
+.overlay.hidden{display:none}
+.spinner{width:46px;height:46px;border:5px solid #ffd6e8;border-top-color:var(--pink);
+  border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#ovText{color:var(--pink-d);font-weight:700}
+.banner{background:#fff3d6;border:1px solid #ffe0a0;color:#8a6d1a;padding:10px 14px;border-radius:10px;
+  font-size:13px;margin-bottom:16px;line-height:1.5}
+#finalWrap video{width:100%;max-width:340px;border-radius:14px;display:block;margin:0 auto}
+.final-dl{display:block;text-align:center;margin-top:14px}

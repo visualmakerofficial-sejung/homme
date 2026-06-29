@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EAU DE SILK · 캐릭터 광고 스튜디오</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <div class="brand">EAU DE SILK <span>· 캐릭터 광고 스튜디오</span></div>
+    <div id="status" class="status">연결 확인 중…</div>
+  </header>
+
+  <main>
+    <!-- 진행 단계 -->
+    <ol class="steps">
+      <li data-step="1" class="active">① 캐릭터</li>
+      <li data-step="2">② 제품·컨셉</li>
+      <li data-step="3">③ 스토리 기획</li>
+      <li data-step="4">④ 이미지</li>
+      <li data-step="5">⑤ 영상</li>
+      <li data-step="6">⑥ 완성</li>
+    </ol>
+
+    <!-- STEP 1 -->
+    <section id="s1" class="panel active">
+      <h2>① 캐릭터 선택</h2>
+      <p class="hint">미리 만들어둔 일관성 캐릭터 중 하나를 고르세요.</p>
+      <div id="charGrid" class="grid"></div>
+    </section>
+
+    <!-- STEP 2 -->
+    <section id="s2" class="panel">
+      <h2>② 제품 정보 · 컨셉</h2>
+      <label>제품명 <input id="pName" placeholder="예: Eau De Silk 세리신 마스크팩" /></label>
+      <label>제품 설명 / USP
+        <textarea id="pInfo" rows="3" placeholder="핵심 성분·효과·임상수치 등"></textarea>
+      </label>
+      <label>엔딩 서브카피 (선택) <input id="pSub" placeholder="예: Sericin Mask" /></label>
+      <label>제품 이미지 레퍼런스 ID (선택, 쉼표로 구분)
+        <input id="pRefs" placeholder="힉스필드 media/element id" />
+      </label>
+      <p class="hint">제품 이미지는 힉스필드에 업로드해 얻은 <b>media/element id</b>를 넣으면
+        생성 시 제품 형태가 일관되게 반영됩니다. (없어도 진행 가능)</p>
+      <label>한 줄 컨셉
+        <textarea id="concept" rows="2" placeholder="예: 푸석한 피부의 셀리가 마스크팩으로 광채 피부로 글로우업"></textarea>
+      </label>
+      <div class="row">
+        <label class="inline">클립 길이(초)
+          <input id="clipSec" type="number" value="5" min="3" max="10" style="width:80px" />
+        </label>
+        <button class="back" data-goto="1">← 캐릭터</button>
+        <button id="planBtn" class="primary">스토리 기획 ▶</button>
+      </div>
+    </section>
+
+    <!-- STEP 3 -->
+    <section id="s3" class="panel">
+      <h2>③ 스토리보드</h2>
+      <div id="planMeta" class="meta"></div>
+      <div id="shots" class="shots"></div>
+      <details><summary>생성 매니페스트 (무엇을 어떻게 만들지)</summary>
+        <pre id="manifest"></pre>
+      </details>
+      <div class="row">
+        <button class="back" data-goto="2">← 수정</button>
+        <button id="imgBtn" class="primary">이 구성으로 이미지 추출 ▶</button>
+      </div>
+    </section>
+
+    <!-- STEP 4 -->
+    <section id="s4" class="panel">
+      <h2>④ 컷별 이미지 검수</h2>
+      <p class="hint">마음에 들면 영상으로 진행. (목업 모드에서는 플레이스홀더가 보입니다)</p>
+      <div id="gallery" class="grid"></div>
+      <div class="row">
+        <button class="back" data-goto="3">← 스토리</button>
+        <button id="vidBtn" class="primary">프레임별 영상 만들기 ▶</button>
+      </div>
+    </section>
+
+    <!-- STEP 5 -->
+    <section id="s5" class="panel">
+      <h2>⑤ 프레임별 클립</h2>
+      <p class="hint">각 클립을 받아 CapCut/힉스필드로 편집하거나, 아래에서 자동 조립하세요.</p>
+      <div id="clips" class="grid"></div>
+      <div class="row">
+        <button class="back" data-goto="4">← 이미지</button>
+        <button id="asmBtn" class="primary">자동 조립(전환+사운드+로고) ▶</button>
+      </div>
+    </section>
+
+    <!-- STEP 6 -->
+    <section id="s6" class="panel">
+      <h2>⑥ 완성본</h2>
+      <div id="finalWrap"></div>
+      <div class="row">
+        <button class="back" data-goto="5">← 클립</button>
+        <button id="newBtn" class="primary">새 영상 만들기</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="overlay" class="overlay hidden"><div class="spinner"></div><div id="ovText">처리 중…</div></div>
+  <script src="/app.js"></script>
+</body>
+</html>
