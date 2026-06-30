@@ -1,0 +1,109 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  background: #fff;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #0b0b0b;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: #0b0b0b;
+  color: #fff;
+}
+
+.font-anton {
+  font-family: var(--font-anton), "Anton", sans-serif;
+}
+
+@keyframes kuk-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ── hover 반전: 직각/모노톤 스트릿 톤 유지 ── */
+.kuk-cta-dark {
+  background: #0b0b0b;
+  color: #fff;
+  transition: background 0.2s ease;
+}
+.kuk-cta-dark:hover {
+  background: var(--accent);
+}
+
+.kuk-cta-ghost {
+  border: 1px solid #0b0b0b;
+  color: #0b0b0b;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.kuk-cta-ghost:hover {
+  background: #0b0b0b;
+  color: #fff;
+}
+
+.kuk-cat-cell {
+  background: #fff;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.kuk-cat-cell:hover {
+  background: #0b0b0b;
+  color: #fff;
+}
+
+.kuk-chip {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.kuk-chip:hover {
+  background: #fff;
+  color: #0b0b0b;
+}
+
+.kuk-card {
+  display: block;
+  cursor: pointer;
+}
+.kuk-card .kuk-card-img {
+  transition: transform 0.4s ease;
+}
+.kuk-card:hover .kuk-card-img {
+  transform: scale(1.04);
+}
+
+/* ── 반응형: 데스크탑 우선, ≤768px 보정 ── */
+@media (max-width: 768px) {
+  .kuk-grid-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .kuk-grid-3 {
+    grid-template-columns: 1fr !important;
+  }
+  .kuk-hero-lineup {
+    flex-wrap: wrap !important;
+  }
+  .kuk-hero-lineup > div {
+    flex: 0 0 25% !important;
+  }
+  .kuk-nav-main {
+    display: none !important;
+  }
+}
