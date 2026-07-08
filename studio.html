@@ -14,8 +14,8 @@
   <!-- ============ 상단바 ============ -->
   <header class="stu-top">
     <div class="stu-brand">
-      <h1>AI 스튜디오 <span class="stu-badge">그록 영상 · 제미나이 사진</span></h1>
-      <p>모델을 고르고 · 제품 사진을 올리면 → 모델이 그 옷을 입은 <b>사진</b>과 <b>영상</b>을 만듭니다.</p>
+      <h1>Grok Studio <span class="stu-badge">그록 영상</span></h1>
+      <p>모델을 고르고 · 옷 사진을 올리면 → 모델이 그 옷을 입은 <b>사진</b>과 <b>영상</b>을 만듭니다. <span class="credit">(영상 1개 = 1크레딧)</span></p>
     </div>
     <div class="stu-top-actions">
       <button class="tbtn" id="btnAdmin">🛠️ 모델 관리</button>
@@ -30,24 +30,24 @@
   <!-- ============ 1. 모델 선택 ============ -->
   <section class="step">
     <div class="step-head">
-      <div class="step-t"><span class="step-n">1</span> 모델 선택</div>
+      <div class="step-t"><span class="step-n">1</span><span class="step-dot">·</span> 모델 선택</div>
       <button class="link-btn" id="btnAddModelInline">+ 새 모델 추가</button>
     </div>
     <div class="model-grid" id="modelGrid"></div>
   </section>
 
-  <!-- ============ 2. 제품 사진 업로드 ============ -->
+  <!-- ============ 2. 옷 사진 업로드 ============ -->
   <section class="step">
     <div class="step-head">
-      <div class="step-t"><span class="step-n">2</span> 제품 사진 업로드</div>
+      <div class="step-t"><span class="step-n">2</span><span class="step-dot">·</span> 옷 사진 업로드</div>
       <span class="step-hint">드래그 앤 드롭 · 파일 선택 · 캡처 후 <b>Ctrl+V</b> 붙여넣기</span>
     </div>
     <div class="drop" id="dropZone" tabindex="0">
       <input type="file" id="fileInput" accept="image/*" multiple hidden>
       <div class="drop-inner" id="dropInner">
         <div class="drop-ic">👕</div>
-        <div class="drop-t">여기로 <b>제품 사진</b>을 끌어다 놓거나 눌러서 선택하세요</div>
-        <div class="drop-s">드래그 앤 드롭 · 상의/하의/원피스 등 · JPG·PNG · 여러 장 가능 · 최대 15MB</div>
+        <div class="drop-t">여기로 <b>옷 사진</b>을 끌어다 놓거나 눌러서 선택하세요</div>
+        <div class="drop-s">드래그 앤 드롭 · 상의/하의/원피스 등 · JPG·PNG · 최대 15MB</div>
         <div class="drop-paste">📋 이미지 캡처 후 이 화면에서 <b>Ctrl+V</b> 로 붙여넣기도 됩니다</div>
       </div>
     </div>
@@ -57,7 +57,7 @@
   <!-- ============ 3. 영상 동작 프롬프트 ============ -->
   <section class="step">
     <div class="step-head">
-      <div class="step-t"><span class="step-n">3</span> 영상 동작(프롬프트)</div>
+      <div class="step-t"><span class="step-n">3</span><span class="step-dot">·</span> 영상 동작(프롬프트)</div>
       <button class="link-btn" id="btnResetPrompt">기본값으로</button>
     </div>
     <textarea class="prompt-area" id="videoPrompt" rows="6"></textarea>
@@ -73,7 +73,7 @@
   <!-- ============ 4. 출력 선택 ============ -->
   <section class="step">
     <div class="step-head">
-      <div class="step-t"><span class="step-n">4</span> 출력 선택</div>
+      <div class="step-t"><span class="step-n">4</span><span class="step-dot">·</span> 출력 선택</div>
     </div>
     <div class="out-grid">
       <label class="out-card" data-out="video">
@@ -106,7 +106,7 @@
 
   <!-- ============ 생성 버튼 ============ -->
   <div class="gen-bar">
-    <button class="gen-btn" id="btnGenerate">🎥 영상·사진 만들기</button>
+    <button class="gen-btn" id="btnGenerate">📼 영상 만들기</button>
     <span class="gen-info" id="genInfo"></span>
   </div>
 

@@ -137,6 +137,7 @@ const StudioAPI = (() => {
   function loadImg(src) {
     return new Promise((resolve, reject) => {
       const im = new Image();
+      im.crossOrigin = 'anonymous'; // 교차출처 이미지로 캔버스가 오염되지 않도록
       im.onload = () => resolve(im);
       im.onerror = reject;
       im.src = src;

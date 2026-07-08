@@ -5,15 +5,16 @@
 /* ---------- 상태 ---------- */
 const LS_MODELS = 'studioModels_v1';
 
+const CDN = 'https://d8j0ntlcm91z4.cloudfront.net/user_38eOsohcqV5hEwchok6qTqV494y/';
 const DEFAULT_MODELS = [
-  { id: 'm-seoa',   name: '서아', nameEn: 'Seoa',   desc: '청초·러블리 · 여성복', emoji: '👩', photo: '' },
-  { id: 'm-jimin',  name: '지민', nameEn: 'Jimin',  desc: '시크·모던 · 여성복',   emoji: '💃', photo: '' },
-  { id: 'm-haneul', name: '하늘', nameEn: 'Haneul', desc: '깔끔·훈훈 · 남성복',   emoji: '🧑', photo: '' },
-  { id: 'm-taesan', name: '태산', nameEn: 'Taesan', desc: '빅사이즈·듬직 · 남성복', emoji: '🧔', photo: '' },
+  { id: 'm-seoa',   name: '서아', nameEn: 'Seoa',   desc: '청초·러블리 · 여성복', emoji: '👩', photo: CDN + 'hf_20260708_040519_4ee8c657-9a56-4f9a-aa34-a0a573989256.png' },
+  { id: 'm-jimin',  name: '지민', nameEn: 'Jimin',  desc: '시크·모던 · 여성복',   emoji: '💃', photo: CDN + 'hf_20260708_040711_88b08c85-4668-444a-9613-259150ceb25c.png' },
+  { id: 'm-haneul', name: '하늘', nameEn: 'Haneul', desc: '깔끔·훈훈 · 남성복',   emoji: '🧑', photo: CDN + 'hf_20260708_040714_6488a9e0-6215-406e-964e-25ca79cd9c5c.png' },
+  { id: 'm-taesan', name: '태산', nameEn: 'Taesan', desc: '빅사이즈·듬직 · 남성복', emoji: '🧔', photo: CDN + 'hf_20260708_040717_faa9d5f9-63e8-40e4-9ad1-143d18aefd48.png' },
 ];
 
 const DEFAULT_VIDEO_PROMPT =
-`The model wears the uploaded clothing and does a full 360-degree turn in place with a natural, composed posture. Then the camera moves in for close-ups — showing the logo, the buttons, and the stitching/fabric details one by one. Finally the model confidently walks to the side and leaves the frame off-screen. Vertical 9:16, 10 seconds, clean studio lighting, realistic fashion film look.`;
+`The character performs a 40-degree rotation in place: pausing precisely for 0.5 second, holding the pause with a natural, composed posture. Then keep rotating 40-degree in the same direction, pause 0.5 seconds. Then rotate back toward the camera and pause precisely for one full second. Then the camera moves in for close-ups of the clothing — showing the logo, the buttons, and the stitching/fabric details one by one. Then the model confidently walks to the left and leaves off-screen from the side. Vertical 9:16, 10 seconds, clean studio lighting.`;
 
 let state = {
   models: [],
@@ -69,6 +70,26 @@ function shrinkImage(dataUrl, max = 1280) {
     };
     im.onerror = () => resolve(dataUrl);
     im.src = dataUrl;
+  });
+}
+
+// URL/경로 이미지를 dataURL로 변환(같은 출처 또는 CORS 허용 시). 실패하면 null.
+function ensureDataUrl(src) {
+  return new Promise(resolve => {
+    if (!src) return resolve(null);
+    if (src.startsWith('data:')) return resolve(src);
+    const im = new Image();
+    im.crossOrigin = 'anonymous';
+    im.onload = () => {
+      try {
+        const cv = document.createElement('canvas');
+        cv.width = im.naturalWidth; cv.height = im.naturalHeight;
+        cv.getContext('2d').drawImage(im, 0, 0);
+        resolve(cv.toDataURL('image/jpeg', 0.9));
+      } catch (e) { resolve(null); }
+    };
+    im.onerror = () => resolve(null);
+    im.src = src;
   });
 }
 
@@ -316,6 +337,9 @@ async function generate() {
   $('#results').hidden = false;
   $('#results').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
+  // 모델 참조 사진을 dataURL로(가능하면). 실패해도 진행.
+  const modelImg = model ? (await ensureDataUrl(model.photo)) || model.photo || null : null;
+
   try {
     /* ----- 사진 (제미나이) ----- */
     if (wantPhoto) {
@@ -338,7 +362,7 @@ async function generate() {
         const a = angles[i];
         const prompt = buildPhotoPrompt(model, a, userExtra);
         try {
-          const img = await StudioAPI.geminiPhoto(prompt, model?.photo || null, state.products);
+          const img = await StudioAPI.geminiPhoto(prompt, modelImg, state.products);
           const slot = $(`#pg-${i}`);
           slot.innerHTML = `
             <img src="${img}" alt="${a.key}">
@@ -365,7 +389,7 @@ async function generate() {
       const vprompt = $('#videoPrompt').value.trim() || DEFAULT_VIDEO_PROMPT;
       try {
         const out = await StudioAPI.grokVideo(vprompt, state.products, {
-          duration: 10, aspect: '9:16', modelImage: model?.photo || null,
+          duration: 10, aspect: '9:16', modelImage: modelImg,
         });
         const ext = out.mime && out.mime.includes('webm') ? 'webm' : 'mp4';
         wrap.innerHTML = `
