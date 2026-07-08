@@ -38,9 +38,21 @@ node server.js
 - `server.js` — 정적 파일 서빙 + `/api/photo`, `/api/video`, `/api/config`. 키는 **서버에만** 보관됩니다.
 - 프론트(`studio.js`/`studio-api.js`)는 시작 시 `/api/config` 를 확인해
   서버 연동 → (없으면) 브라우저 키 → (없으면) 데모 순으로 생성합니다.
-- 사진: `gemini-2.5-flash-image` 로 모델 참조 사진 + 옷 사진을 합성.
-- 영상: `xai` 는 제공사 스펙에 맞춰 `server.js` 의 `grokXai()` 를 조정,
-  `gemini_veo` 는 `predictLongRunning` → 폴링으로 mp4 URL 반환.
+- 사진: `gemini-2.5-flash-image` 로 모델 참조 사진 + 옷 사진을 합성 → 실사 착장 이미지.
+- 영상(2단계 파이프라인, `/api/video`):
+  1. **착장 스틸 생성** — 모델 얼굴 + 옷 사진 → 제미나이로 "모델이 옷을 입은" 세로 전신 이미지.
+  2. **회전 영상** — 그 스틸을 첫 프레임으로 삼아
+     `gemini_veo`(Veo, `predictLongRunning`→폴링) 또는 `xai`(그록)로 영상화.
+  → 그래서 "이미지가 도는" 게 아니라 **사람이 옷 입고 도는** 영상이 나옵니다.
+
+## ⚠️ 배포된 정적 링크(GitHub Pages)는 "데모 전용"
+
+`https://<owner>.github.io/homme/studio.html` 는 서버가 없는 정적 호스팅이라
+**항상 데모(미리보기 일러스트)** 로만 동작합니다. **실제 인물 영상**을 뽑으려면:
+1. `.env` 에 `GEMINI_API_KEY` 넣고 `VIDEO_PROVIDER=gemini_veo` (Veo 사용 권한 필요),
+2. `node server.js` 로 서버를 켜거나 서버를 호스팅(예: Render/Fly/VM)에 배포,
+3. 그 서버 주소로 접속하면 위 2단계 파이프라인이 실제로 동작합니다.
+정적 링크는 "체험판", 서버+키가 "실사 웹앱"입니다.
 
 ## 참고
 

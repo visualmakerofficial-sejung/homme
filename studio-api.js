@@ -113,11 +113,14 @@ const StudioAPI = (() => {
      엔드포인트/응답 스키마는 제공사에 맞춰 조정하세요.
   ------------------------------------------------ */
   async function grokVideo(prompt, refImages, opts = {}) {
-    // 1순위: 백엔드 서버
+    // 1순위: 백엔드 서버 (모델 사진+옷 사진 → 착장 스틸 → 회전 영상)
     if (server.available && server.video.enabled) {
       const r = await fetch('/api/video', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, images: refImages, duration: opts.duration || 10, aspect: opts.aspect || '9:16' }),
+        body: JSON.stringify({
+          prompt, modelImage: opts.modelImage || null, productImages: refImages, images: refImages,
+          duration: opts.duration || 10, aspect: opts.aspect || '9:16',
+        }),
       });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `서버 ${r.status}`);
       const j = await r.json();
@@ -412,8 +415,8 @@ const StudioAPI = (() => {
     ctx.fillStyle = 'rgba(255,255,255,.15)'; ctx.fillRect(40, H - 70, W - 80, 6);
     ctx.fillStyle = '#7c5cff'; ctx.fillRect(40, H - 70, (W - 80) * t, 6);
     ctx.fillStyle = '#6ee7ff';
-    ctx.font = '600 15px "Noto Sans KR", sans-serif';
-    ctx.fillText(`DEMO · 그록 · ${seconds}s · 9:16`, W / 2, H - 40);
+    ctx.font = '600 14px "Noto Sans KR", sans-serif';
+    ctx.fillText(`미리보기(DEMO) · API 키 연결 시 실제 인물 영상`, W / 2, H - 40);
   }
 
   /* ---- canvas 그리기 유틸 ---- */

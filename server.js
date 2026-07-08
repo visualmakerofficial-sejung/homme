@@ -104,9 +104,24 @@ async function generatePhoto({ prompt, modelImage, productImages }) {
 /* ============================================================
    영상 — 그록(xAI) 또는 제미나이 Veo
    ============================================================ */
-async function generateVideo({ prompt, images, duration, aspect }) {
-  if (CFG.videoProvider === 'xai')       return grokXai({ prompt, images, duration, aspect });
-  if (CFG.videoProvider === 'gemini_veo') return geminiVeo({ prompt, images, aspect });
+async function generateVideo({ prompt, modelImage, productImages, images, duration, aspect }) {
+  const ar = aspect || '9:16';
+  const products = (productImages && productImages.length) ? productImages : (images || []);
+
+  // 1단계: "모델이 옷을 입은" 전신 착장 스틸을 먼저 생성(제미나이) → 이걸 영상의 첫 프레임으로.
+  //         (제미나이 키가 있고 제품 사진이 있을 때. 그래야 이미지가 도는 게 아니라 사람이 도는 영상이 됨)
+  let startImages = products;
+  if (CFG.geminiKey && products.length) {
+    const still = await generatePhoto({
+      prompt: `Full-body head-to-toe fashion photograph of the model wearing the uploaded outfit exactly as shown (keep colors, buttons and details faithful). The model fills the vertical ${ar} frame from head to shoes with only a little headroom, slightly low camera angle so the legs look long and elongated, front view, standing naturally. Keep the model's face identical to the reference. Clean seamless studio background, soft fashion lighting, photorealistic, high detail.`,
+      modelImage, productImages: products,
+    });
+    startImages = [still.image];
+  }
+
+  // 2단계: 착장 스틸을 첫 프레임으로 회전 영상 생성
+  if (CFG.videoProvider === 'xai')        return grokXai({ prompt, images: startImages, duration, aspect: ar });
+  if (CFG.videoProvider === 'gemini_veo') return geminiVeo({ prompt, images: startImages, aspect: ar });
   const e = new Error('VIDEO_PROVIDER 미설정 (xai 또는 gemini_veo)'); e.status = 400; throw e;
 }
 
