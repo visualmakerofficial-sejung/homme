@@ -14,7 +14,11 @@ const DEFAULT_MODELS = [
 ];
 
 const DEFAULT_VIDEO_PROMPT =
-`The character performs a 40-degree rotation in place: pausing precisely for 0.5 second, holding the pause with a natural, composed posture. Then keep rotating 40-degree in the same direction, pause 0.5 seconds. Then rotate back toward the camera and pause precisely for one full second. Then the camera moves in for close-ups of the clothing — showing the logo, the buttons, and the stitching/fabric details one by one. Then the model confidently walks to the left and leaves off-screen from the side. Vertical 9:16, 10 seconds, clean studio lighting.`;
+`The character, wearing the attached outfit, rotates 40 degrees in place in the same direction, then pauses for exactly 0.5 seconds while maintaining a natural and calm pose. The character then rotates another 40 degrees in the same direction and pauses again for exactly 0.5 seconds in the same stable and composed posture.
+
+After that, the character slowly turns back toward the camera and holds a front-facing pose, allowing the details of the attached outfit—such as the buttons, zipper, pockets, collar, and lining—to be shown naturally. At this moment, the camera smoothly zooms in on the character to capture the texture of the clothing and its detailed elements more clearly. The character remains still for exactly 2 seconds with a confident yet calm attitude.
+
+Finally, the character walks confidently and leisurely toward the left side of the screen, naturally exiting the frame.`;
 
 let state = {
   models: [],
