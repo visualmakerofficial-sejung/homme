@@ -69,7 +69,7 @@ const StudioAPI = (() => {
      prompt: 연출 프롬프트
      반환: dataURL(생성 이미지)
   ------------------------------------------------ */
-  async function geminiPhoto(prompt, modelImage, productImages) {
+  async function geminiPhoto(prompt, modelImage, productImages, opts = {}) {
     // 1순위: 백엔드 서버(키를 서버가 보관)
     if (server.available && server.gemini) {
       const r = await fetch('/api/photo', {
@@ -80,7 +80,7 @@ const StudioAPI = (() => {
       return (await r.json()).image;
     }
     const s = getSettings();
-    if (!s.geminiKey) return demoPhoto(prompt, modelImage, productImages);
+    if (!s.geminiKey) return demoPhoto(prompt, modelImage, productImages, opts);
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(s.geminiModel)}:generateContent?key=${encodeURIComponent(s.geminiKey)}`;
     const parts = [{ text: prompt }];
@@ -181,140 +181,234 @@ const StudioAPI = (() => {
     });
   }
 
-  // 데모 사진: 제품 이미지를 카드형 연출로 합성한 PNG
-  async function demoPhoto(prompt, modelImage, productImages) {
-    const W = 768, H = 1024;
-    const cv = document.createElement('canvas');
-    cv.width = W; cv.height = H;
+  /* ---- 착장 합성용 유틸 ---- */
+  function roundRect(ctx, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  function circle(ctx, x, y, r) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.closePath(); }
+  function drawContainInto(ctx, img, x, y, w, h) {
+    const iw = img.width || img.naturalWidth, ih = img.height || img.naturalHeight;
+    const r = Math.min(w / iw, h / ih);
+    const nw = iw * r, nh = ih * r;
+    ctx.drawImage(img, x + (w - nw) / 2, y + (h - nh) / 2, nw, nh);
+  }
+
+  // 제품(옷) 사진의 단색/흰 배경을 제거해 옷만 컷아웃 → 몸에 입히기 위함
+  function cutoutGarment(img) {
+    const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
     const ctx = cv.getContext('2d');
+    ctx.drawImage(img, 0, 0, w, h);
+    try {
+      const id = ctx.getImageData(0, 0, w, h), d = id.data;
+      // 네 모서리 평균색을 배경으로 추정
+      const idx = [0, (w - 1) * 4, (w * (h - 1)) * 4, (w * h - 1) * 4];
+      let br = 0, bg = 0, bb = 0;
+      idx.forEach(i => { br += d[i]; bg += d[i + 1]; bb += d[i + 2]; });
+      br /= 4; bg /= 4; bb /= 4;
+      const nearWhite = br > 222 && bg > 222 && bb > 222;
+      for (let i = 0; i < d.length; i += 4) {
+        const r = d[i], g = d[i + 1], b = d[i + 2];
+        const dist = Math.abs(r - br) + Math.abs(g - bg) + Math.abs(b - bb);
+        if (nearWhite ? (r > 230 && g > 230 && b > 230) : dist < 34) d[i + 3] = 0;
+      }
+      ctx.putImageData(id, 0, 0);
+    } catch (e) {}
+    return cv;
+  }
 
-    // 배경 그라디언트
+  // 모델 피규어(사람)를 그리고 옷을 몸통에 착장
+  // 로컬 좌표계: 머리~발 y ∈ [-200,200], 몸통 폭 ±64
+  function paintFigure(ctx, cx, cy, s, model, garmentCv, o = {}) {
+    const isMale = model && /남/.test((model.desc || '') + (model.name || ''));
+    const skin = '#ecb28c', pants = '#3b4257';
+    const hairCol = isMale ? '#1f1a17' : '#241b16';
+    const back = !!o.back, face = o.face !== false && !back;
+
+    // 다리
+    ctx.fillStyle = pants;
+    roundRect(ctx, cx - 52 * s, cy + 48 * s, 42 * s, 150 * s, 12 * s); ctx.fill();
+    roundRect(ctx, cx + 10 * s, cy + 48 * s, 42 * s, 150 * s, 12 * s); ctx.fill();
+    // 신발
+    ctx.fillStyle = '#20242e';
+    roundRect(ctx, cx - 54 * s, cy + 188 * s, 46 * s, 20 * s, 8 * s); ctx.fill();
+    roundRect(ctx, cx + 8 * s, cy + 188 * s, 46 * s, 20 * s, 8 * s); ctx.fill();
+    // 팔 (피부)
+    ctx.fillStyle = skin;
+    roundRect(ctx, cx - 90 * s, cy - 96 * s, 24 * s, 150 * s, 12 * s); ctx.fill();
+    roundRect(ctx, cx + 66 * s, cy - 96 * s, 24 * s, 150 * s, 12 * s); ctx.fill();
+    // 몸통 기본(옷 아래 바탕)
+    ctx.fillStyle = '#c9d0db';
+    roundRect(ctx, cx - 64 * s, cy - 104 * s, 128 * s, 162 * s, 22 * s); ctx.fill();
+    // 목
+    ctx.fillStyle = skin;
+    roundRect(ctx, cx - 13 * s, cy - 128 * s, 26 * s, 32 * s, 7 * s); ctx.fill();
+    // 머리
+    ctx.fillStyle = skin;
+    circle(ctx, cx, cy - 152 * s, 35 * s); ctx.fill();
+    // 귀
+    circle(ctx, cx - 34 * s, cy - 150 * s, 7 * s); ctx.fill();
+    circle(ctx, cx + 34 * s, cy - 150 * s, 7 * s); ctx.fill();
+    // 머리카락
+    ctx.fillStyle = hairCol;
+    if (back) {
+      circle(ctx, cx, cy - 150 * s, 37 * s); ctx.fill();
+      roundRect(ctx, cx - 37 * s, cy - 150 * s, 74 * s, (isMale ? 40 : 96) * s, 18 * s); ctx.fill();
+    } else if (isMale) {
+      ctx.beginPath();
+      ctx.arc(cx, cy - 158 * s, 36 * s, Math.PI, Math.PI * 2); ctx.fill();
+      roundRect(ctx, cx - 36 * s, cy - 168 * s, 72 * s, 26 * s, 12 * s); ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.arc(cx, cy - 158 * s, 38 * s, Math.PI, Math.PI * 2); ctx.fill();
+      // 양옆 긴 머리
+      roundRect(ctx, cx - 42 * s, cy - 168 * s, 20 * s, 96 * s, 10 * s); ctx.fill();
+      roundRect(ctx, cx + 22 * s, cy - 168 * s, 20 * s, 96 * s, 10 * s); ctx.fill();
+    }
+    // 얼굴
+    if (face) {
+      ctx.fillStyle = '#2a2320';
+      circle(ctx, cx - 13 * s, cy - 154 * s, 3.4 * s); ctx.fill();
+      circle(ctx, cx + 13 * s, cy - 154 * s, 3.4 * s); ctx.fill();
+      ctx.strokeStyle = '#b56b57'; ctx.lineWidth = 2.4 * s; ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(cx, cy - 140 * s, 9 * s, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+    }
+    // 옷 착장 (몸통 위에 컷아웃 얹기)
+    if (garmentCv) {
+      ctx.save();
+      roundRect(ctx, cx - 66 * s, cy - 106 * s, 132 * s, 168 * s, 18 * s); ctx.clip();
+      drawContainInto(ctx, garmentCv, cx - 70 * s, cy - 110 * s, 140 * s, 184 * s);
+      ctx.restore();
+    }
+  }
+
+  function studioBg(ctx, W, H) {
     const g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, '#20242f'); g.addColorStop(1, '#0d0f15');
+    g.addColorStop(0, '#2a2f3b'); g.addColorStop(0.55, '#1a1e28'); g.addColorStop(1, '#0c0e14');
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    // 바닥 원형 스포트
+    const rg = ctx.createRadialGradient(W / 2, H * 0.86, 10, W / 2, H * 0.86, W * 0.6);
+    rg.addColorStop(0, 'rgba(124,92,255,0.12)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+  }
 
-    // 모델 배경 (있으면)
-    if (modelImage) {
-      try {
-        const mi = await loadImg(modelImage);
-        ctx.globalAlpha = 0.28;
-        drawCover(ctx, mi, 0, 0, W, H);
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = 'rgba(10,12,18,0.45)';
-        ctx.fillRect(0, 0, W, H);
-      } catch (e) {}
-    }
+  // 포즈별 배치값
+  const POSE = {
+    front:  { s: 1.9, cyMul: 0, xs: 1,    face: true,  back: false },
+    back:   { s: 1.9, cyMul: 0, xs: 1,    face: false, back: true },
+    side:   { s: 1.9, cyMul: 0, xs: 0.6,  face: true,  back: false },
+    mood:   { s: 1.9, cyMul: 0, xs: 0.92, face: true,  back: false },
+    upper:  { s: 2.6, cyMul: 24, xs: 1,   face: true,  back: false },
+    detail: { s: 3.5, cyMul: 40, xs: 1,   face: false, back: false },
+  };
 
-    // 제품 중앙 배치
-    const prod = productImages && productImages[0];
-    if (prod) {
-      try {
-        const pi = await loadImg(prod);
-        const pad = 90;
-        drawContain(ctx, pi, pad, 150, W - pad * 2, H - 380);
-      } catch (e) {}
-    }
+  // 데모 사진: 모델이 옷을 입은 연출 컷 PNG
+  async function demoPhoto(prompt, modelImage, productImages, opts = {}) {
+    const W = 768, H = 1024;
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d');
+    studioBg(ctx, W, H);
+
+    let garment = null;
+    try { if (productImages && productImages[0]) garment = cutoutGarment(await loadImg(productImages[0])); } catch (e) {}
+
+    const pose = POSE[opts.pose] || POSE.front;
+    const model = opts.model || null;
+    const cx = W / 2, cy = H / 2 - 30 + pose.cyMul * pose.s;
+
+    ctx.save();
+    if (pose.xs !== 1) { ctx.translate(cx, 0); ctx.scale(pose.xs, 1); ctx.translate(-cx, 0); }
+    paintFigure(ctx, cx, cy, pose.s, model, garment, { face: pose.face, back: pose.back });
+    ctx.restore();
 
     // 라벨
+    ctx.textAlign = 'center';
     ctx.fillStyle = '#eef1f7';
     ctx.font = '700 30px "Noto Sans KR", sans-serif';
-    ctx.textAlign = 'center';
-    const label = (prompt || '').split('\n')[0].slice(0, 22) || '연출 컷';
-    ctx.fillText(label, W / 2, H - 90);
+    ctx.fillText(`${model ? model.name + ' · ' : ''}${opts.angleLabel || '연출 컷'}`, W / 2, H - 84);
     ctx.fillStyle = '#a78bfa';
-    ctx.font = '600 18px "Noto Sans KR", sans-serif';
-    ctx.fillText('DEMO · 제미나이 키를 넣으면 실제 생성', W / 2, H - 56);
+    ctx.font = '600 17px "Noto Sans KR", sans-serif';
+    ctx.fillText('DEMO · 제미나이 키를 넣으면 실사 착장 생성', W / 2, H - 52);
 
     return cv.toDataURL('image/png');
   }
 
-  // 데모 영상: 제품이 한 바퀴 도는 세로 영상(webm)
+  // 데모 영상: 모델이 옷을 입고 회전 → 클로즈업 → 퇴장하는 세로 영상(webm)
   async function demoVideo(prompt, refImages, opts = {}) {
     const W = 540, H = 960, FPS = 30;
     const seconds = opts.duration || 10;
-    const cv = document.createElement('canvas');
-    cv.width = W; cv.height = H;
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const ctx = cv.getContext('2d');
 
-    let prod = null, model = null;
-    try { if (refImages && refImages[0]) prod = await loadImg(refImages[0]); } catch (e) {}
-    try { if (opts.modelImage) model = await loadImg(opts.modelImage); } catch (e) {}
+    let garment = null;
+    try { if (refImages && refImages[0]) garment = cutoutGarment(await loadImg(refImages[0])); } catch (e) {}
+    const model = opts.model || null;
 
     const stream = cv.captureStream(FPS);
-    const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-      ? 'video/webm;codecs=vp9' : 'video/webm';
-    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 4_000_000 });
+    const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/webm';
+    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 4_500_000 });
     const chunks = [];
     rec.ondataavailable = e => e.data.size && chunks.push(e.data);
-
-    const done = new Promise(resolve => { rec.onstop = () => resolve(); });
+    const done = new Promise(r => { rec.onstop = () => r(); });
     rec.start();
 
     const total = seconds * FPS;
     const scenes = ['한 바퀴 회전', '로고 클로즈업', '단추 · 디테일', '옆모습', '퇴장'];
-
     for (let f = 0; f < total; f++) {
-      const t = f / total; // 0..1
-      drawVideoFrame(ctx, W, H, t, prod, model, scenes, seconds);
+      drawVideoFrame(ctx, W, H, f / total, garment, model, scenes, seconds);
       await nextFrame();
     }
-    rec.stop();
-    await done;
-    const blob = new Blob(chunks, { type: 'video/webm' });
-    return { url: URL.createObjectURL(blob), mime: 'video/webm', demo: true };
+    rec.stop(); await done;
+    return { url: URL.createObjectURL(new Blob(chunks, { type: 'video/webm' })), mime: 'video/webm', demo: true };
   }
 
-  function drawVideoFrame(ctx, W, H, t, prod, model, scenes, seconds) {
-    const bg = ctx.createLinearGradient(0, 0, 0, H);
-    bg.addColorStop(0, '#191d28'); bg.addColorStop(1, '#0a0c12');
-    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
-
-    if (model) { ctx.globalAlpha = 0.18; drawCover(ctx, model, 0, 0, W, H); ctx.globalAlpha = 1; }
-
-    const phase = Math.min(4, Math.floor(t * 5)); // 0..4
+  function drawVideoFrame(ctx, W, H, t, garment, model, scenes, seconds) {
+    studioBg(ctx, W, H);
+    const phase = Math.min(4, Math.floor(t * 5));
     const localT = (t * 5) % 1;
+    const cx = W / 2, baseCy = H / 2 - 10, s = 1.55;
 
     ctx.save();
-    ctx.translate(W / 2, H / 2 - 40);
-
-    if (prod) {
-      if (phase === 0) {
-        // 회전 (yaw 시뮬레이션: 가로 스케일)
-        const ang = localT * Math.PI * 2;
-        const sx = Math.max(0.12, Math.abs(Math.cos(ang)));
-        ctx.scale(sx, 1);
-        drawContainCentered(ctx, prod, 360, 520);
-      } else if (phase >= 1 && phase <= 3) {
-        // 클로즈업 (줌 인 + 이동)
-        const zoom = 1.7 + localT * 0.5;
-        const dx = (phase - 2) * 70;
-        const dy = (phase === 2 ? 60 : -30);
-        ctx.translate(dx, dy);
-        ctx.scale(zoom, zoom);
-        drawContainCentered(ctx, prod, 360, 520);
-      } else {
-        // 퇴장 (좌측으로 슬라이드 아웃)
-        ctx.translate(-localT * (W + 200), 0);
-        drawContainCentered(ctx, prod, 360, 520);
-      }
+    if (phase === 0) {
+      // 한 바퀴 회전: yaw를 가로 스케일로, 90°~270°는 뒷모습
+      const ang = localT * Math.PI * 2;
+      const xs = Math.max(0.16, Math.abs(Math.cos(ang)));
+      const back = Math.cos(ang) < 0;
+      ctx.translate(cx, 0); ctx.scale(xs, 1); ctx.translate(-cx, 0);
+      paintFigure(ctx, cx, baseCy, s, model, garment, { face: !back, back });
+    } else if (phase === 1) {
+      // 로고/상체 클로즈업
+      paintFigure(ctx, cx, H / 2 + 24 * 3.1, 3.1, model, garment, { face: false });
+    } else if (phase === 2) {
+      // 단추·디테일 (조금 더 아래, 더 확대)
+      paintFigure(ctx, cx, H / 2 + 70 * 3.6, 3.6, model, garment, { face: false });
+    } else if (phase === 3) {
+      // 옆모습
+      ctx.translate(cx, 0); ctx.scale(0.6, 1); ctx.translate(-cx, 0);
+      paintFigure(ctx, cx, baseCy, s, model, garment, { face: true });
     } else {
-      ctx.fillStyle = '#333b4d';
-      ctx.fillRect(-120, -180, 240, 360);
+      // 퇴장: 좌측으로 걸어 나감
+      const dx = -localT * (W * 0.9 + 240);
+      ctx.translate(dx, 0);
+      paintFigure(ctx, cx, baseCy, s, model, garment, { face: true });
     }
     ctx.restore();
 
-    // 자막
+    // 자막 / 진행바 / 태그
     ctx.textAlign = 'center';
     ctx.fillStyle = '#eef1f7';
     ctx.font = '800 30px "Noto Sans KR", sans-serif';
-    ctx.fillText(scenes[phase], W / 2, H - 120);
-
-    // 진행 바
-    ctx.fillStyle = 'rgba(255,255,255,.15)';
-    ctx.fillRect(40, H - 70, W - 80, 6);
-    ctx.fillStyle = '#7c5cff';
-    ctx.fillRect(40, H - 70, (W - 80) * t, 6);
-
+    ctx.fillText(`${model ? model.name + ' · ' : ''}${scenes[phase]}`, W / 2, H - 118);
+    ctx.fillStyle = 'rgba(255,255,255,.15)'; ctx.fillRect(40, H - 70, W - 80, 6);
+    ctx.fillStyle = '#7c5cff'; ctx.fillRect(40, H - 70, (W - 80) * t, 6);
     ctx.fillStyle = '#6ee7ff';
     ctx.font = '600 15px "Noto Sans KR", sans-serif';
     ctx.fillText(`DEMO · 그록 · ${seconds}s · 9:16`, W / 2, H - 40);

@@ -333,14 +333,14 @@ function updateConnBanner() {
   }
 }
 
-// 사진 연출 앵글 (자동)
+// 사진 연출 앵글 (자동) — pose 는 데모 합성용
 const PHOTO_ANGLES = [
-  { key: '앞모습',   en: 'full-body front view, model facing camera' },
-  { key: '뒷모습',   en: 'full-body back view, showing the back of the garment' },
-  { key: '옆모습',   en: 'full-body side profile view' },
-  { key: '디테일',   en: 'close-up detail shot of the fabric, logo and buttons' },
-  { key: '상반신',   en: 'upper-body three-quarter fashion shot' },
-  { key: '착장 무드', en: 'editorial lifestyle mood shot, natural pose' },
+  { key: '앞모습',   pose: 'front',  en: 'full-body front view, model facing camera' },
+  { key: '뒷모습',   pose: 'back',   en: 'full-body back view, showing the back of the garment' },
+  { key: '옆모습',   pose: 'side',   en: 'full-body side profile view' },
+  { key: '디테일',   pose: 'detail', en: 'close-up detail shot of the fabric, logo and buttons' },
+  { key: '상반신',   pose: 'upper',  en: 'upper-body three-quarter fashion shot' },
+  { key: '착장 무드', pose: 'mood',   en: 'editorial lifestyle mood shot, natural pose' },
 ];
 
 function buildPhotoPrompt(model, angle, userExtra) {
@@ -373,6 +373,8 @@ async function generate() {
 
   // 모델 참조 사진을 dataURL로(가능하면). 실패해도 진행.
   const modelImg = model ? (await ensureDataUrl(model.photo)) || model.photo || null : null;
+  // 데모 합성용 모델 메타(성별/이름)
+  const modelMeta = model ? { id: model.id, name: model.name, desc: model.desc } : null;
 
   try {
     /* ----- 사진 (제미나이) ----- */
@@ -396,7 +398,8 @@ async function generate() {
         const a = angles[i];
         const prompt = buildPhotoPrompt(model, a, userExtra);
         try {
-          const img = await StudioAPI.geminiPhoto(prompt, modelImg, state.products);
+          const img = await StudioAPI.geminiPhoto(prompt, modelImg, state.products,
+            { pose: a.pose, angleLabel: a.key, model: modelMeta });
           const slot = $(`#pg-${i}`);
           slot.innerHTML = `
             <img src="${img}" alt="${a.key}">
@@ -423,7 +426,7 @@ async function generate() {
       const vprompt = $('#videoPrompt').value.trim() || DEFAULT_VIDEO_PROMPT;
       try {
         const out = await StudioAPI.grokVideo(vprompt, state.products, {
-          duration: 10, aspect: '9:16', modelImage: modelImg,
+          duration: 10, aspect: '9:16', modelImage: modelImg, model: modelMeta,
         });
         const ext = out.mime && out.mime.includes('webm') ? 'webm' : 'mp4';
         wrap.innerHTML = `
