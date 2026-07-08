@@ -302,12 +302,14 @@ const StudioAPI = (() => {
 
   // 포즈별 배치값
   const POSE = {
-    front:  { s: 1.9, cyMul: 0, xs: 1,    face: true,  back: false },
-    back:   { s: 1.9, cyMul: 0, xs: 1,    face: false, back: true },
-    side:   { s: 1.9, cyMul: 0, xs: 0.6,  face: true,  back: false },
-    mood:   { s: 1.9, cyMul: 0, xs: 0.92, face: true,  back: false },
-    upper:  { s: 2.6, cyMul: 24, xs: 1,   face: true,  back: false },
-    detail: { s: 3.5, cyMul: 40, xs: 1,   face: false, back: false },
+    front:   { s: 1.9, cyMul: 0,   xs: 1,    face: true,  back: false },
+    back:    { s: 1.9, cyMul: 0,   xs: 1,    face: false, back: true },
+    side:    { s: 1.9, cyMul: 0,   xs: 0.6,  face: true,  back: false },
+    mood:    { s: 1.9, cyMul: 0,   xs: 0.92, face: true,  back: false },
+    upper:   { s: 2.6, cyMul: 24,  xs: 1,    face: true,  back: false },
+    // 디테일: 머리가 화면 밖으로 나가도록 몸통을 크게 확대(얼굴 X, 옷만)
+    detail:  { s: 6.0, cyMul: 6,   xs: 1,    face: false, back: false },
+    detail2: { s: 6.0, cyMul: -16, xs: 1,    face: false, back: false },
   };
 
   // 데모 사진: 모델이 옷을 입은 연출 컷 PNG
@@ -385,11 +387,11 @@ const StudioAPI = (() => {
       ctx.translate(cx, 0); ctx.scale(xs, 1); ctx.translate(-cx, 0);
       paintFigure(ctx, cx, baseCy, s, model, garment, { face: !back, back });
     } else if (phase === 1) {
-      // 로고/상체 클로즈업
-      paintFigure(ctx, cx, H / 2 + 24 * 3.1, 3.1, model, garment, { face: false });
+      // 로고/가슴 클로즈업 — 머리는 화면 밖(얼굴 X, 옷만)
+      paintFigure(ctx, cx, H / 2, 5.5, model, garment, { face: false });
     } else if (phase === 2) {
-      // 단추·디테일 (조금 더 아래, 더 확대)
-      paintFigure(ctx, cx, H / 2 + 70 * 3.6, 3.6, model, garment, { face: false });
+      // 단추·하단 디테일 — 더 아래로, 얼굴 없이 옷만
+      paintFigure(ctx, cx, H / 2 - 180, 5.5, model, garment, { face: false });
     } else if (phase === 3) {
       // 옆모습
       ctx.translate(cx, 0); ctx.scale(0.6, 1); ctx.translate(-cx, 0);

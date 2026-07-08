@@ -338,17 +338,27 @@ function updateConnBanner() {
   }
 }
 
-// 사진 연출 앵글 (자동) — pose 는 데모 합성용
+// 사진 연출 앵글 (자동) — pose 는 데모 합성용, detail=true 는 옷 클로즈업(얼굴 X)
 const PHOTO_ANGLES = [
   { key: '앞모습',   pose: 'front',  en: 'full-body front view, model facing camera' },
   { key: '뒷모습',   pose: 'back',   en: 'full-body back view, showing the back of the garment' },
   { key: '옆모습',   pose: 'side',   en: 'full-body side profile view' },
-  { key: '디테일',   pose: 'detail', en: 'close-up detail shot of the fabric, logo and buttons' },
+  { key: '디테일',   pose: 'detail', detail: true, en: 'extreme close-up of the clothing only — buttons, fabric texture, stitching, zipper and logo — tightly cropped on the garment' },
   { key: '상반신',   pose: 'upper',  en: 'upper-body three-quarter fashion shot' },
-  { key: '착장 무드', pose: 'mood',   en: 'editorial lifestyle mood shot, natural pose' },
+  { key: '디테일2',  pose: 'detail2', detail: true, en: 'extreme close-up of another clothing detail — collar, pocket, hem or lining — tightly cropped on the garment' },
 ];
 
 function buildPhotoPrompt(model, angle, userExtra) {
+  // 디테일 컷: 얼굴 없이 옷에만 집중
+  if (angle.detail) {
+    return [
+      `Extreme close-up macro shot of the outfit worn on the body: ${angle.en}.`,
+      `Focus entirely on the clothing — show fabric weave, buttons, stitching, zipper and logo in sharp detail.`,
+      `Do NOT show the model's face or head; crop tightly to the garment so no face is visible.`,
+      `Soft even studio lighting, photorealistic, high detail, vertical 3:4.`,
+      userExtra ? `Extra direction: ${userExtra}` : '',
+    ].filter(Boolean).join(' ');
+  }
   const who = model
     ? `Use the provided reference photo as the model (${model.name}${model.desc ? ', ' + model.desc : ''}). Keep the same face and body.`
     : `A professional fashion model.`;
