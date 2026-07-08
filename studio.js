@@ -120,7 +120,7 @@ function renderModels() {
     const el = document.createElement('div');
     el.className = 'model-card' + (m.id === state.selectedModelId ? ' sel' : '');
     el.innerHTML = `
-      <div class="mc-photo">${m.photo ? `<img src="${m.photo}" alt="">` : (m.emoji || '👤')}</div>
+      <div class="mc-photo">${modelImgTag(m)}</div>
       <div class="mc-name">${escapeHtml(m.name)}${m.nameEn ? ` <span style="color:var(--ink3);font-weight:600">(${escapeHtml(m.nameEn)})</span>` : ''}</div>
       <div class="mc-desc">${escapeHtml(m.desc || '')}</div>`;
     el.onclick = () => { state.selectedModelId = m.id; renderModels(); updateGenInfo(); };
@@ -135,6 +135,36 @@ function renderModels() {
 }
 
 function selectedModel() { return state.models.find(m => m.id === state.selectedModelId) || null; }
+
+// 자체 내장 SVG 아바타 (외부 이미지가 없거나 차단됐을 때의 폴백)
+const AVATAR_GRAD = {
+  'm-seoa':   ['#fbc2eb', '#a18cd1'],
+  'm-jimin':  ['#a6c1ee', '#7b9cf2'],
+  'm-haneul': ['#a1f0c4', '#5eb6e6'],
+  'm-taesan': ['#5a7bd8', '#26324f'],
+};
+function avatarDataUri(m) {
+  const [c1, c2] = AVATAR_GRAD[m.id] || ['#a78bfa', '#5b3fd6'];
+  const initial = escapeHtml((m.nameEn || m.name || '?').slice(0, 1).toUpperCase());
+  const svg =
+    `<svg xmlns='http://www.w3.org/2000/svg' width='240' height='260' viewBox='0 0 240 260'>` +
+    `<defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'>` +
+    `<stop offset='0' stop-color='${c1}'/><stop offset='1' stop-color='${c2}'/></linearGradient></defs>` +
+    `<rect width='240' height='260' fill='url(#g)'/>` +
+    `<circle cx='120' cy='104' r='44' fill='rgba(255,255,255,0.92)'/>` +
+    `<path d='M120 158 c-48 0 -74 30 -74 66 v40 h148 v-40 c0 -36 -26 -66 -74 -66 z' fill='rgba(255,255,255,0.92)'/>` +
+    `<text x='120' y='120' font-family='sans-serif' font-size='42' font-weight='700' fill='${c2}' text-anchor='middle'>${initial}</text>` +
+    `</svg>`;
+  // 작은따옴표까지 인코딩해야 인라인 onerror 문자열이 깨지지 않음
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg).replace(/'/g, '%27');
+}
+// 모델 사진 <img> (실패 시 SVG 아바타로 폴백)
+function modelImgTag(m, cls) {
+  const fallback = avatarDataUri(m);
+  const src = m.photo || fallback;
+  return `<img class="${cls || ''}" src="${src}" alt="" loading="lazy" ` +
+    `onerror="this.onerror=null;this.src='${fallback}'">`;
+}
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => (
@@ -156,7 +186,7 @@ function renderAdminList() {
     const row = document.createElement('div');
     row.className = 'admin-item';
     row.innerHTML = `
-      <div class="ai-photo">${m.photo ? `<img src="${m.photo}">` : (m.emoji || '👤')}</div>
+      <div class="ai-photo">${modelImgTag(m)}</div>
       <div class="ai-info">
         <div class="ai-name">${escapeHtml(m.name)} ${m.nameEn ? `<span style="color:var(--ink3);font-weight:600">(${escapeHtml(m.nameEn)})</span>` : ''}</div>
         <div class="ai-desc">${escapeHtml(m.desc || '')}</div>
