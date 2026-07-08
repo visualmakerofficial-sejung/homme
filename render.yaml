@@ -1,0 +1,22 @@
+# Render 원클릭 배포 설정 (https://render.com)
+# 1) Render 로그인 → New → Blueprint → 이 저장소 연결
+# 2) 배포 후 Environment 에서 GEMINI_API_KEY 값만 입력하면 실사 생성 동작
+services:
+  - type: web
+    name: grok-studio
+    runtime: node
+    plan: free
+    branch: claude/ai-product-showcase-tool-yobhdq
+    buildCommand: ""
+    startCommand: node server.js
+    envVars:
+      # 사진(실사 착장) — 필수. https://aistudio.google.com/apikey 에서 발급
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_IMAGE_MODEL
+        value: gemini-2.5-flash-image
+      # 영상 — Veo(같은 Gemini 키 사용, Veo 접근권한 필요)
+      - key: VIDEO_PROVIDER
+        value: gemini_veo
+      - key: GEMINI_VEO_MODEL
+        value: veo-3.0-generate-preview

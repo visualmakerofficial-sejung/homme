@@ -54,7 +54,21 @@ node server.js
 3. 그 서버 주소로 접속하면 위 2단계 파이프라인이 실제로 동작합니다.
 정적 링크는 "체험판", 서버+키가 "실사 웹앱"입니다.
 
+## 실사 웹앱으로 공개 배포 (서버 호스팅)
+
+정적 링크(GitHub Pages)는 데모 전용입니다. 실사로 동작하는 웹앱은 **서버 호스팅**이 필요합니다.
+가장 쉬운 경로(Render, 무료 플랜):
+
+1. https://render.com 로그인 → **New → Blueprint** → 이 저장소 선택 (`render.yaml` 자동 인식)
+2. 배포되면 **Environment** 탭에서 `GEMINI_API_KEY` 값만 붙여넣기
+   (https://aistudio.google.com/apikey 에서 발급)
+3. 끝. Render가 준 공개 URL(예: `https://grok-studio.onrender.com/studio.html`)로 접속하면
+   위 2단계 파이프라인(착장 스틸 → 회전 영상)이 실제로 동작합니다.
+
+`Dockerfile` 도 포함되어 있어 Fly.io / Railway / 자체 VM 등 어디든 컨테이너로 배포할 수 있습니다.
+
 ## 참고
 
-- 그록(xAI)의 공개 영상 API 스펙이 확정되면 `server.js` 의 `grokXai()` 요청/응답 필드만 맞추면 됩니다.
-- 당장 실제 영상까지 확인하려면 `VIDEO_PROVIDER=gemini_veo` 를 권장합니다(문서화된 공개 경로).
+- 사진(실사 착장)은 **Gemini 키 하나**면 바로 됩니다. 영상은 `VIDEO_PROVIDER` 를 골라야 합니다:
+  - `gemini_veo` — Gemini 키 그대로 사용(Veo 접근권한 필요, 권장)
+  - `xai` — xAI 키 필요. 공개 영상 API 스펙이 확정되면 `server.js` 의 `grokXai()` 필드만 맞추면 됩니다.
