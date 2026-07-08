@@ -1,0 +1,12 @@
+{
+  "name": "grok-studio",
+  "version": "1.0.0",
+  "description": "모델 선택 → 옷 사진 업로드 → 연출 영상·사진 생성 (사진: 제미나이 · 영상: 그록/Veo)",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

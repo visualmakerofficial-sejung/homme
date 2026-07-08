@@ -26,8 +26,26 @@ const StudioAPI = (() => {
     localStorage.setItem(LS_KEY, JSON.stringify({ ...getSettings(), ...s }));
   }
 
-  const hasGemini = () => !!getSettings().geminiKey;
-  const hasGrok   = () => { const s = getSettings(); return !!(s.grokUrl && s.grokKey); };
+  // 서버(백엔드) 연결 상태 — init()에서 채움
+  let server = { available: false, gemini: false, video: { enabled: false, provider: null } };
+
+  async function init() {
+    // file:// 로 열면 서버가 없음 → 프로브 생략
+    if (location.protocol === 'file:') return server;
+    try {
+      const r = await fetch('/api/config', { cache: 'no-store' });
+      if (r.ok) {
+        const j = await r.json();
+        server = { available: true, gemini: !!j.gemini, video: j.video || { enabled: false, provider: null } };
+      }
+    } catch (e) { /* 서버 없음 */ }
+    return server;
+  }
+  const getServer = () => server;
+
+  // 실제 사진 생성이 가능한가(서버 또는 클라이언트 키)
+  const hasGemini = () => (server.available && server.gemini) || !!getSettings().geminiKey;
+  const hasGrok   = () => (server.available && server.video.enabled) || (() => { const s = getSettings(); return !!(s.grokUrl && s.grokKey); })();
 
   /* ---------- 유틸 ---------- */
 
@@ -52,6 +70,15 @@ const StudioAPI = (() => {
      반환: dataURL(생성 이미지)
   ------------------------------------------------ */
   async function geminiPhoto(prompt, modelImage, productImages) {
+    // 1순위: 백엔드 서버(키를 서버가 보관)
+    if (server.available && server.gemini) {
+      const r = await fetch('/api/photo', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, modelImage, productImages }),
+      });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `서버 ${r.status}`);
+      return (await r.json()).image;
+    }
     const s = getSettings();
     if (!s.geminiKey) return demoPhoto(prompt, modelImage, productImages);
 
@@ -86,6 +113,16 @@ const StudioAPI = (() => {
      엔드포인트/응답 스키마는 제공사에 맞춰 조정하세요.
   ------------------------------------------------ */
   async function grokVideo(prompt, refImages, opts = {}) {
+    // 1순위: 백엔드 서버
+    if (server.available && server.video.enabled) {
+      const r = await fetch('/api/video', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, images: refImages, duration: opts.duration || 10, aspect: opts.aspect || '9:16' }),
+      });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `서버 ${r.status}`);
+      const j = await r.json();
+      return { url: j.url || j.video, mime: j.mime || 'video/mp4' };
+    }
     const s = getSettings();
     if (!(s.grokUrl && s.grokKey)) return demoVideo(prompt, refImages, opts);
 
@@ -304,5 +341,6 @@ const StudioAPI = (() => {
   return {
     getSettings, saveSettings, hasGemini, hasGrok,
     geminiPhoto, grokVideo,
+    init, getServer,
   };
 })();

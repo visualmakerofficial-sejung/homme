@@ -289,13 +289,17 @@ function updateGenInfo() {
 function updateConnBanner() {
   const b = $('#connBanner');
   const g = StudioAPI.hasGemini(), v = StudioAPI.hasGrok();
-  if (g && v) { b.className = 'conn-banner live'; b.textContent = '● 실연동: 제미나이(사진) · 그록(영상) 연결됨'; }
+  const srv = StudioAPI.getServer();
+  const via = srv.available ? ' · 서버 연동' : '';
+  if (g && v) { b.className = 'conn-banner live'; b.textContent = `● 실연동: 제미나이(사진) · 영상 생성 연결됨${via}`; }
   else if (g || v) {
     b.className = 'conn-banner live';
-    b.textContent = `● 부분 연동: ${g ? '제미나이(사진) 연결' : '그록(영상) 연결'} · 나머지는 데모 모드`;
+    b.textContent = `● 부분 연동: ${g ? '제미나이(사진) 연결' : '영상 생성 연결'} · 나머지는 데모 모드${via}`;
   } else {
     b.className = 'conn-banner demo';
-    b.textContent = '● 데모 모드: API 키가 없어 미리보기 파일을 만듭니다. [🔑 API 연결]에서 키를 넣으면 실제 생성됩니다.';
+    b.textContent = srv.available
+      ? '● 데모 모드: 서버에 API 키가 없어 미리보기 파일을 만듭니다. .env 에 키를 넣고 재시작하면 실제 생성됩니다.'
+      : '● 데모 모드: 미리보기 파일을 만듭니다. node server.js 로 서버를 켜고 키를 넣거나, [🔑 API 연결]에서 키를 넣으면 실제 생성됩니다.';
   }
 }
 
@@ -453,7 +457,7 @@ async function testConn() {
 /* ============================================================
    초기화
    ============================================================ */
-function init() {
+async function init() {
   state.models = loadModels();
   state.selectedModelId = state.models[0]?.id || null;
   renderModels();
@@ -463,6 +467,8 @@ function init() {
   setupPaste();
   updateConnBanner();
   updateGenInfo();
+  // 백엔드 서버 연결 확인 후 배너 갱신
+  StudioAPI.init().then(updateConnBanner);
 
   // 상단 버튼
   $('#btnAdmin').onclick = openAdmin;
