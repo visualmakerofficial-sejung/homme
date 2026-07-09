@@ -315,9 +315,52 @@ const StudioAPI = (() => {
     detail2: { s: 6.0, cyMul: -16, xs: 1,    face: false, back: false },
   };
 
-  // 데모 사진: 모델이 옷을 입은 연출 컷 PNG
+  // 데모 뷰티 컷: 모델이 제품을 들고/사용하거나, 손+제품 히어로
+  function demoBeauty(W, H, product, model, pose, angleLabel) {
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d');
+    studioBg(ctx, W, H);
+    const cx = W / 2;
+    const faceType = pose === 'hold' || pose === 'apply' || pose === 'moodb';
+    if (faceType) {
+      // 인물(옷 없이) + 제품을 손/가슴 앞에 배치
+      paintFigure(ctx, cx, H / 2 - 20, 1.7, model, null, { face: true });
+      if (product) {
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.35)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8;
+        drawContainInto(ctx, product, cx + 30, H * 0.34, 150, 200);
+        ctx.restore();
+      }
+    } else {
+      // 손+제품 / 텍스처 / 히어로 → 제품 크게 + 스포트라이트 (얼굴 없음)
+      const rg = ctx.createRadialGradient(cx, H * 0.44, 20, cx, H * 0.44, W * 0.55);
+      rg.addColorStop(0, 'rgba(255,255,255,0.12)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+      if (product) {
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 12;
+        drawContainInto(ctx, product, cx - W * 0.33, H * 0.16, W * 0.66, H * 0.52);
+        ctx.restore();
+      }
+    }
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#eef1f7';
+    ctx.font = '700 30px "Noto Sans KR", sans-serif';
+    ctx.fillText(`${model ? model.name + ' · ' : ''}${angleLabel || '뷰티 컷'}`, W / 2, H - 84);
+    ctx.fillStyle = '#a78bfa';
+    ctx.font = '600 17px "Noto Sans KR", sans-serif';
+    ctx.fillText('DEMO · 제미나이 키를 넣으면 실사 생성', W / 2, H - 52);
+    return cv.toDataURL('image/png');
+  }
+
+  // 데모 사진: 모델이 옷을 입은 연출 컷 PNG (뷰티는 demoBeauty)
   async function demoPhoto(prompt, modelImage, productImages, opts = {}) {
     const W = 768, H = 1024;
+    if (opts.beauty) {
+      let product = null;
+      try { if (productImages && productImages[0]) product = await loadImg(productImages[0]); } catch (e) {}
+      return demoBeauty(W, H, product, opts.model || null, opts.pose, opts.angleLabel);
+    }
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const ctx = cv.getContext('2d');
     studioBg(ctx, W, H);

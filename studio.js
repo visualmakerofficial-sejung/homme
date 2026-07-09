@@ -24,7 +24,8 @@ Finally, the character walks confidently and leisurely toward the left side of t
 let state = {
   models: [],
   selectedModelId: null,
-  products: [],   // dataURL[]
+  products: [],           // dataURL[]
+  productType: 'clothing', // 'clothing' | 'beauty'
 };
 
 /* ---------- 저장/불러오기 ---------- */
@@ -140,6 +141,23 @@ function renderModels() {
 }
 
 function selectedModel() { return state.models.find(m => m.id === state.selectedModelId) || null; }
+
+// 의류 / 뷰티 전환
+function setProductType(pt) {
+  state.productType = pt;
+  document.querySelectorAll('#ptypeSeg .seg-btn').forEach(b => b.classList.toggle('on', b.dataset.pt === pt));
+  const beauty = pt === 'beauty';
+  const el = id => document.getElementById(id);
+  el('step2Title').textContent = beauty ? '뷰티 제품 사진 업로드' : '옷 사진 업로드';
+  el('dropIc').textContent = beauty ? '💄' : '👕';
+  el('dropWord').textContent = beauty ? '제품 사진' : '옷 사진';
+  el('dropSub').textContent = beauty
+    ? '드래그 앤 드롭 · 스킨케어/메이크업/향수 등 · JPG·PNG · 최대 15MB'
+    : '드래그 앤 드롭 · 상의/하의/원피스 등 · JPG·PNG · 최대 15MB';
+  const oc = document.querySelector('.out-card[data-out="photo"] .out-t2');
+  if (oc) oc.textContent = beauty ? '들고·바르는·손+제품 등 홍보컷 자동 구성' : '앞·뒤·옆·디테일을 알아서 찾아 구성';
+  updateGenInfo();
+}
 
 // 자체 내장 SVG 아바타 (외부 이미지가 없거나 차단됐을 때의 폴백)
 const AVATAR_GRAD = {
@@ -338,8 +356,8 @@ function updateConnBanner() {
   }
 }
 
-// 사진 연출 앵글 (자동) — pose 는 데모 합성용, detail=true 는 옷 클로즈업(얼굴 X)
-const PHOTO_ANGLES = [
+// 의류 연출 앵글 (자동) — pose 는 데모 합성용, detail=true 는 옷 클로즈업(얼굴 X)
+const CLOTHING_ANGLES = [
   { key: '앞모습',   pose: 'front',  en: 'full-body front view, model facing camera' },
   { key: '뒷모습',   pose: 'back',   en: 'full-body back view, showing the back of the garment' },
   { key: '옆모습',   pose: 'side',   en: 'full-body side profile view' },
@@ -348,7 +366,40 @@ const PHOTO_ANGLES = [
   { key: '디테일2',  pose: 'detail2', detail: true, en: 'extreme close-up of another clothing detail — collar, pocket, hem or lining — tightly cropped on the garment' },
 ];
 
-function buildPhotoPrompt(model, angle, userExtra) {
+// 뷰티 제품 연출 컷 (모델이 제품을 들고/바르고/사용) — detail=true 는 손+제품(얼굴 X)
+const BEAUTY_ANGLES = [
+  { key: '제품 들고', pose: 'hold',  en: 'the model holds the beauty product up beside her face with a natural friendly smile, product packaging and label clearly facing the camera, upper-body beauty advertising shot' },
+  { key: '바르는 컷', pose: 'apply', en: 'the model is actively using the product on herself — applying cream or serum to her cheek, or lip product to her lips as appropriate to the product — natural candid expression, soft focus' },
+  { key: '손+제품',   pose: 'handhero', detail: true, en: "close-up of the model's hand elegantly holding the product as the hero, product front-and-center in sharp focus with the label readable, only hand and product visible" },
+  { key: '텍스처',    pose: 'swatch', detail: true, en: 'macro close-up of the product texture/formula swatched on the back of the hand or skin, glossy detail, the product placed beside it' },
+  { key: '뷰티 무드', pose: 'moodb', en: 'editorial upper-body beauty mood shot, model with clean glowing skin holding the product near her collarbone, soft dreamy studio lighting' },
+  { key: '제품 히어로', pose: 'hero', detail: true, en: 'product hero shot held between fingertips against a clean minimal background, packaging label crisp and centered, e-commerce beauty style' },
+];
+
+const ANGLE_SETS = { clothing: CLOTHING_ANGLES, beauty: BEAUTY_ANGLES };
+
+function buildPhotoPrompt(model, angle, userExtra, productType) {
+  const extra = userExtra ? `Extra direction: ${userExtra}` : '';
+
+  // ===== 뷰티 제품 =====
+  if (productType === 'beauty') {
+    const noFace = !!angle.detail; // 손+제품 / 텍스처 / 히어로 = 얼굴 없음
+    const who = noFace
+      ? ''
+      : (model
+          ? `Feature ${model.name}${model.desc ? ', ' + model.desc : ''}; use the provided reference photo and keep the exact same face and skin.`
+          : 'A professional beauty model.');
+    return [
+      who,
+      `High-end beauty product advertising photo. Use the uploaded product exactly as shown — keep its packaging, label text, colors and shape faithful.`,
+      `Shot: ${angle.en}.`,
+      noFace ? `Do NOT show any face; keep the product the clear hero of the frame.` : '',
+      `Clean studio background, soft flattering beauty lighting, realistic advertising photography, high detail, vertical 3:4.`,
+      extra,
+    ].filter(Boolean).join(' ');
+  }
+
+  // ===== 의류 =====
   // 디테일 컷: 얼굴 없이 옷에만 집중
   if (angle.detail) {
     return [
@@ -356,18 +407,18 @@ function buildPhotoPrompt(model, angle, userExtra) {
       `Focus entirely on the clothing — show fabric weave, buttons, stitching, zipper and logo in sharp detail.`,
       `Do NOT show the model's face or head; crop tightly to the garment so no face is visible.`,
       `Soft even studio lighting, photorealistic, high detail, vertical 3:4.`,
-      userExtra ? `Extra direction: ${userExtra}` : '',
+      extra,
     ].filter(Boolean).join(' ');
   }
   const who = model
     ? `Use the provided reference photo as the model (${model.name}${model.desc ? ', ' + model.desc : ''}). Keep the same face and body.`
     : `A professional fashion model.`;
   return [
-    `${who}`,
+    who,
     `Dress the model in the uploaded clothing item exactly as shown (keep colors, print, logo and details faithful).`,
     `Shot: ${angle.en}.`,
     `Clean studio background, realistic fashion catalog photography, high detail, vertical 3:4.`,
-    userExtra ? `Extra direction: ${userExtra}` : '',
+    extra,
   ].filter(Boolean).join(' ');
 }
 
@@ -395,7 +446,7 @@ async function generate() {
     /* ----- 사진 (제미나이) ----- */
     if (wantPhoto) {
       const count = parseInt($('#photoCount').value, 10);
-      const angles = PHOTO_ANGLES.slice(0, count);
+      const angles = (ANGLE_SETS[state.productType] || CLOTHING_ANGLES).slice(0, count);
       const userExtra = $('#photoPrompt').value.trim();
       const rv = $('#resultPhotos'); rv.hidden = false;
       const gal = $('#photoGallery'); gal.innerHTML = '';
@@ -411,10 +462,10 @@ async function generate() {
       btn.textContent = '🖼️ 사진 생성 중…';
       for (let i = 0; i < angles.length; i++) {
         const a = angles[i];
-        const prompt = buildPhotoPrompt(model, a, userExtra);
+        const prompt = buildPhotoPrompt(model, a, userExtra, state.productType);
         try {
           const img = await StudioAPI.geminiPhoto(prompt, modelImg, state.products,
-            { pose: a.pose, angleLabel: a.key, model: modelMeta });
+            { pose: a.pose, angleLabel: a.key, model: modelMeta, beauty: state.productType === 'beauty' });
           const slot = $(`#pg-${i}`);
           slot.innerHTML = `
             <img src="${img}" alt="${a.key}">
@@ -528,6 +579,9 @@ async function init() {
 
   // 출력 옵션 변경 → 정보 갱신
   ['outVideo', 'outPhoto', 'photoCount'].forEach(id => $('#' + id).addEventListener('change', updateGenInfo));
+
+  // 제품 종류 토글 (의류/뷰티)
+  $$('#ptypeSeg .seg-btn').forEach(b => b.onclick = () => setProductType(b.dataset.pt));
 
   // 모델 폼
   $('#modelForm').onsubmit = submitModelForm;

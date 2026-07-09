@@ -39,15 +39,18 @@
   <!-- ============ 2. 옷 사진 업로드 ============ -->
   <section class="step">
     <div class="step-head">
-      <div class="step-t"><span class="step-n">2</span><span class="step-dot">·</span> 옷 사진 업로드</div>
-      <span class="step-hint">드래그 앤 드롭 · 파일 선택 · 캡처 후 <b>Ctrl+V</b> 붙여넣기</span>
+      <div class="step-t"><span class="step-n">2</span><span class="step-dot">·</span> <span id="step2Title">옷 사진 업로드</span></div>
+      <div class="seg" id="ptypeSeg">
+        <button type="button" class="seg-btn on" data-pt="clothing">👕 의류</button>
+        <button type="button" class="seg-btn" data-pt="beauty">💄 뷰티</button>
+      </div>
     </div>
     <div class="drop" id="dropZone" tabindex="0">
       <input type="file" id="fileInput" accept="image/*" multiple hidden>
       <div class="drop-inner" id="dropInner">
-        <div class="drop-ic">👕</div>
-        <div class="drop-t">여기로 <b>옷 사진</b>을 끌어다 놓거나 눌러서 선택하세요</div>
-        <div class="drop-s">드래그 앤 드롭 · 상의/하의/원피스 등 · JPG·PNG · 최대 15MB</div>
+        <div class="drop-ic" id="dropIc">👕</div>
+        <div class="drop-t">여기로 <b id="dropWord">옷 사진</b>을 끌어다 놓거나 눌러서 선택하세요</div>
+        <div class="drop-s" id="dropSub">드래그 앤 드롭 · 상의/하의/원피스 등 · JPG·PNG · 최대 15MB</div>
         <div class="drop-paste">📋 이미지 캡처 후 이 화면에서 <b>Ctrl+V</b> 로 붙여넣기도 됩니다</div>
       </div>
     </div>

@@ -80,6 +80,13 @@ body {
 .step-n { color: var(--accent2); font-weight: 900; }
 .step-dot { color: var(--ink3); font-weight: 700; }
 .step-hint { font-size: 11.5px; color: var(--ink3); }
+.seg { display: inline-flex; background: var(--panel2); border: 1px solid var(--line2); border-radius: 10px; padding: 3px; gap: 3px; }
+.seg-btn {
+  font-family: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink2);
+  background: transparent; border: none; padding: 6px 13px; border-radius: 8px; cursor: pointer; transition: .15s;
+}
+.seg-btn:hover { color: var(--ink); }
+.seg-btn.on { background: var(--accent); color: #fff; }
 .step-hint b { color: var(--ink2); }
 .step-note { font-size: 11.5px; color: var(--ink3); margin-top: 8px; }
 .link-btn {
