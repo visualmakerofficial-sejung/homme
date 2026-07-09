@@ -263,7 +263,11 @@ const server = http.createServer(async (req, res) => {
   if (!filePath.startsWith(__dirname)) { res.writeHead(403); return res.end('forbidden'); }
   fs.readFile(filePath, (err, data) => {
     if (err) { res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); return res.end('404 Not Found'); }
-    res.writeHead(200, { 'Content-Type': MIME[path.extname(filePath).toLowerCase()] || 'application/octet-stream' });
+    const ext = path.extname(filePath).toLowerCase();
+    const headers = { 'Content-Type': MIME[ext] || 'application/octet-stream' };
+    // 앱 코드/문서는 항상 최신을 받도록 캐시 방지 (업데이트 즉시 반영)
+    if (['.html', '.js', '.css', '.json'].includes(ext)) headers['Cache-Control'] = 'no-cache, must-revalidate';
+    res.writeHead(200, headers);
     res.end(data);
   });
 });
