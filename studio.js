@@ -14,12 +14,22 @@ const DEFAULT_MODELS = [
   { id: 'm-taesan', name: '태산', nameEn: 'Taesan', desc: '빅사이즈·듬직 · 남성복', emoji: '🧔', photo: CDN + 'hf_20260708_040717_faa9d5f9-63e8-40e4-9ad1-143d18aefd48.png' },
 ];
 
-const DEFAULT_VIDEO_PROMPT =
+const CLOTHING_VIDEO_PROMPT =
 `The character, wearing the attached outfit, rotates 40 degrees in place in the same direction, then pauses for exactly 0.5 seconds while maintaining a natural and calm pose. The character then rotates another 40 degrees in the same direction and pauses again for exactly 0.5 seconds in the same stable and composed posture.
 
 After that, the character slowly turns back toward the camera and holds a front-facing pose, allowing the details of the attached outfit—such as the buttons, zipper, pockets, collar, and lining—to be shown naturally. At this moment, the camera smoothly zooms in on the character to capture the texture of the clothing and its detailed elements more clearly. The character remains still for exactly 2 seconds with a confident yet calm attitude.
 
 Finally, the character walks confidently and leisurely toward the left side of the screen, naturally exiting the frame.`;
+
+const BEAUTY_VIDEO_PROMPT =
+`The model naturally presents the attached beauty product to the camera. First she holds the product up beside her face with a calm confident smile, the label clearly facing the camera for about 1 second. Then she gently uses the product on herself—applying a small amount of cream or serum to her cheek, or a swipe of the product as appropriate—with a soft, natural expression.
+
+Then the camera smoothly pushes in for a close-up of the product and its texture, keeping the packaging and label sharp and readable for about 2 seconds.
+
+Finally she lowers the product and gives a soft glowing look to the camera. Clean studio background, soft flattering beauty lighting, vertical 9:16, about 10 seconds.`;
+
+function videoPromptFor(type) { return type === 'beauty' ? BEAUTY_VIDEO_PROMPT : CLOTHING_VIDEO_PROMPT; }
+const DEFAULT_VIDEO_PROMPT = CLOTHING_VIDEO_PROMPT; // 호환용
 
 let state = {
   models: [],
@@ -154,8 +164,19 @@ function setProductType(pt) {
   el('dropSub').textContent = beauty
     ? '드래그 앤 드롭 · 스킨케어/메이크업/향수 등 · JPG·PNG · 최대 15MB'
     : '드래그 앤 드롭 · 상의/하의/원피스 등 · JPG·PNG · 최대 15MB';
-  const oc = document.querySelector('.out-card[data-out="photo"] .out-t2');
-  if (oc) oc.textContent = beauty ? '들고·바르는·손+제품 등 홍보컷 자동 구성' : '앞·뒤·옆·디테일을 알아서 찾아 구성';
+  // 출력 카드 설명 — 모드에 맞게
+  const pc = document.querySelector('.out-card[data-out="photo"] .out-t2');
+  if (pc) pc.textContent = beauty ? '들고·바르는·손+제품 등 홍보컷 자동 구성' : '앞·뒤·옆·디테일을 알아서 찾아 구성';
+  const vc = document.querySelector('.out-card[data-out="video"] .out-t2');
+  if (vc) vc.textContent = beauty ? '제품 들고·사용 장면 · 제품 클로즈업 · MP4' : '한 바퀴 회전 · 로고·단추·디테일 클로즈업 · 퇴장 · MP4';
+  const vt1 = document.querySelector('.out-card[data-out="video"] .out-t1');
+  if (vt1) vt1.textContent = beauty ? '세로형 영상 10초 (제품 소개)' : '세로형 영상 10초';
+
+  // 영상 프롬프트 — 사용자가 손대지 않았으면 모드 기본값으로 교체
+  const ta = document.getElementById('videoPrompt');
+  const other = beauty ? 'clothing' : 'beauty';
+  if (ta && ta.value.trim() === videoPromptFor(other).trim()) ta.value = videoPromptFor(pt);
+
   updateGenInfo();
 }
 
@@ -489,7 +510,7 @@ async function generate() {
       wrap.innerHTML = `<div class="rv-placeholder" style="display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:12px;flex-direction:column;gap:10px"><span class="spin"></span>영상 생성 중…</div>`;
       btn.textContent = '🎬 영상 생성 중…';
 
-      const vprompt = $('#videoPrompt').value.trim() || DEFAULT_VIDEO_PROMPT;
+      const vprompt = $('#videoPrompt').value.trim() || videoPromptFor(state.productType);
       try {
         const out = await StudioAPI.grokVideo(vprompt, state.products, {
           duration: 10, aspect: '9:16', modelImage: modelImg, model: modelMeta,
@@ -561,7 +582,7 @@ async function init() {
   state.selectedModelId = state.models[0]?.id || null;
   renderModels();
   renderThumbs();
-  $('#videoPrompt').value = DEFAULT_VIDEO_PROMPT;
+  $('#videoPrompt').value = videoPromptFor(state.productType);
   setupDropzone();
   setupPaste();
   updateConnBanner();
@@ -574,7 +595,7 @@ async function init() {
   $('#btnAddModelInline').onclick = openAdmin;
   $('#btnSettings').onclick = openSettings;
   $('#btnGenerate').onclick = generate;
-  $('#btnResetPrompt').onclick = () => { $('#videoPrompt').value = DEFAULT_VIDEO_PROMPT; toast('기본 프롬프트로 되돌렸어요'); };
+  $('#btnResetPrompt').onclick = () => { $('#videoPrompt').value = videoPromptFor(state.productType); toast('기본 프롬프트로 되돌렸어요'); };
   $('#btnClearResults').onclick = () => { $('#results').hidden = true; };
 
   // 출력 옵션 변경 → 정보 갱신
