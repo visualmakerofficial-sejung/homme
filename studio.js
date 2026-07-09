@@ -441,12 +441,12 @@ const CLOTHING_ANGLES = [
 
 // 뷰티 제품 연출 컷 (모델이 제품을 들고/바르고/사용) — detail=true 는 손+제품(얼굴 X)
 const BEAUTY_ANGLES = [
-  { key: '제품 들고', pose: 'hold',  en: 'the model holds the beauty product up beside her face with a natural friendly smile, product packaging and label clearly facing the camera, upper-body beauty advertising shot' },
-  { key: '바르는 컷', pose: 'apply', en: 'the model is actively using the product on herself — applying cream or serum to her cheek, or lip product to her lips as appropriate to the product — natural candid expression, soft focus' },
-  { key: '손+제품',   pose: 'handhero', detail: true, en: "close-up of the model's hand elegantly holding the product as the hero, product front-and-center in sharp focus with the label readable, only hand and product visible" },
-  { key: '텍스처',    pose: 'swatch', detail: true, en: 'macro close-up of the product texture/formula swatched on the back of the hand or skin, glossy detail, the product placed beside it' },
-  { key: '뷰티 무드', pose: 'moodb', en: 'editorial upper-body beauty mood shot, model with clean glowing skin holding the product near her collarbone, soft dreamy studio lighting' },
-  { key: '제품 히어로', pose: 'hero', detail: true, en: 'product hero shot held between fingertips against a clean minimal background, packaging label crisp and centered, e-commerce beauty style' },
+  { key: '제품 들고', pose: 'hold',  en: 'the model holds the beauty product up beside her face with ONE hand, natural friendly smile, product packaging and label clearly facing the camera, upper-body beauty advertising shot' },
+  { key: '바르는 컷', pose: 'apply', hand: true, en: 'the model gently applies the product to her cheek using the fingertips of ONE hand — a single natural applying gesture. She is NOT holding the jar, tube or bottle; her other hand is out of the frame. Only one hand touches her face. Natural candid expression, soft focus, do NOT show the product container in this shot' },
+  { key: '손+제품',   pose: 'handhero', detail: true, hand: true, en: "close-up of ONE hand elegantly holding the product as the hero, product front-and-center in sharp focus with the label readable, only a single hand and the product visible" },
+  { key: '텍스처',    pose: 'swatch', detail: true, hand: true, en: 'extreme macro close-up of the product texture and formula swatched on the back of a hand or on bare skin, glossy detailed texture filling the frame. Show ONLY the texture swatch on skin — do NOT include the product jar, bottle, tube, cap or any packaging anywhere in the frame' },
+  { key: '뷰티 무드', pose: 'moodb', en: 'editorial upper-body beauty mood shot, model with clean glowing skin holding the product with ONE hand near her collarbone, soft dreamy studio lighting' },
+  { key: '제품 히어로', pose: 'hero', detail: true, hand: true, en: 'product hero shot held between the fingertips of ONE hand against a clean minimal background, packaging label crisp and centered, e-commerce beauty style' },
 ];
 
 // 제품 단독 연출 (모델 없이 제품만 다양하게)
@@ -486,11 +486,15 @@ function buildPhotoPrompt(model, angle, userExtra, productType) {
       : (model
           ? `Feature ${model.name}${model.desc ? ', ' + model.desc : ''}; use the provided reference photo and keep the exact same face and skin.`
           : 'A professional beauty model.');
+    const handSafe = angle.hand
+      ? `Render hands with correct natural human anatomy: show only the hand(s) described, exactly five fingers each, no extra, duplicated, merged or malformed hands or fingers.`
+      : '';
     return [
       who,
       `High-end beauty product advertising photo. Use the uploaded product exactly as shown — keep its packaging, label text, colors and shape faithful.`,
       `Shot: ${angle.en}.`,
       noFace ? `Do NOT show any face; keep the product the clear hero of the frame.` : '',
+      handSafe,
       `Clean studio background, soft flattering beauty lighting, realistic advertising photography, high detail, vertical 3:4.`,
       extra,
     ].filter(Boolean).join(' ');
