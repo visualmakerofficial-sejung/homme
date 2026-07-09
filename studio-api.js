@@ -353,12 +353,41 @@ const StudioAPI = (() => {
     return cv.toDataURL('image/png');
   }
 
-  // 데모 사진: 모델이 옷을 입은 연출 컷 PNG (뷰티는 demoBeauty)
+  // 데모 제품 단독 컷: 제품만 스포트라이트/연출
+  function demoProductShot(W, H, product, angleLabel) {
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d');
+    studioBg(ctx, W, H);
+    const cx = W / 2, cy = H * 0.44;
+    const rg = ctx.createRadialGradient(cx, cy, 20, cx, cy, W * 0.6);
+    rg.addColorStop(0, 'rgba(255,255,255,0.14)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+    // 단상
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    roundRect(ctx, cx - 150, H * 0.66, 300, 40, 14); ctx.fill();
+    if (product) {
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 34; ctx.shadowOffsetY = 16;
+      drawContainInto(ctx, product, cx - W * 0.28, H * 0.16, W * 0.56, H * 0.5);
+      ctx.restore();
+    }
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#eef1f7';
+    ctx.font = '700 30px "Noto Sans KR", sans-serif';
+    ctx.fillText(angleLabel || '제품컷', W / 2, H - 84);
+    ctx.fillStyle = '#a78bfa';
+    ctx.font = '600 17px "Noto Sans KR", sans-serif';
+    ctx.fillText('DEMO · 제미나이 키를 넣으면 실사 생성', W / 2, H - 52);
+    return cv.toDataURL('image/png');
+  }
+
+  // 데모 사진: 모델이 옷을 입은 연출 컷 PNG (뷰티/제품컷은 별도)
   async function demoPhoto(prompt, modelImage, productImages, opts = {}) {
     const W = 768, H = 1024;
-    if (opts.beauty) {
+    if (opts.beauty || opts.productOnly) {
       let product = null;
       try { if (productImages && productImages[0]) product = await loadImg(productImages[0]); } catch (e) {}
+      if (opts.productOnly) return demoProductShot(W, H, product, opts.angleLabel);
       return demoBeauty(W, H, product, opts.model || null, opts.pose, opts.angleLabel);
     }
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;

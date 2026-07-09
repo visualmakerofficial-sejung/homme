@@ -34,6 +34,7 @@
       <button class="link-btn" id="btnAddModelInline">+ 새 모델 추가</button>
     </div>
     <div class="model-grid" id="modelGrid"></div>
+    <div class="step-hint" id="modelHint" style="margin-top:8px"></div>
   </section>
 
   <!-- ============ 2. 옷 사진 업로드 ============ -->
@@ -43,6 +44,7 @@
       <div class="seg" id="ptypeSeg">
         <button type="button" class="seg-btn on" data-pt="clothing">👕 의류</button>
         <button type="button" class="seg-btn" data-pt="beauty">💄 뷰티</button>
+        <button type="button" class="seg-btn" data-pt="product">📦 제품컷</button>
       </div>
     </div>
     <div class="drop" id="dropZone" tabindex="0">
@@ -96,7 +98,7 @@
           <div class="out-t2">앞·뒤·옆·디테일을 알아서 찾아 구성</div>
           <div class="out-eng">제미나이(Gemini)</div>
         </div>
-        <div class="photo-count">
+        <div class="photo-count" id="photoCountWrap">
           <span>장수</span>
           <select id="photoCount">
             <option value="3">3장</option>
@@ -104,6 +106,17 @@
           </select>
         </div>
       </label>
+    </div>
+
+    <!-- 컨셉 선택 (뷰티/제품컷 전용) -->
+    <div class="concepts" id="conceptSel" hidden>
+      <div class="concepts-head">🎯 컨셉 선택 <span>원하는 컷만 골라 뽑아요 (여러 개 선택 가능)</span>
+        <div class="concepts-quick">
+          <button type="button" class="mini-link" id="conceptAll">전체</button>
+          <button type="button" class="mini-link" id="conceptNone">해제</button>
+        </div>
+      </div>
+      <div class="concepts-chips" id="conceptChips"></div>
     </div>
   </section>
 
