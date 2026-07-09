@@ -15,8 +15,10 @@ services:
         sync: false
       - key: GEMINI_IMAGE_MODEL
         value: gemini-2.5-flash-image
-      # 영상 — Veo(같은 Gemini 키 사용, Veo 접근권한 필요)
+      # 영상 — 클링(fal.ai 게이트웨이). FAL_KEY 는 Render Environment 에 직접 입력
       - key: VIDEO_PROVIDER
-        value: gemini_veo
-      - key: GEMINI_VEO_MODEL
-        value: veo-3.0-generate-preview
+        value: kling
+      - key: FAL_KEY
+        sync: false
+      - key: FAL_KLING_MODEL
+        value: fal-ai/kling-video/v1.6/pro/image-to-video

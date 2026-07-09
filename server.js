@@ -31,14 +31,18 @@ const PORT = process.env.PORT || 5173;
 const CFG = {
   geminiKey:     process.env.GEMINI_API_KEY || '',
   geminiModel:   process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image',
-  videoProvider: (process.env.VIDEO_PROVIDER || '').toLowerCase(), // 'xai' | 'gemini_veo' | ''
+  videoProvider: (process.env.VIDEO_PROVIDER || '').toLowerCase(), // 'kling' | 'xai' | 'gemini_veo'
   xaiKey:        process.env.XAI_API_KEY || '',
   xaiVideoUrl:   process.env.XAI_VIDEO_URL || 'https://api.x.ai/v1/video/generations',
   xaiModel:      process.env.XAI_VIDEO_MODEL || 'grok-video',
   veoModel:      process.env.GEMINI_VEO_MODEL || 'veo-3.0-generate-preview',
+  // 클링(fal.ai 게이트웨이) — 키 하나로 서버에서 클링 영상 호출
+  falKey:        process.env.FAL_KEY || '',
+  falKlingModel: process.env.FAL_KLING_MODEL || 'fal-ai/kling-video/v1.6/pro/image-to-video',
 };
 
 function videoEnabled() {
+  if (CFG.videoProvider === 'kling') return !!CFG.falKey;
   if (CFG.videoProvider === 'xai') return !!CFG.xaiKey;
   if (CFG.videoProvider === 'gemini_veo') return !!CFG.geminiKey;
   return false;
@@ -120,9 +124,50 @@ async function generateVideo({ prompt, modelImage, productImages, images, durati
   }
 
   // 2단계: 착장 스틸을 첫 프레임으로 회전 영상 생성
+  if (CFG.videoProvider === 'kling')      return klingFal({ prompt, images: startImages, duration, aspect: ar });
   if (CFG.videoProvider === 'xai')        return grokXai({ prompt, images: startImages, duration, aspect: ar });
   if (CFG.videoProvider === 'gemini_veo') return geminiVeo({ prompt, images: startImages, aspect: ar });
-  const e = new Error('VIDEO_PROVIDER 미설정 (xai 또는 gemini_veo)'); e.status = 400; throw e;
+  const e = new Error('VIDEO_PROVIDER 미설정 (kling / xai / gemini_veo)'); e.status = 400; throw e;
+}
+
+// 클링 영상 — fal.ai 게이트웨이 (이미지→영상, 큐 방식 폴링)
+async function klingFal({ prompt, images, duration, aspect }) {
+  if (!CFG.falKey) { const e = new Error('FAL_KEY 미설정'); e.status = 400; throw e; }
+  const startImage = images && images[0];
+  if (!startImage) { const e = new Error('클링: 시작 이미지가 없음(착장 스틸 생성 실패)'); e.status = 400; throw e; }
+  const auth = { 'Authorization': `Key ${CFG.falKey}`, 'Content-Type': 'application/json' };
+
+  // 제출
+  const submit = await fetch(`https://queue.fal.run/${CFG.falKlingModel}`, {
+    method: 'POST', headers: auth,
+    body: JSON.stringify({
+      prompt,
+      image_url: startImage,                       // data URI 허용
+      duration: String(duration || 10) === '5' ? '5' : '10',
+      aspect_ratio: aspect || '9:16',
+    }),
+  });
+  if (!submit.ok) { const t = await submit.text().catch(() => ''); const e = new Error(`Kling(fal) ${submit.status}: ${t.slice(0, 300)}`); e.status = 502; throw e; }
+  const q = await submit.json();
+  const statusUrl = q.status_url, responseUrl = q.response_url;
+  if (!statusUrl || !responseUrl) { const e = new Error('Kling(fal): 큐 URL 없음'); e.status = 502; throw e; }
+
+  // 폴링 (최대 6분)
+  for (let i = 0; i < 72; i++) {
+    await sleep(5000);
+    const st = await fetch(statusUrl, { headers: auth });
+    const sj = await st.json().catch(() => ({}));
+    const status = (sj.status || '').toUpperCase();
+    if (status === 'COMPLETED') {
+      const rr = await fetch(responseUrl, { headers: auth });
+      const rj = await rr.json().catch(() => ({}));
+      const url = rj?.video?.url || rj?.video_url || rj?.output?.video?.url || rj?.data?.video?.url;
+      if (url) return { url, mime: 'video/mp4' };
+      const e = new Error('Kling(fal): 결과 영상 URL 없음'); e.status = 502; throw e;
+    }
+    if (status === 'FAILED' || status === 'ERROR') { const e = new Error('Kling(fal): 생성 실패'); e.status = 502; throw e; }
+  }
+  const e = new Error('Kling(fal): 시간 초과(폴링)'); e.status = 504; throw e;
 }
 
 // xAI(Grok) 영상 — 제공사 스펙에 맞춰 URL/응답 필드는 환경변수/여기서 조정
