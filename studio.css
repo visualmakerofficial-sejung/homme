@@ -1,30 +1,31 @@
 /* ============ AI 스튜디오 — 다크 테마 ============ */
 :root {
-  --bg: #0a0c12;
-  --bg2: #11141c;
-  --panel: #161a24;
-  --panel2: #1c2130;
-  --line: #262c3a;
-  --line2: #333b4d;
-  --ink: #eef1f7;
-  --ink2: #aab2c5;
-  --ink3: #6b7488;
-  --accent: #7c5cff;
-  --accent2: #a78bfa;
-  --accent-soft: rgba(124,92,255,0.14);
-  --green: #34d399;
-  --amber: #fbbf24;
-  --red: #f87171;
-  --grok: #6ee7ff;
-  --gem: #c084fc;
+  /* VISUAL MAKER — 라이트 · 코랄 */
+  --bg: #fbf7f5;
+  --bg2: #f4ede9;
+  --panel: #ffffff;
+  --panel2: #f7f1ed;
+  --line: #efe4de;
+  --line2: #e6d8d0;
+  --ink: #221c19;
+  --ink2: #5f544e;
+  --ink3: #9b8f87;
+  --accent: #e8553a;
+  --accent2: #d5462c;
+  --accent-soft: rgba(232,85,58,0.10);
+  --green: #2e9e6b;
+  --amber: #c9821a;
+  --red: #d23f3f;
+  --grok: #d5462c;
+  --gem: #e8553a;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   font-family: 'Noto Sans KR', -apple-system, sans-serif;
   background:
-    radial-gradient(900px 500px at 15% -10%, rgba(124,92,255,0.12), transparent 60%),
-    radial-gradient(700px 500px at 100% 0%, rgba(110,231,255,0.07), transparent 55%),
+    radial-gradient(900px 520px at 12% -12%, rgba(232,85,58,0.12), transparent 60%),
+    radial-gradient(760px 480px at 102% -4%, rgba(232,85,58,0.06), transparent 55%),
     var(--bg);
   color: var(--ink);
   min-height: 100vh;
@@ -40,13 +41,14 @@ body {
   gap: 16px; flex-wrap: wrap; margin-bottom: 14px;
 }
 .stu-brand h1 {
-  font-size: 26px; font-weight: 900; letter-spacing: -0.02em;
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  font-size: 27px; font-weight: 900; letter-spacing: 0.06em;
+  color: var(--accent); text-transform: uppercase;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
 }
 .stu-badge {
-  font-size: 11px; font-weight: 700; color: var(--accent2);
-  background: var(--accent-soft); border: 1px solid rgba(124,92,255,0.35);
-  padding: 4px 10px; border-radius: 999px; letter-spacing: 0;
+  font-size: 11px; font-weight: 800; color: #fff;
+  background: var(--accent); border: 1px solid var(--accent);
+  padding: 4px 11px; border-radius: 999px; letter-spacing: 0.12em;
 }
 .stu-brand p { color: var(--ink2); font-size: 13px; margin-top: 8px; max-width: 620px; }
 .stu-brand p b { color: var(--ink); }
@@ -209,6 +211,7 @@ body {
 
 /* ---- 제품컷 옵션 ---- */
 .prodopts { margin-top: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.prodopts[hidden] { display: none; }
 .prodopts label { display: flex; flex-direction: column; gap: 5px; font-size: 11.5px; font-weight: 700; color: var(--ink2); }
 .prodopts select {
   background: var(--panel2); border: 1px solid var(--line2); color: var(--ink);
@@ -221,11 +224,11 @@ body {
 .gen-bar { display: flex; align-items: center; gap: 14px; margin: 28px 0 10px; flex-wrap: wrap; }
 .gen-btn {
   font-family: inherit; font-size: 15px; font-weight: 800; color: #fff;
-  background: linear-gradient(135deg, var(--accent), #5b3fd6);
+  background: linear-gradient(135deg, #ee6349, var(--accent));
   border: none; padding: 15px 30px; border-radius: 14px; cursor: pointer;
-  box-shadow: 0 8px 24px rgba(124,92,255,0.35); transition: .15s;
+  box-shadow: 0 8px 24px rgba(232,85,58,0.32); transition: .15s;
 }
-.gen-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(124,92,255,0.45); }
+.gen-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(232,85,58,0.42); }
 .gen-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; box-shadow: none; }
 .gen-info { font-size: 12.5px; color: var(--ink2); }
 
