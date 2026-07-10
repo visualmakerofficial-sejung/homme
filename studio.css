@@ -174,7 +174,15 @@ body {
 .out-card {
   background: var(--panel); border: 1.5px solid var(--line); border-radius: 14px;
   padding: 16px; display: flex; gap: 13px; align-items: flex-start;
-  transition: .15s; position: relative;
+  transition: .15s; position: relative; cursor: pointer;
+}
+.out-card input {
+  margin-top: 3px; width: 17px; height: 17px;
+  accent-color: var(--accent); cursor: pointer; flex: none;
+}
+.out-card:has(input:checked) {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 .out-ic { font-size: 26px; }
 .out-t1 { font-size: 14px; font-weight: 800; }

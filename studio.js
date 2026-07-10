@@ -586,77 +586,80 @@ async function resolveModel() {
   return { model, modelImg, modelMeta };
 }
 
-// 📷 사진만 생성
-async function generatePhotos() {
+// 선택한 출력(사진/영상)을 한 번에 생성
+async function generate() {
+  const wantVideo = $('#outVideo').checked;
+  const wantPhoto = $('#outPhoto').checked;
   if (!state.products.length) { toast('사진/제품 이미지를 먼저 올려주세요'); return; }
-  const btn = $('#btnGenPhotos'); if (btn.disabled) return;
+  if (!wantVideo && !wantPhoto) { toast('영상·사진 중 하나 이상 선택하세요'); return; }
 
-  const set = ANGLE_SETS[state.productType] || CLOTHING_ANGLES;
-  let angles;
-  if (CONCEPT_MODES.includes(state.productType)) {
-    angles = set.filter(a => state.concepts.has(a.pose));
-    if (!angles.length) { toast('컨셉을 하나 이상 선택하세요'); return; }
-  } else {
-    angles = set.slice(0, parseInt($('#photoCount').value, 10));
-  }
-  const userExtra = $('#photoPrompt').value.trim();
+  const btn = $('#btnGenerate'); if (btn.disabled) return;
+  const lbl = btn.textContent; btn.disabled = true;
+
+  $('#results').hidden = false;
+  $('#results').scrollIntoView({ behavior: 'smooth', block: 'start' });
   const { model, modelImg, modelMeta } = await resolveModel();
 
-  $('#results').hidden = false;
-  $('#resultPhotos').hidden = false;
-  $('#results').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  const gal = $('#photoGallery'); gal.innerHTML = '';
-  angles.forEach((a, i) => {
-    const it = document.createElement('div');
-    it.className = 'pg-item'; it.id = `pg-${i}`;
-    it.innerHTML = `<div class="pg-loading"><span class="spin"></span></div><div class="pg-cap"><span>${a.key}</span></div>`;
-    gal.appendChild(it);
-  });
-
-  const lbl = btn.textContent; btn.disabled = true; btn.textContent = '🖼️ 사진 생성 중…';
   try {
-    for (let i = 0; i < angles.length; i++) {
-      const a = angles[i];
-      const prompt = buildPhotoPrompt(model, a, userExtra, state.productType);
-      try {
-        const img = await StudioAPI.geminiPhoto(prompt, modelImg, state.products,
-          { pose: a.pose, angleLabel: a.key, model: modelMeta,
-            beauty: state.productType === 'beauty', productOnly: state.productType === 'product' });
-        const slot = $(`#pg-${i}`);
-        slot.innerHTML = `<img src="${img}" alt="${a.key}"><div class="pg-cap"><span>${a.key}</span><a class="pg-dl" href="#">저장 ↓</a></div>`;
-        slot.querySelector('.pg-dl').onclick = e => { e.preventDefault(); download(img, `연출_${a.key}_${i + 1}.png`); };
-      } catch (err) {
-        $(`#pg-${i}`).innerHTML = `<div class="pg-loading" style="color:var(--red);font-size:11px;padding:10px;text-align:center">${a.key}<br>실패: ${escapeHtml(err.message)}</div>`;
+    /* ----- 사진 (제미나이) ----- */
+    if (wantPhoto) {
+      const set = ANGLE_SETS[state.productType] || CLOTHING_ANGLES;
+      let angles;
+      if (CONCEPT_MODES.includes(state.productType)) {
+        angles = set.filter(a => state.concepts.has(a.pose));
+      } else {
+        angles = set.slice(0, parseInt($('#photoCount').value, 10));
       }
-    }
-    toast('사진 완료 🎉');
-  } finally { btn.disabled = false; btn.textContent = lbl; }
-}
+      if (!angles.length) {
+        toast('컨셉을 하나 이상 선택하세요');
+      } else {
+        $('#resultPhotos').hidden = false;
+        const userExtra = $('#photoPrompt').value.trim();
+        const gal = $('#photoGallery'); gal.innerHTML = '';
+        angles.forEach((a, i) => {
+          const it = document.createElement('div');
+          it.className = 'pg-item'; it.id = `pg-${i}`;
+          it.innerHTML = `<div class="pg-loading"><span class="spin"></span></div><div class="pg-cap"><span>${a.key}</span></div>`;
+          gal.appendChild(it);
+        });
+        btn.textContent = '🖼️ 사진 생성 중…';
+        for (let i = 0; i < angles.length; i++) {
+          const a = angles[i];
+          const prompt = buildPhotoPrompt(model, a, userExtra, state.productType);
+          try {
+            const img = await StudioAPI.geminiPhoto(prompt, modelImg, state.products,
+              { pose: a.pose, angleLabel: a.key, model: modelMeta,
+                beauty: state.productType === 'beauty', productOnly: state.productType === 'product' });
+            const slot = $(`#pg-${i}`);
+            slot.innerHTML = `<img src="${img}" alt="${a.key}"><div class="pg-cap"><span>${a.key}</span><a class="pg-dl" href="#">저장 ↓</a></div>`;
+            slot.querySelector('.pg-dl').onclick = e => { e.preventDefault(); download(img, `연출_${a.key}_${i + 1}.png`); };
+          } catch (err) {
+            $(`#pg-${i}`).innerHTML = `<div class="pg-loading" style="color:var(--red);font-size:11px;padding:10px;text-align:center">${a.key}<br>실패: ${escapeHtml(err.message)}</div>`;
+          }
+        }
+      }
+    } else { $('#resultPhotos').hidden = true; }
 
-// 📼 영상만 생성
-async function generateVideoOnly() {
-  if (!state.products.length) { toast('사진/제품 이미지를 먼저 올려주세요'); return; }
-  const btn = $('#btnGenVideo'); if (btn.disabled) return;
-  const { modelImg, modelMeta } = await resolveModel();
+    /* ----- 영상 ----- */
+    if (wantVideo) {
+      $('#resultVideo').hidden = false;
+      const wrap = $('#rvWrap');
+      wrap.innerHTML = `<div class="rv-placeholder" style="display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:12px;flex-direction:column;gap:10px"><span class="spin"></span>영상 생성 중…</div>`;
+      btn.textContent = '🎬 영상 생성 중…';
+      const vprompt = $('#videoPrompt').value.trim() || videoPromptFor(state.productType);
+      try {
+        const out = await StudioAPI.grokVideo(vprompt, state.products, { duration: 10, aspect: '9:16', modelImage: modelImg, model: modelMeta });
+        const ext = out.mime && out.mime.includes('webm') ? 'webm' : 'mp4';
+        wrap.innerHTML = `<video src="${out.url}" controls autoplay muted loop playsinline></video>
+          <div class="rv-dl"><a class="dlbtn" id="vdl">⬇ 영상 저장 (.${ext})</a>
+          ${out.demo ? '<div class="tiny" style="margin-top:6px">DEMO 영상입니다. 실제 영상 API 연결 시 실사가 생성됩니다.</div>' : ''}</div>`;
+        $('#vdl').onclick = () => download(out.url, `비주얼메이커_영상.${ext}`);
+      } catch (err) {
+        wrap.innerHTML = `<div class="rv-placeholder" style="display:flex;align-items:center;justify-content:center;color:var(--red);font-size:12px;padding:16px;text-align:center">영상 생성 실패<br>${escapeHtml(err.message)}</div>`;
+      }
+    } else { $('#resultVideo').hidden = true; }
 
-  $('#results').hidden = false;
-  $('#resultVideo').hidden = false;
-  $('#results').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  const wrap = $('#rvWrap');
-  wrap.innerHTML = `<div class="rv-placeholder" style="display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:12px;flex-direction:column;gap:10px"><span class="spin"></span>영상 생성 중…</div>`;
-
-  const lbl = btn.textContent; btn.disabled = true; btn.textContent = '🎬 영상 생성 중…';
-  const vprompt = $('#videoPrompt').value.trim() || videoPromptFor(state.productType);
-  try {
-    const out = await StudioAPI.grokVideo(vprompt, state.products, { duration: 10, aspect: '9:16', modelImage: modelImg, model: modelMeta });
-    const ext = out.mime && out.mime.includes('webm') ? 'webm' : 'mp4';
-    wrap.innerHTML = `<video src="${out.url}" controls autoplay muted loop playsinline></video>
-      <div class="rv-dl"><a class="dlbtn" id="vdl">⬇ 영상 저장 (.${ext})</a>
-      ${out.demo ? '<div class="tiny" style="margin-top:6px">DEMO 영상입니다. 실제 영상 API 연결 시 실사가 생성됩니다.</div>' : ''}</div>`;
-    $('#vdl').onclick = () => download(out.url, `비주얼메이커_영상.${ext}`);
-    toast('영상 완료 🎉');
-  } catch (err) {
-    wrap.innerHTML = `<div class="rv-placeholder" style="display:flex;align-items:center;justify-content:center;color:var(--red);font-size:12px;padding:16px;text-align:center">영상 생성 실패<br>${escapeHtml(err.message)}</div>`;
+    toast('완료되었습니다 🎉');
   } finally { btn.disabled = false; btn.textContent = lbl; }
 }
 
@@ -719,8 +722,7 @@ async function init() {
   $('#btnAdmin').onclick = openAdmin;
   $('#btnAddModelInline').onclick = openAdmin;
   $('#btnSettings').onclick = openSettings;
-  $('#btnGenPhotos').onclick = generatePhotos;
-  $('#btnGenVideo').onclick = generateVideoOnly;
+  $('#btnGenerate').onclick = generate;
   $('#btnResetPrompt').onclick = () => { $('#videoPrompt').value = videoPromptFor(state.productType); toast('기본 프롬프트로 되돌렸어요'); };
   $('#btnClearResults').onclick = () => { $('#results').hidden = true; };
 
