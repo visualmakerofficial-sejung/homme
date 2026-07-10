@@ -302,11 +302,36 @@ body {
   font-size: 10.5px; color: var(--ink2); padding: 7px 9px;
   display: flex; justify-content: space-between; align-items: center; gap: 6px;
 }
-.pg-dl { color: var(--accent2); font-weight: 700; text-decoration: none; font-size: 11px; }
+.pg-acts { display: flex; align-items: center; gap: 8px; flex: none; }
+.pg-dl { color: var(--accent2); font-weight: 700; text-decoration: none; font-size: 11px; white-space: nowrap; }
+.pg-edit {
+  font-family: inherit; font-size: 11px; font-weight: 700; color: var(--ink2);
+  background: var(--panel); border: 1px solid var(--line2); border-radius: 7px;
+  padding: 3px 8px; cursor: pointer; white-space: nowrap;
+}
+.pg-edit:hover { border-color: var(--accent); color: var(--accent2); }
+.pg-editbox { display: flex; gap: 6px; padding: 0 9px 9px; }
+.pg-editbox[hidden] { display: none; }
+.pg-editin {
+  flex: 1; min-width: 0; background: var(--panel); border: 1px solid var(--line2);
+  color: var(--ink); border-radius: 7px; padding: 6px 8px; font-family: inherit; font-size: 11.5px;
+}
+.pg-editin:focus { outline: none; border-color: var(--accent); }
+.pg-regen {
+  font-family: inherit; font-size: 11px; font-weight: 800; color: #fff; flex: none;
+  background: var(--accent); border: none; border-radius: 7px; padding: 6px 11px; cursor: pointer;
+}
+.pg-regen:hover { filter: brightness(1.05); }
+.pg-retry {
+  font-family: inherit; font-size: 11px; font-weight: 700; color: var(--accent2);
+  background: var(--panel); border: 1px solid var(--line2); border-radius: 7px;
+  padding: 4px 12px; cursor: pointer;
+}
 .pg-loading {
   aspect-ratio: 3/4; display: flex; align-items: center; justify-content: center;
   color: var(--ink3); font-size: 12px;
 }
+.photo-gallery.ar916 .pg-item img, .photo-gallery.ar916 .pg-loading { aspect-ratio: 9/16; }
 
 /* 다운로드 버튼 공용 */
 .dlbtn {

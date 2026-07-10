@@ -86,24 +86,46 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 /* ============================================================
    사진 — 제미나이
    ============================================================ */
-async function generatePhoto({ prompt, modelImage, productImages }) {
+// 이미지 생성 모델 후보 (구모델 404 대비 폴백)
+const IMAGE_MODELS = [CFG.geminiModel, 'gemini-2.5-flash-image', 'gemini-2.5-flash-image-preview', 'gemini-2.0-flash-preview-image-generation']
+  .filter((v, i, a) => v && a.indexOf(v) === i);
+
+async function generatePhoto({ prompt, modelImage, productImages, aspect }) {
   if (!CFG.geminiKey) { const e = new Error('GEMINI_API_KEY 미설정'); e.status = 400; throw e; }
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(CFG.geminiModel)}:generateContent?key=${encodeURIComponent(CFG.geminiKey)}`;
+  const ar = aspect === '3:4' ? '3:4' : '9:16';
   const parts = [{ text: prompt }];
   if (modelImage) parts.push(...inlineParts([modelImage]));
   parts.push(...inlineParts(productImages));
-
-  const r = await fetch(url, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { responseModalities: ['IMAGE'] } }),
+  const bodyWith = JSON.stringify({
+    contents: [{ role: 'user', parts }],
+    generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: ar } },
   });
-  if (!r.ok) { const t = await r.text().catch(() => ''); const e = new Error(`Gemini ${r.status}: ${t.slice(0, 300)}`); e.status = 502; throw e; }
-  const j = await r.json();
-  const outParts = j?.candidates?.[0]?.content?.parts || [];
-  const found = outParts.find(p => p.inline_data || p.inlineData);
-  const inl = found && (found.inline_data || found.inlineData);
-  if (!inl) { const e = new Error('Gemini: 이미지가 반환되지 않음'); e.status = 502; throw e; }
-  return { image: `data:${inl.mime_type || inl.mimeType || 'image/png'};base64,${inl.data}` };
+  const bodyNo = JSON.stringify({
+    contents: [{ role: 'user', parts }],
+    generationConfig: { responseModalities: ['IMAGE'] },
+  });
+  const hdr = { 'Content-Type': 'application/json' };
+
+  let lastErr = '';
+  for (const model of IMAGE_MODELS) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(CFG.geminiKey)}`;
+    let r = await fetch(url, { method: 'POST', headers: hdr, body: bodyWith });
+    // imageConfig(비율) 미지원 버전이면 옵션 없이 재시도 (비율은 프롬프트로 유도)
+    if (r.status === 400) r = await fetch(url, { method: 'POST', headers: hdr, body: bodyNo });
+    if (!r.ok) {
+      const t = await r.text().catch(() => '');
+      lastErr = `Gemini ${r.status}: ${t.slice(0, 300)}`;
+      if (r.status === 404 || r.status === 400) continue; // 모델 미지원 → 다음 후보
+      const e = new Error(lastErr); e.status = 502; throw e;
+    }
+    const j = await r.json();
+    const outParts = j?.candidates?.[0]?.content?.parts || [];
+    const found = outParts.find(p => p.inline_data || p.inlineData);
+    const inl = found && (found.inline_data || found.inlineData);
+    if (!inl) { const e = new Error('Gemini: 이미지가 반환되지 않음'); e.status = 502; throw e; }
+    return { image: `data:${inl.mime_type || inl.mimeType || 'image/png'};base64,${inl.data}` };
+  }
+  const e = new Error(lastErr || '사용 가능한 이미지 생성 모델 없음'); e.status = 502; throw e;
 }
 
 /* ============================================================
@@ -191,7 +213,7 @@ async function generateVideo({ prompt, modelImage, productImages, images, durati
   if (CFG.geminiKey && products.length) {
     const still = await generatePhoto({
       prompt: `Full-body head-to-toe fashion photograph of the model wearing the uploaded outfit exactly as shown (keep colors, buttons and details faithful). The model fills the vertical ${ar} frame from head to shoes with only a little headroom, slightly low camera angle so the legs look long and elongated, front view, standing naturally. Keep the model's face identical to the reference. Clean seamless studio background, soft fashion lighting, photorealistic, high detail.`,
-      modelImage, productImages: products,
+      modelImage, productImages: products, aspect: ar,
     });
     startImages = [still.image];
   }

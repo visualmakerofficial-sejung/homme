@@ -69,12 +69,16 @@ const StudioAPI = (() => {
      prompt: 연출 프롬프트
      반환: dataURL(생성 이미지)
   ------------------------------------------------ */
+  // 이미지 생성 모델 후보 (구모델 404 대비 폴백)
+  const IMAGE_MODELS = ['gemini-2.5-flash-image', 'gemini-2.5-flash-image-preview', 'gemini-2.0-flash-preview-image-generation'];
+
   async function geminiPhoto(prompt, modelImage, productImages, opts = {}) {
+    const aspect = opts.aspect === '3:4' ? '3:4' : '9:16';
     // 1순위: 백엔드 서버(키를 서버가 보관)
     if (server.available && server.gemini) {
       const r = await fetch('/api/photo', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, modelImage, productImages }),
+        body: JSON.stringify({ prompt, modelImage, productImages, aspect }),
       });
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `서버 ${r.status}`);
       return (await r.json()).image;
@@ -82,30 +86,41 @@ const StudioAPI = (() => {
     const s = getSettings();
     if (!s.geminiKey) return demoPhoto(prompt, modelImage, productImages, opts);
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(s.geminiModel)}:generateContent?key=${encodeURIComponent(s.geminiKey)}`;
     const parts = [{ text: prompt }];
     if (modelImage) parts.push(...partsFromImages([modelImage]));
     parts.push(...partsFromImages(productImages));
-
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts }],
-        generationConfig: { responseModalities: ['IMAGE'] },
-      }),
+    const bodyWith = JSON.stringify({
+      contents: [{ role: 'user', parts }],
+      generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: aspect } },
     });
-    if (!res.ok) {
-      const t = await res.text().catch(() => '');
-      throw new Error(`Gemini ${res.status}: ${t.slice(0, 200)}`);
+    const bodyNo = JSON.stringify({
+      contents: [{ role: 'user', parts }],
+      generationConfig: { responseModalities: ['IMAGE'] },
+    });
+    const hdr = { 'Content-Type': 'application/json' };
+
+    const models = [s.geminiModel, ...IMAGE_MODELS].filter((v, i, a) => v && a.indexOf(v) === i);
+    let lastErr = '';
+    for (const model of models) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(s.geminiKey)}`;
+      let res = await fetch(url, { method: 'POST', headers: hdr, body: bodyWith });
+      // imageConfig(비율) 미지원 버전이면 옵션 없이 재시도 (비율은 프롬프트로 유도)
+      if (res.status === 400) res = await fetch(url, { method: 'POST', headers: hdr, body: bodyNo });
+      if (!res.ok) {
+        const t = await res.text().catch(() => '');
+        lastErr = `Gemini ${res.status}: ${t.slice(0, 160)}`;
+        if (res.status === 404 || res.status === 400) continue; // 모델 미지원 → 다음 후보
+        throw new Error(lastErr);
+      }
+      const json = await res.json();
+      const outParts = json?.candidates?.[0]?.content?.parts || [];
+      const img = outParts.find(p => p.inline_data || p.inlineData);
+      const inline = img && (img.inline_data || img.inlineData);
+      if (!inline) throw new Error('Gemini: 이미지가 반환되지 않았습니다');
+      const mime = inline.mime_type || inline.mimeType || 'image/png';
+      return `data:${mime};base64,${inline.data}`;
     }
-    const json = await res.json();
-    const outParts = json?.candidates?.[0]?.content?.parts || [];
-    const img = outParts.find(p => p.inline_data || p.inlineData);
-    const inline = img && (img.inline_data || img.inlineData);
-    if (!inline) throw new Error('Gemini: 이미지가 반환되지 않았습니다');
-    const mime = inline.mime_type || inline.mimeType || 'image/png';
-    return `data:${mime};base64,${inline.data}`;
+    throw new Error(lastErr || '사용 가능한 이미지 생성 모델을 찾지 못했습니다');
   }
 
   /* ---------- 제품 AI 분석 (브랜드 톤앤매너 + 컬러 팔레트) ---------- */
@@ -506,7 +521,7 @@ const StudioAPI = (() => {
 
   // 데모 사진: 모델이 옷을 입은 연출 컷 PNG (뷰티/제품컷은 별도)
   async function demoPhoto(prompt, modelImage, productImages, opts = {}) {
-    const W = 768, H = 1024;
+    const W = 768, H = opts.aspect === '3:4' ? 1024 : 1365;
     if (opts.beauty || opts.productOnly) {
       let product = null;
       try { if (productImages && productImages[0]) product = await loadImg(productImages[0]); } catch (e) {}

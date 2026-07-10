@@ -39,7 +39,15 @@ let state = {
   concepts: new Set(),     // 선택된 컨셉 pose (뷰티/제품컷 모드)
   palette: ['#e9e7e2', '#c8c1b6', '#9b958c', '#f8f7f4'], // 제품 대표색 (제품컷 배경 톤)
   analysis: null,          // 제품 AI 분석 결과 (브랜드 톤앤매너 + 팔레트)
+  aspect: '9:16',          // 이미지 비율 '9:16' | '3:4'
 };
+
+// 이미지 비율 프롬프트 문구
+function aspectPhrase() {
+  return state.aspect === '3:4'
+    ? 'vertical 3:4 portrait aspect ratio'
+    : 'vertical 9:16 full-frame portrait aspect ratio';
+}
 
 // 제품 이미지에서 대표 컬러 4개 추출 (제품컷 배경 톤 하모니)
 function extractPalette(src) {
@@ -629,7 +637,7 @@ function buildPhotoPrompt(model, angle, userExtra, productType) {
       .split('[WARM_PALETTE]').join(`${warm} and warm tonal variations`)
       .split('[COOL_PALETTE]').join(`${cool} and cool watery tonal variations`);
 
-    const rules = `Composition rules: single finished advertising image, no collage, no split screen, no watermark, no random lettering, no extra products unless the shot explicitly requests a dual product.` +
+    const rules = `Composition rules: single finished advertising image in ${aspectPhrase()}, no collage, no split screen, no watermark, no random lettering, no extra products unless the shot explicitly requests a dual product.` +
       (angle.hand ? ' Render the hand with correct natural anatomy — exactly one hand with five fingers, no extra or malformed hands.' : '');
 
     return [
@@ -659,7 +667,7 @@ function buildPhotoPrompt(model, angle, userExtra, productType) {
       `Shot: ${angle.en}.`,
       noFace ? `Do NOT show any face; keep the product the clear hero of the frame.` : '',
       handSafe,
-      `Clean studio background, soft flattering beauty lighting, realistic advertising photography, high detail, vertical 3:4.`,
+      `Clean studio background, soft flattering beauty lighting, realistic advertising photography, high detail, ${aspectPhrase()}.`,
       extra,
     ].filter(Boolean).join(' ');
   }
@@ -671,7 +679,7 @@ function buildPhotoPrompt(model, angle, userExtra, productType) {
       `Extreme close-up macro shot of the outfit worn on the body: ${angle.en}.`,
       `Focus entirely on the clothing — show fabric weave, buttons, stitching, zipper and logo in sharp detail.`,
       `Do NOT show the model's face or head; crop tightly to the garment so no face is visible.`,
-      `Soft even studio lighting, photorealistic, high detail, vertical 3:4.`,
+      `Soft even studio lighting, photorealistic, high detail, ${aspectPhrase()}.`,
       extra,
     ].filter(Boolean).join(' ');
   }
@@ -682,7 +690,7 @@ function buildPhotoPrompt(model, angle, userExtra, productType) {
     who,
     `Dress the model in the uploaded clothing item exactly as shown (keep colors, print, logo and details faithful).`,
     `Shot: ${angle.en}.`,
-    `Clean studio background, realistic fashion catalog photography, high detail, vertical 3:4.`,
+    `Clean studio background, realistic fashion catalog photography, high detail, ${aspectPhrase()}.`,
     extra,
   ].filter(Boolean).join(' ');
 }
@@ -694,6 +702,50 @@ async function resolveModel() {
   const modelImg = (usesModel && model) ? (await ensureDataUrl(model.photo)) || model.photo || null : null;
   const modelMeta = (usesModel && model) ? { id: model.id, name: model.name, desc: model.desc } : null;
   return { model, modelImg, modelMeta };
+}
+
+// 개별 사진 재생성용 컨텍스트 (마지막 생성 시점의 모델/제품 정보)
+let photoCtx = null;
+
+// 사진 한 장 생성/재생성 → 해당 슬롯만 갱신 (다른 이미지는 유지)
+async function makePhoto(i, angle, editNote) {
+  const slot = $(`#pg-${i}`);
+  if (!slot || !photoCtx) return;
+  slot.innerHTML = `<div class="pg-loading"><span class="spin"></span></div><div class="pg-cap"><span>${escapeHtml(angle.key)}</span></div>`;
+  const extra = [photoCtx.userExtra, editNote].filter(Boolean).join('. ');
+  const prompt = buildPhotoPrompt(photoCtx.model, angle, extra, photoCtx.productType);
+  try {
+    const img = await StudioAPI.geminiPhoto(prompt, photoCtx.modelImg, state.products, {
+      pose: angle.pose, angleLabel: angle.key, model: photoCtx.modelMeta,
+      beauty: photoCtx.productType === 'beauty', productOnly: photoCtx.productType === 'product',
+      aspect: state.aspect,
+    });
+    renderPhotoSlot(slot, img, angle, i);
+  } catch (err) {
+    slot.innerHTML =
+      `<div class="pg-loading" style="color:var(--red);font-size:11px;padding:10px;text-align:center;flex-direction:column;gap:8px">${escapeHtml(angle.key)}<br>실패: ${escapeHtml(err.message)}` +
+      `<button class="pg-retry" type="button">다시 시도</button></div>`;
+    slot.querySelector('.pg-retry').onclick = () => makePhoto(i, angle, editNote);
+  }
+}
+
+// 생성 완료된 슬롯 렌더 (저장 + 이 컷만 수정)
+function renderPhotoSlot(slot, img, angle, i) {
+  slot.innerHTML =
+    `<img src="${img}" alt="${escapeHtml(angle.key)}">` +
+    `<div class="pg-cap"><span>${escapeHtml(angle.key)}</span>` +
+    `<span class="pg-acts"><button class="pg-edit" type="button">✏ 수정</button>` +
+    `<a class="pg-dl" href="#">저장 ↓</a></span></div>` +
+    `<div class="pg-editbox" hidden>` +
+    `<input type="text" class="pg-editin" placeholder="이 컷만 이렇게 바꿔줘 (예: 배경 더 밝게, 각도 살짝 위)">` +
+    `<button class="pg-regen" type="button">재생성</button></div>`;
+  slot.querySelector('.pg-dl').onclick = e => { e.preventDefault(); download(img, `연출_${angle.key}_${i + 1}.png`); };
+  const box = slot.querySelector('.pg-editbox');
+  const input = slot.querySelector('.pg-editin');
+  slot.querySelector('.pg-edit').onclick = () => { box.hidden = !box.hidden; if (!box.hidden) input.focus(); };
+  const run = () => makePhoto(i, angle, input.value.trim());
+  slot.querySelector('.pg-regen').onclick = run;
+  input.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); run(); } };
 }
 
 // 선택한 출력(사진/영상)을 한 번에 생성
@@ -725,27 +777,18 @@ async function generate() {
       } else {
         $('#resultPhotos').hidden = false;
         const userExtra = $('#photoPrompt').value.trim();
+        // 재생성에 필요한 컨텍스트 저장 (개별 수정 시 사용)
+        photoCtx = { model, modelImg, modelMeta, productType: state.productType, userExtra };
         const gal = $('#photoGallery'); gal.innerHTML = '';
         angles.forEach((a, i) => {
           const it = document.createElement('div');
           it.className = 'pg-item'; it.id = `pg-${i}`;
-          it.innerHTML = `<div class="pg-loading"><span class="spin"></span></div><div class="pg-cap"><span>${a.key}</span></div>`;
+          it.innerHTML = `<div class="pg-loading"><span class="spin"></span></div><div class="pg-cap"><span>${escapeHtml(a.key)}</span></div>`;
           gal.appendChild(it);
         });
         btn.textContent = '🖼️ 사진 생성 중…';
         for (let i = 0; i < angles.length; i++) {
-          const a = angles[i];
-          const prompt = buildPhotoPrompt(model, a, userExtra, state.productType);
-          try {
-            const img = await StudioAPI.geminiPhoto(prompt, modelImg, state.products,
-              { pose: a.pose, angleLabel: a.key, model: modelMeta,
-                beauty: state.productType === 'beauty', productOnly: state.productType === 'product' });
-            const slot = $(`#pg-${i}`);
-            slot.innerHTML = `<img src="${img}" alt="${a.key}"><div class="pg-cap"><span>${a.key}</span><a class="pg-dl" href="#">저장 ↓</a></div>`;
-            slot.querySelector('.pg-dl').onclick = e => { e.preventDefault(); download(img, `연출_${a.key}_${i + 1}.png`); };
-          } catch (err) {
-            $(`#pg-${i}`).innerHTML = `<div class="pg-loading" style="color:var(--red);font-size:11px;padding:10px;text-align:center">${a.key}<br>실패: ${escapeHtml(err.message)}</div>`;
-          }
+          await makePhoto(i, angles[i]);
         }
       }
     } else { $('#resultPhotos').hidden = true; }
@@ -758,7 +801,7 @@ async function generate() {
       btn.textContent = '🎬 영상 생성 중…';
       const vprompt = $('#videoPrompt').value.trim() || videoPromptFor(state.productType);
       try {
-        const out = await StudioAPI.grokVideo(vprompt, state.products, { duration: 10, aspect: '9:16', modelImage: modelImg, model: modelMeta });
+        const out = await StudioAPI.grokVideo(vprompt, state.products, { duration: 10, aspect: state.aspect, modelImage: modelImg, model: modelMeta });
         const ext = out.mime && out.mime.includes('webm') ? 'webm' : 'mp4';
         wrap.innerHTML = `<video src="${out.url}" controls autoplay muted loop playsinline></video>
           <div class="rv-dl"><a class="dlbtn" id="vdl">⬇ 영상 저장 (.${ext})</a>
@@ -820,6 +863,7 @@ async function init() {
   state.selectedModelId = state.models[0]?.id || null;
   renderModels();
   renderThumbs();
+  $('#photoGallery')?.classList.toggle('ar916', state.aspect === '9:16');
   $('#videoPrompt').value = videoPromptFor(state.productType);
   setupDropzone();
   setupPaste();
@@ -841,6 +885,12 @@ async function init() {
 
   // 제품 종류 토글 (의류/뷰티/제품컷)
   $$('#ptypeSeg .seg-btn').forEach(b => b.onclick = () => setProductType(b.dataset.pt));
+  // 이미지 비율 토글 (9:16 / 3:4)
+  $$('#aspectSeg .seg-btn').forEach(b => b.onclick = () => {
+    state.aspect = b.dataset.ar;
+    $$('#aspectSeg .seg-btn').forEach(x => x.classList.toggle('on', x.dataset.ar === state.aspect));
+    $('#photoGallery')?.classList.toggle('ar916', state.aspect === '9:16');
+  });
   // 컨셉 전체/해제
   $('#conceptAll').onclick = () => { state.concepts = new Set((ANGLE_SETS[state.productType] || []).map(a => a.pose)); renderConceptChips(); updateGenInfo(); };
   $('#conceptNone').onclick = () => { state.concepts.clear(); renderConceptChips(); updateGenInfo(); };
