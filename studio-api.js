@@ -109,9 +109,13 @@ const StudioAPI = (() => {
   }
 
   /* ---------- 제품 AI 분석 (브랜드 톤앤매너 + 컬러 팔레트) ---------- */
+  const ANALYZE_MODELS = ['gemini-flash-latest', 'gemini-2.0-flash', 'gemini-2.5-flash'];
   const ANALYZE_PROMPT =
-`당신은 뷰티/제품 브랜드 아트디렉터입니다. 업로드된 제품 사진을 자세히 관찰해 브랜드 톤앤매너를 분석하고 JSON 객체 하나로만 답하세요. 설명 문장이나 코드블록 없이 순수 JSON만 출력합니다.
+`당신은 뷰티/제품 브랜드 아트디렉터입니다. 업로드된 제품 사진(앞면·뒷면 등 여러 장일 수 있음)을 자세히 관찰하고 라벨의 글자·성분·용량 표기까지 읽어서, 제품 정보와 브랜드 톤앤매너를 분석해 JSON 객체 하나로만 답하세요. 설명 문장이나 코드블록 없이 순수 JSON만 출력합니다.
 필드:
+- productName: 제품명 (라벨에서 읽은 정확한 브랜드/제품명, 원문 그대로. 불확실하면 가장 가까운 추정)
+- size: 제품 규격 — 용량(ml/g)과 대략적인 크기. 라벨 표기가 있으면 그대로, 없으면 용기 형태로 추정 (예: 30ml · 높이 약 10cm 슬림 병). 손 연출 등에서 크기가 왜곡되지 않도록 최대한 실제 값에 가깝게.
+- features: 제품의 핵심 특장점 2~3가지를 한국어 한두 문장으로 (라벨 문구·성분·효능 기반)
 - productColor: 제품 용기/패키지의 대표 색상 HEX (#RRGGBB)
 - secondaryColor: 제품의 포인트/보조 색상 HEX (#RRGGBB)
 - bottleShape: 용기 모양을 한국어 짧은 구로 (예: 슬림 원통형 스포이드 병)
@@ -136,6 +140,7 @@ const StudioAPI = (() => {
     while (pal.length < 5) pal.push(fb[pal.length % fb.length]);
     pal = pal.slice(0, 5);
     return {
+      productName: str(d.productName), size: str(d.size), features: str(d.features),
       productColor: hex6(d.productColor, pal[1]),
       secondaryColor: hex6(d.secondaryColor, pal[3]),
       bottleShape: str(d.bottleShape), material: str(d.material),
@@ -200,21 +205,27 @@ const StudioAPI = (() => {
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `서버 ${r.status}`);
       return normalizeAnalysis((await r.json()).analysis);
     }
-    // 2순위: 클라이언트 제미나이 키
+    // 2순위: 클라이언트 제미나이 키 (사용 가능한 모델을 순서대로 시도)
     const s = getSettings();
     if (s.geminiKey) {
-      const model = 'gemini-2.5-flash';
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(s.geminiKey)}`;
       const parts = [{ text: ANALYZE_PROMPT }, ...partsFromImages(productImages)];
-      const res = await fetch(url, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { responseMimeType: 'application/json', temperature: 0.4 } }),
-      });
-      if (!res.ok) { const t = await res.text().catch(() => ''); throw new Error(`Gemini ${res.status}: ${t.slice(0, 200)}`); }
-      const j = await res.json();
-      const txt = (j?.candidates?.[0]?.content?.parts || []).map(p => p.text).filter(Boolean).join('');
-      let data; try { data = parseAnalysisText(txt); } catch (e) { throw new Error('분석 결과 해석 실패'); }
-      return normalizeAnalysis(data);
+      const body = JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { responseMimeType: 'application/json', temperature: 0.4 } });
+      let lastErr = '';
+      for (const model of ANALYZE_MODELS) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(s.geminiKey)}`;
+        const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+        if (!res.ok) {
+          const t = await res.text().catch(() => '');
+          lastErr = `Gemini ${res.status}: ${t.slice(0, 160)}`;
+          if (res.status === 404 || res.status === 400) continue; // 모델 미지원 → 다음 후보
+          throw new Error(lastErr);
+        }
+        const j = await res.json();
+        const txt = (j?.candidates?.[0]?.content?.parts || []).map(p => p.text).filter(Boolean).join('');
+        let data; try { data = parseAnalysisText(txt); } catch (e) { throw new Error('분석 결과 해석 실패'); }
+        return normalizeAnalysis(data);
+      }
+      throw new Error(lastErr || '사용 가능한 분석 모델을 찾지 못했습니다');
     }
     // 3순위: 데모(로컬 팔레트 추출)
     return demoAnalyze(productImages);

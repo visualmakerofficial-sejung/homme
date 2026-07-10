@@ -31,7 +31,7 @@ const PORT = process.env.PORT || 5173;
 const CFG = {
   geminiKey:     process.env.GEMINI_API_KEY || '',
   geminiModel:   process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image',
-  geminiTextModel: process.env.GEMINI_TEXT_MODEL || 'gemini-2.5-flash',
+  geminiTextModel: process.env.GEMINI_TEXT_MODEL || 'gemini-flash-latest',
   videoProvider: (process.env.VIDEO_PROVIDER || '').toLowerCase(), // 'kling' | 'xai' | 'gemini_veo'
   xaiKey:        process.env.XAI_API_KEY || '',
   xaiVideoUrl:   process.env.XAI_VIDEO_URL || 'https://api.x.ai/v1/video/generations',
@@ -110,8 +110,11 @@ async function generatePhoto({ prompt, modelImage, productImages }) {
    제품 AI 분석 — 제미나이 (브랜드 톤앤매너 + 컬러 팔레트)
    ============================================================ */
 const ANALYZE_PROMPT =
-`당신은 뷰티/제품 브랜드 아트디렉터입니다. 업로드된 제품 사진을 자세히 관찰해 브랜드 톤앤매너를 분석하고 JSON 객체 하나로만 답하세요. 설명 문장이나 코드블록 없이 순수 JSON만 출력합니다.
+`당신은 뷰티/제품 브랜드 아트디렉터입니다. 업로드된 제품 사진(앞면·뒷면 등 여러 장일 수 있음)을 자세히 관찰하고 라벨의 글자·성분·용량 표기까지 읽어서, 제품 정보와 브랜드 톤앤매너를 분석해 JSON 객체 하나로만 답하세요. 설명 문장이나 코드블록 없이 순수 JSON만 출력합니다.
 필드:
+- productName: 제품명 (라벨에서 읽은 정확한 브랜드/제품명, 원문 그대로. 불확실하면 가장 가까운 추정)
+- size: 제품 규격 — 용량(ml/g)과 대략적인 크기. 라벨 표기가 있으면 그대로, 없으면 용기 형태로 추정 (예: 30ml · 높이 약 10cm 슬림 병). 손 연출 등에서 크기가 왜곡되지 않도록 최대한 실제 값에 가깝게.
+- features: 제품의 핵심 특장점 2~3가지를 한국어 한두 문장으로 (라벨 문구·성분·효능 기반)
 - productColor: 제품 용기/패키지의 대표 색상 HEX (#RRGGBB)
 - secondaryColor: 제품의 포인트/보조 색상 HEX (#RRGGBB)
 - bottleShape: 용기 모양을 한국어 짧은 구로 (예: 슬림 원통형 스포이드 병)
@@ -127,6 +130,7 @@ const ANALYZE_PROMPT =
 const ANALYZE_SCHEMA = {
   type: 'OBJECT',
   properties: {
+    productName: { type: 'STRING' }, size: { type: 'STRING' }, features: { type: 'STRING' },
     productColor: { type: 'STRING' }, secondaryColor: { type: 'STRING' },
     bottleShape: { type: 'STRING' }, material: { type: 'STRING' },
     labelPosition: { type: 'STRING' }, lighting: { type: 'STRING' },
@@ -134,32 +138,44 @@ const ANALYZE_SCHEMA = {
     toneSummary: { type: 'STRING' },
     palette: { type: 'ARRAY', items: { type: 'STRING' } },
   },
-  required: ['productColor', 'secondaryColor', 'bottleShape', 'material', 'labelPosition', 'lighting', 'palette'],
+  required: ['productName', 'size', 'features', 'productColor', 'secondaryColor', 'bottleShape', 'material', 'labelPosition', 'lighting', 'palette'],
 };
+
+// 사용 가능한 텍스트/비전 모델을 순서대로 시도 (구모델 404 대비)
+const ANALYZE_MODELS = [CFG.geminiTextModel, 'gemini-flash-latest', 'gemini-2.0-flash', 'gemini-2.5-flash']
+  .filter((v, i, a) => v && a.indexOf(v) === i);
 
 async function analyzeProduct({ productImages }) {
   if (!CFG.geminiKey) { const e = new Error('GEMINI_API_KEY 미설정'); e.status = 400; throw e; }
   const imgs = inlineParts(productImages);
   if (!imgs.length) { const e = new Error('제품 이미지가 필요합니다'); e.status = 400; throw e; }
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(CFG.geminiTextModel)}:generateContent?key=${encodeURIComponent(CFG.geminiKey)}`;
-  const r = await fetch(url, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ role: 'user', parts: [{ text: ANALYZE_PROMPT }, ...imgs] }],
-      generationConfig: { responseMimeType: 'application/json', responseSchema: ANALYZE_SCHEMA, temperature: 0.4 },
-    }),
+  const payload = JSON.stringify({
+    contents: [{ role: 'user', parts: [{ text: ANALYZE_PROMPT }, ...imgs] }],
+    generationConfig: { responseMimeType: 'application/json', responseSchema: ANALYZE_SCHEMA, temperature: 0.4 },
   });
-  if (!r.ok) { const t = await r.text().catch(() => ''); const e = new Error(`Gemini ${r.status}: ${t.slice(0, 300)}`); e.status = 502; throw e; }
-  const j = await r.json();
-  const txt = (j?.candidates?.[0]?.content?.parts || []).map(p => p.text).filter(Boolean).join('');
-  let data;
-  try { data = JSON.parse(txt); }
-  catch (e) {
-    const s = txt.indexOf('{'), en = txt.lastIndexOf('}');
-    if (s >= 0 && en > s) { try { data = JSON.parse(txt.slice(s, en + 1)); } catch (e2) {} }
+
+  let lastErr = '';
+  for (const model of ANALYZE_MODELS) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(CFG.geminiKey)}`;
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload });
+    if (!r.ok) {
+      const t = await r.text().catch(() => '');
+      lastErr = `Gemini ${r.status}: ${t.slice(0, 200)}`;
+      if (r.status === 404 || r.status === 400) continue; // 모델 미지원 → 다음 후보
+      const e = new Error(lastErr); e.status = 502; throw e;
+    }
+    const j = await r.json();
+    const txt = (j?.candidates?.[0]?.content?.parts || []).map(p => p.text).filter(Boolean).join('');
+    let data;
+    try { data = JSON.parse(txt); }
+    catch (e) {
+      const s = txt.indexOf('{'), en = txt.lastIndexOf('}');
+      if (s >= 0 && en > s) { try { data = JSON.parse(txt.slice(s, en + 1)); } catch (e2) {} }
+    }
+    if (!data) { const e = new Error('분석 결과 해석 실패'); e.status = 502; throw e; }
+    return { analysis: data };
   }
-  if (!data) { const e = new Error('분석 결과 해석 실패'); e.status = 502; throw e; }
-  return { analysis: data };
+  const e = new Error(lastErr || '사용 가능한 분석 모델 없음'); e.status = 502; throw e;
 }
 
 /* ============================================================

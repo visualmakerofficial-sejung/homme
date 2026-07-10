@@ -187,7 +187,7 @@ function selectedModel() { return state.models.find(m => m.id === state.selected
 const PTYPE_UI = {
   clothing: { title: '옷 사진 업로드',        ic: '👕', word: '옷 사진',   sub: '드래그 앤 드롭 · 상의/하의/원피스 등 · JPG·PNG · 최대 15MB', photoT2: '앞·뒤·옆·디테일을 알아서 찾아 구성' },
   beauty:   { title: '뷰티 제품 사진 업로드', ic: '💄', word: '제품 사진', sub: '드래그 앤 드롭 · 스킨케어/메이크업/향수 등 · JPG·PNG · 최대 15MB', photoT2: '들고·바르는·손+제품 등 홍보컷 (컨셉 선택)' },
-  product:  { title: '제품 사진 업로드',      ic: '📦', word: '제품 사진', sub: '드래그 앤 드롭 · 화장품/잡화/음료 등 · JPG·PNG · 최대 15MB', photoT2: '모델 없이 제품만 다양하게 연출 (컨셉 선택)' },
+  product:  { title: '제품 사진 업로드',      ic: '📦', word: '제품 사진', sub: '앞·뒤 사진을 함께 올리면 제품명·용량·특장점까지 분석해요 · JPG·PNG · 최대 15MB', photoT2: '모델 없이 제품만 다양하게 연출 (컨셉 선택)' },
 };
 
 function setProductType(pt) {
@@ -433,20 +433,30 @@ async function runAnalysis() {
 }
 
 function renderAnalysis(a) {
-  const row = (k, v) => `<div class="aa-item"><span class="aa-k">${k}</span><div class="aa-v">${escapeHtml(v || '—')}</div></div>`;
+  const inp = (k, field, wide) => `<label class="aa-f${wide ? ' aa-f-wide' : ''}"><span class="aa-k">${k}</span><input type="text" data-af="${field}" value="${escapeHtml(a[field] || '')}" placeholder="분석값 없음 · 직접 입력"></label>`;
+  const area = (k, field) => `<label class="aa-f aa-f-wide"><span class="aa-k">${k}</span><textarea data-af="${field}" rows="2" placeholder="분석값 없음 · 직접 입력">${escapeHtml(a[field] || '')}</textarea></label>`;
   const colorRow = (k, c) => `<div class="aa-item"><span class="aa-k">${k}</span><div class="aa-color"><i style="background:${escapeHtml(c)}"></i>${escapeHtml((c || '').toUpperCase())}</div></div>`;
   const pal = (a.palette || []).map(c => `<i style="background:${escapeHtml(c)}" title="${escapeHtml(c)}"></i>`).join('');
   const note = a.demo
-    ? '데모 분석 — 제미나이 키를 연결하면 브랜드 톤앤매너를 상세 분석해 반영합니다.'
+    ? '데모 분석 — 제미나이 키를 연결하면 앞·뒤 라벨까지 읽어 제품명·용량·특장점을 상세 분석합니다.'
     : (a.toneSummary || '');
   $('#aiAnalysisBody').innerHTML = `
+    <div class="aa-info">
+      <div class="aa-sec-t">📋 제품 정보 <span>틀린 내용은 직접 고치면 생성에 그대로 반영돼요</span></div>
+      <div class="aa-form">
+        ${inp('제품명', 'productName')}
+        ${inp('제품 사이즈 (용량·크기)', 'size')}
+        ${area('제품 특장점', 'features')}
+      </div>
+    </div>
+    <div class="aa-sec-t">🎨 톤 & 디테일</div>
     <div class="aa-grid">
       ${colorRow('제품 색상', a.productColor)}
       ${colorRow('2차 색상', a.secondaryColor)}
-      ${row('병 모양', a.bottleShape)}
-      ${row('재료', a.material)}
-      ${row('레이블 위치', a.labelPosition)}
-      ${row('조명 연출', a.lighting)}
+      ${inp('병 모양', 'bottleShape')}
+      ${inp('재료', 'material')}
+      ${inp('레이블 위치', 'labelPosition')}
+      ${inp('조명 연출', 'lighting')}
     </div>
     <div class="aa-palette">
       <span class="aa-k">프리미엄 컬러 팔레트</span>
@@ -600,6 +610,9 @@ function buildPhotoPrompt(model, angle, userExtra, productType) {
 
     // 브랜드 톤앤매너 (AI 분석 결과를 프롬프트로 주입 → 톤에 맞는 이미지)
     const brand = an ? [
+      an.productName ? `Product name: ${an.productName}.` : '',
+      an.size ? `Real-world product size: ${an.size}. Keep the product's true physical scale and proportions accurate — when a hand, table or other object appears in frame, size the product realistically against it so it is never enlarged or shrunk.` : '',
+      an.features ? `Key selling points to convey visually: ${an.features}.` : '',
       an.toneSummary ? `Brand tone & manner to follow: ${an.toneSummary}` : '',
       (an.bottleShape || an.material) ? `The real product is a ${an.bottleShape || ''}${an.material ? `, made of ${an.material}` : ''} — reproduce it faithfully.` : '',
       an.labelPosition ? `Label layout: ${an.labelPosition}. Keep the label crisp and readable.` : '',
@@ -834,6 +847,12 @@ async function init() {
 
   // 제품 AI 분석 다시 실행
   const bAnal = $('#btnAnalyze'); if (bAnal) bAnal.onclick = () => { state.analysis = null; runAnalysis(); };
+  // 분석값 수기 수정 → state.analysis 반영 (생성에 그대로 사용)
+  const aBody = $('#aiAnalysisBody');
+  if (aBody) aBody.addEventListener('input', e => {
+    const el = e.target.closest('[data-af]');
+    if (el && state.analysis) state.analysis[el.dataset.af] = el.value;
+  });
 
   // 모델 폼
   $('#modelForm').onsubmit = submitModelForm;
