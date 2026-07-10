@@ -437,14 +437,11 @@ function updateGenInfo() {
   const m = selectedModel();
   const parts = [];
   parts.push(state.productType === 'product' ? '제품컷 (모델 없음)' : (m ? `모델: ${m.name}` : '모델 미선택'));
-  parts.push(`제품 ${state.products.length}장`);
-  const outs = [];
-  if ($('#outVideo').checked) outs.push('영상');
-  if ($('#outPhoto').checked) {
-    const n = CONCEPT_MODES.includes(state.productType) ? state.concepts.size : parseInt($('#photoCount').value, 10);
-    outs.push(`사진 ${n}장`);
-  }
-  parts.push(outs.length ? outs.join(' + ') : '출력 미선택');
+  parts.push(`이미지 ${state.products.length}장`);
+  const n = CONCEPT_MODES.includes(state.productType)
+    ? state.concepts.size
+    : parseInt(($('#photoCount') || {}).value || '6', 10);
+  parts.push(`사진 ${n}컷`);
   $('#genInfo').textContent = parts.join(' · ');
 }
 
@@ -580,106 +577,87 @@ function buildPhotoPrompt(model, angle, userExtra, productType) {
   ].filter(Boolean).join(' ');
 }
 
-async function generate() {
+// 모델 참조 이미지/메타 준비 (사진·영상 공용)
+async function resolveModel() {
   const model = selectedModel();
-  const wantVideo = $('#outVideo').checked;
-  const wantPhoto = $('#outPhoto').checked;
+  const usesModel = state.productType !== 'product';
+  const modelImg = (usesModel && model) ? (await ensureDataUrl(model.photo)) || model.photo || null : null;
+  const modelMeta = (usesModel && model) ? { id: model.id, name: model.name, desc: model.desc } : null;
+  return { model, modelImg, modelMeta };
+}
 
-  if (!state.products.length) { toast('제품 사진을 먼저 올려주세요'); return; }
-  if (!wantVideo && !wantPhoto) { toast('출력(영상/사진)을 하나 이상 선택하세요'); return; }
+// 📷 사진만 생성
+async function generatePhotos() {
+  if (!state.products.length) { toast('사진/제품 이미지를 먼저 올려주세요'); return; }
+  const btn = $('#btnGenPhotos'); if (btn.disabled) return;
 
-  const btn = $('#btnGenerate');
-  btn.disabled = true;
-  const origLabel = btn.textContent;
+  const set = ANGLE_SETS[state.productType] || CLOTHING_ANGLES;
+  let angles;
+  if (CONCEPT_MODES.includes(state.productType)) {
+    angles = set.filter(a => state.concepts.has(a.pose));
+    if (!angles.length) { toast('컨셉을 하나 이상 선택하세요'); return; }
+  } else {
+    angles = set.slice(0, parseInt($('#photoCount').value, 10));
+  }
+  const userExtra = $('#photoPrompt').value.trim();
+  const { model, modelImg, modelMeta } = await resolveModel();
 
   $('#results').hidden = false;
+  $('#resultPhotos').hidden = false;
   $('#results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const gal = $('#photoGallery'); gal.innerHTML = '';
+  angles.forEach((a, i) => {
+    const it = document.createElement('div');
+    it.className = 'pg-item'; it.id = `pg-${i}`;
+    it.innerHTML = `<div class="pg-loading"><span class="spin"></span></div><div class="pg-cap"><span>${a.key}</span></div>`;
+    gal.appendChild(it);
+  });
 
-  // 제품컷 모드는 모델을 쓰지 않음
-  const usesModel = state.productType !== 'product';
-  // 모델 참조 사진을 dataURL로(가능하면). 실패해도 진행.
-  const modelImg = (usesModel && model) ? (await ensureDataUrl(model.photo)) || model.photo || null : null;
-  // 데모 합성용 모델 메타(성별/이름)
-  const modelMeta = (usesModel && model) ? { id: model.id, name: model.name, desc: model.desc } : null;
-
+  const lbl = btn.textContent; btn.disabled = true; btn.textContent = '🖼️ 사진 생성 중…';
   try {
-    /* ----- 사진 (제미나이) ----- */
-    if (wantPhoto) {
-      const set = ANGLE_SETS[state.productType] || CLOTHING_ANGLES;
-      let angles;
-      if (CONCEPT_MODES.includes(state.productType)) {
-        angles = set.filter(a => state.concepts.has(a.pose));
-        if (!angles.length) { toast('컨셉을 하나 이상 선택하세요'); btn.disabled = false; btn.textContent = origLabel; return; }
-      } else {
-        const count = parseInt($('#photoCount').value, 10);
-        angles = set.slice(0, count);
-      }
-      const userExtra = $('#photoPrompt').value.trim();
-      const rv = $('#resultPhotos'); rv.hidden = false;
-      const gal = $('#photoGallery'); gal.innerHTML = '';
-
-      // 로딩 슬롯
-      angles.forEach((a, i) => {
-        const it = document.createElement('div');
-        it.className = 'pg-item'; it.id = `pg-${i}`;
-        it.innerHTML = `<div class="pg-loading"><span class="spin"></span></div><div class="pg-cap"><span>${a.key}</span></div>`;
-        gal.appendChild(it);
-      });
-
-      btn.textContent = '🖼️ 사진 생성 중…';
-      for (let i = 0; i < angles.length; i++) {
-        const a = angles[i];
-        const prompt = buildPhotoPrompt(model, a, userExtra, state.productType);
-        try {
-          const img = await StudioAPI.geminiPhoto(prompt, modelImg, state.products,
-            { pose: a.pose, angleLabel: a.key, model: modelMeta,
-              beauty: state.productType === 'beauty', productOnly: state.productType === 'product' });
-          const slot = $(`#pg-${i}`);
-          slot.innerHTML = `
-            <img src="${img}" alt="${a.key}">
-            <div class="pg-cap"><span>${a.key}</span>
-              <a class="pg-dl" href="#" data-src="${'x'}">저장 ↓</a></div>`;
-          const dl = slot.querySelector('.pg-dl');
-          dl.onclick = e => { e.preventDefault(); download(img, `연출_${a.key}_${i + 1}.png`); };
-        } catch (err) {
-          $(`#pg-${i}`).innerHTML =
-            `<div class="pg-loading" style="color:var(--red);font-size:11px;padding:10px;text-align:center">${a.key}<br>실패: ${escapeHtml(err.message)}</div>`;
-        }
-      }
-    } else {
-      $('#resultPhotos').hidden = true;
-    }
-
-    /* ----- 영상 (그록) ----- */
-    if (wantVideo) {
-      const rv = $('#resultVideo'); rv.hidden = false;
-      const wrap = $('#rvWrap');
-      wrap.innerHTML = `<div class="rv-placeholder" style="display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:12px;flex-direction:column;gap:10px"><span class="spin"></span>영상 생성 중…</div>`;
-      btn.textContent = '🎬 영상 생성 중…';
-
-      const vprompt = $('#videoPrompt').value.trim() || videoPromptFor(state.productType);
+    for (let i = 0; i < angles.length; i++) {
+      const a = angles[i];
+      const prompt = buildPhotoPrompt(model, a, userExtra, state.productType);
       try {
-        const out = await StudioAPI.grokVideo(vprompt, state.products, {
-          duration: 10, aspect: '9:16', modelImage: modelImg, model: modelMeta,
-        });
-        const ext = out.mime && out.mime.includes('webm') ? 'webm' : 'mp4';
-        wrap.innerHTML = `
-          <video src="${out.url}" controls autoplay muted loop playsinline></video>
-          <div class="rv-dl"><a class="dlbtn" id="vdl">⬇ 영상 저장 (.${ext})</a>
-            ${out.demo ? '<div class="tiny" style="margin-top:6px">DEMO 영상입니다. 그록 키를 넣으면 실제 mp4가 생성됩니다.</div>' : ''}</div>`;
-        $('#vdl').onclick = () => download(out.url, `스튜디오_영상.${ext}`);
+        const img = await StudioAPI.geminiPhoto(prompt, modelImg, state.products,
+          { pose: a.pose, angleLabel: a.key, model: modelMeta,
+            beauty: state.productType === 'beauty', productOnly: state.productType === 'product' });
+        const slot = $(`#pg-${i}`);
+        slot.innerHTML = `<img src="${img}" alt="${a.key}"><div class="pg-cap"><span>${a.key}</span><a class="pg-dl" href="#">저장 ↓</a></div>`;
+        slot.querySelector('.pg-dl').onclick = e => { e.preventDefault(); download(img, `연출_${a.key}_${i + 1}.png`); };
       } catch (err) {
-        wrap.innerHTML = `<div class="rv-placeholder" style="display:flex;align-items:center;justify-content:center;color:var(--red);font-size:12px;padding:16px;text-align:center">영상 생성 실패<br>${escapeHtml(err.message)}</div>`;
+        $(`#pg-${i}`).innerHTML = `<div class="pg-loading" style="color:var(--red);font-size:11px;padding:10px;text-align:center">${a.key}<br>실패: ${escapeHtml(err.message)}</div>`;
       }
-    } else {
-      $('#resultVideo').hidden = true;
     }
+    toast('사진 완료 🎉');
+  } finally { btn.disabled = false; btn.textContent = lbl; }
+}
 
-    toast('완료되었습니다 🎉');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = origLabel;
-  }
+// 📼 영상만 생성
+async function generateVideoOnly() {
+  if (!state.products.length) { toast('사진/제품 이미지를 먼저 올려주세요'); return; }
+  const btn = $('#btnGenVideo'); if (btn.disabled) return;
+  const { modelImg, modelMeta } = await resolveModel();
+
+  $('#results').hidden = false;
+  $('#resultVideo').hidden = false;
+  $('#results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const wrap = $('#rvWrap');
+  wrap.innerHTML = `<div class="rv-placeholder" style="display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:12px;flex-direction:column;gap:10px"><span class="spin"></span>영상 생성 중…</div>`;
+
+  const lbl = btn.textContent; btn.disabled = true; btn.textContent = '🎬 영상 생성 중…';
+  const vprompt = $('#videoPrompt').value.trim() || videoPromptFor(state.productType);
+  try {
+    const out = await StudioAPI.grokVideo(vprompt, state.products, { duration: 10, aspect: '9:16', modelImage: modelImg, model: modelMeta });
+    const ext = out.mime && out.mime.includes('webm') ? 'webm' : 'mp4';
+    wrap.innerHTML = `<video src="${out.url}" controls autoplay muted loop playsinline></video>
+      <div class="rv-dl"><a class="dlbtn" id="vdl">⬇ 영상 저장 (.${ext})</a>
+      ${out.demo ? '<div class="tiny" style="margin-top:6px">DEMO 영상입니다. 실제 영상 API 연결 시 실사가 생성됩니다.</div>' : ''}</div>`;
+    $('#vdl').onclick = () => download(out.url, `비주얼메이커_영상.${ext}`);
+    toast('영상 완료 🎉');
+  } catch (err) {
+    wrap.innerHTML = `<div class="rv-placeholder" style="display:flex;align-items:center;justify-content:center;color:var(--red);font-size:12px;padding:16px;text-align:center">영상 생성 실패<br>${escapeHtml(err.message)}</div>`;
+  } finally { btn.disabled = false; btn.textContent = lbl; }
 }
 
 /* ============================================================
@@ -741,12 +719,13 @@ async function init() {
   $('#btnAdmin').onclick = openAdmin;
   $('#btnAddModelInline').onclick = openAdmin;
   $('#btnSettings').onclick = openSettings;
-  $('#btnGenerate').onclick = generate;
+  $('#btnGenPhotos').onclick = generatePhotos;
+  $('#btnGenVideo').onclick = generateVideoOnly;
   $('#btnResetPrompt').onclick = () => { $('#videoPrompt').value = videoPromptFor(state.productType); toast('기본 프롬프트로 되돌렸어요'); };
   $('#btnClearResults').onclick = () => { $('#results').hidden = true; };
 
-  // 출력 옵션 변경 → 정보 갱신
-  ['outVideo', 'outPhoto', 'photoCount'].forEach(id => $('#' + id).addEventListener('change', updateGenInfo));
+  // 장수 변경 → 정보 갱신
+  $('#photoCount').addEventListener('change', updateGenInfo);
 
   // 제품 종류 토글 (의류/뷰티/제품컷)
   $$('#ptypeSeg .seg-btn').forEach(b => b.onclick = () => setProductType(b.dataset.pt));

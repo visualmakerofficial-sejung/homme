@@ -66,13 +66,7 @@
       <button class="link-btn" id="btnResetPrompt">기본값으로</button>
     </div>
     <textarea class="prompt-area" id="videoPrompt" rows="9"></textarea>
-    <p class="step-note">그록에 전달할 영상 연출 안내입니다. 그대로 두거나 수정하세요.</p>
-
-    <details class="adv">
-      <summary>사진 연출 프롬프트 (선택 · 제미나이)</summary>
-      <textarea class="prompt-area" id="photoPrompt" rows="3"></textarea>
-      <p class="step-note">비워두면 앞·뒤·옆·디테일을 자동으로 연출합니다.</p>
-    </details>
+    <p class="step-note">영상 생성에 전달할 연출 안내입니다. 그대로 두거나 수정하세요.</p>
   </section>
 
   <!-- ============ 4. 출력 선택 ============ -->
@@ -81,17 +75,15 @@
       <div class="step-t"><span class="step-n">4</span><span class="step-dot">·</span> 출력 선택</div>
     </div>
     <div class="out-grid">
-      <label class="out-card" data-out="video">
-        <input type="checkbox" id="outVideo" checked>
+      <div class="out-card" data-out="video">
         <div class="out-ic">🎬</div>
         <div class="out-tx">
           <div class="out-t1">세로형 영상 10초</div>
           <div class="out-t2">한 바퀴 회전 · 로고·단추·디테일 클로즈업 · 퇴장 · MP4</div>
           <div class="out-eng">그록(Grok)</div>
         </div>
-      </label>
-      <label class="out-card" data-out="photo">
-        <input type="checkbox" id="outPhoto" checked>
+      </div>
+      <div class="out-card" data-out="photo">
         <div class="out-ic">🖼️</div>
         <div class="out-tx">
           <div class="out-t1">연출 사진</div>
@@ -105,7 +97,7 @@
             <option value="6" selected>6장</option>
           </select>
         </div>
-      </label>
+      </div>
     </div>
 
     <!-- 컨셉 선택 (뷰티/제품컷 전용) -->
@@ -143,11 +135,19 @@
         </select>
       </label>
     </div>
+
+    <!-- 사진 추가·수정 요청 (자동 프롬프트에 덧붙임) -->
+    <div class="extra-block">
+      <div class="extra-label">✏️ 사진 추가·수정 요청 <span>자동 프롬프트에 덧붙여 반영돼요 · 비워둬도 됩니다</span></div>
+      <textarea class="prompt-area" id="photoPrompt" rows="2" placeholder="예: 물방울은 적게, 라벨 완전 선명하게, 배경 더 밝게, 손톱은 짧고 깔끔하게, 그림자 부드럽게"></textarea>
+      <p class="step-note">수정 내용을 입력하고 아래 <b>사진 만들기</b>를 다시 누르면 반영해서 새로 생성합니다.</p>
+    </div>
   </section>
 
   <!-- ============ 생성 버튼 ============ -->
   <div class="gen-bar">
-    <button class="gen-btn" id="btnGenerate">📼 영상 만들기</button>
+    <button class="gen-btn" id="btnGenPhotos">📷 사진 만들기</button>
+    <button class="gen-btn ghost" id="btnGenVideo">📼 영상 만들기</button>
     <span class="gen-info" id="genInfo"></span>
   </div>
 
