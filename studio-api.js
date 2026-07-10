@@ -108,6 +108,118 @@ const StudioAPI = (() => {
     return `data:${mime};base64,${inline.data}`;
   }
 
+  /* ---------- 제품 AI 분석 (브랜드 톤앤매너 + 컬러 팔레트) ---------- */
+  const ANALYZE_PROMPT =
+`당신은 뷰티/제품 브랜드 아트디렉터입니다. 업로드된 제품 사진을 자세히 관찰해 브랜드 톤앤매너를 분석하고 JSON 객체 하나로만 답하세요. 설명 문장이나 코드블록 없이 순수 JSON만 출력합니다.
+필드:
+- productColor: 제품 용기/패키지의 대표 색상 HEX (#RRGGBB)
+- secondaryColor: 제품의 포인트/보조 색상 HEX (#RRGGBB)
+- bottleShape: 용기 모양을 한국어 짧은 구로 (예: 슬림 원통형 스포이드 병)
+- material: 재질을 한국어로 (예: 서리가 낀 유리 또는 투명 유리)
+- labelPosition: 라벨 위치·구성 한국어로 (예: 앞 중앙 라벨, 세로 텍스트 블록)
+- lighting: 이 제품에 가장 어울리는 조명 연출 제안 한국어 한 문장
+- category: 제품 종류 한국어 (예: 세럼 / 앰플)
+- texture: 예상 제형 한국어 (예: 투명하고 묽은 워터리 제형)
+- mood: 브랜드 무드 한국어 (예: 미니멀 프리미엄)
+- toneSummary: 브랜드 톤앤매너를 한 문장으로 요약 (한국어)
+- palette: 제품 톤과 어울리는 프리미엄 배경 컬러 팔레트 HEX 5개 배열`;
+
+  function str(v) { return (typeof v === 'string' && v.trim()) ? v.trim() : ''; }
+  function hex6(v, fb) {
+    if (typeof v === 'string') { const m = /#?([0-9a-fA-F]{6})/.exec(v); if (m) return '#' + m[1].toLowerCase(); }
+    return fb;
+  }
+  function normalizeAnalysis(d) {
+    d = d || {};
+    const fb = ['#efe7e0', '#e3d5cb', '#cbb8ab', '#9c8f83', '#6f655c'];
+    let pal = Array.isArray(d.palette) ? d.palette.map(c => hex6(c, null)).filter(Boolean) : [];
+    while (pal.length < 5) pal.push(fb[pal.length % fb.length]);
+    pal = pal.slice(0, 5);
+    return {
+      productColor: hex6(d.productColor, pal[1]),
+      secondaryColor: hex6(d.secondaryColor, pal[3]),
+      bottleShape: str(d.bottleShape), material: str(d.material),
+      labelPosition: str(d.labelPosition), lighting: str(d.lighting),
+      category: str(d.category), texture: str(d.texture), mood: str(d.mood),
+      toneSummary: str(d.toneSummary), palette: pal, demo: !!d.demo,
+    };
+  }
+
+  // 이미지에서 대표 컬러 n개 추출 (데모/폴백용)
+  function paletteFromImg(img, n) {
+    try {
+      const c = document.createElement('canvas'), x = c.getContext('2d');
+      c.width = 80; c.height = 80; x.drawImage(img, 0, 0, 80, 80);
+      const d = x.getImageData(0, 0, 80, 80).data, bins = {};
+      for (let i = 0; i < d.length; i += 16) {
+        if (d[i + 3] < 180) continue;
+        const r = Math.round(d[i] / 24) * 24, g = Math.round(d[i + 1] / 24) * 24, b = Math.round(d[i + 2] / 24) * 24;
+        if (Math.min(r, g, b) > 245) continue;
+        const k = r + ',' + g + ',' + b; bins[k] = (bins[k] || 0) + 1;
+      }
+      let cols = Object.entries(bins).sort((a, b) => b[1] - a[1]).slice(0, n).map(([k]) => {
+        const [r, g, b] = k.split(',').map(Number);
+        return '#' + [r, g, b].map(v => Math.min(255, v).toString(16).padStart(2, '0')).join('');
+      });
+      const fb = ['#efe7e0', '#e3d5cb', '#cbb8ab', '#9c8f83', '#6f655c'];
+      while (cols.length < n) cols.push(fb[cols.length % fb.length]);
+      return cols.slice(0, n);
+    } catch (e) { return ['#efe7e0', '#e3d5cb', '#cbb8ab', '#9c8f83', '#6f655c'].slice(0, n); }
+  }
+
+  async function demoAnalyze(productImages) {
+    let pal = ['#efe7e0', '#e3d5cb', '#cbb8ab', '#9c8f83', '#6f655c'];
+    try { const img = await loadImg(productImages[0]); pal = paletteFromImg(img, 5); } catch (e) {}
+    return normalizeAnalysis({
+      demo: true,
+      productColor: pal[1], secondaryColor: pal[3],
+      bottleShape: '', material: '', labelPosition: '',
+      lighting: '제품 톤에 맞춘 소프트 스튜디오 조명',
+      toneSummary: '제품 이미지에서 추출한 컬러 팔레트로 배경 톤을 맞춥니다.',
+      palette: pal,
+    });
+  }
+
+  function parseAnalysisText(txt) {
+    let t = (txt || '').trim();
+    // ```json ... ``` 감싸기 제거
+    const fence = /```(?:json)?\s*([\s\S]*?)```/.exec(t);
+    if (fence) t = fence[1].trim();
+    else { const s = t.indexOf('{'), e = t.lastIndexOf('}'); if (s >= 0 && e > s) t = t.slice(s, e + 1); }
+    return JSON.parse(t);
+  }
+
+  async function analyzeProduct(productImages) {
+    if (!productImages || !productImages.length) throw new Error('제품 이미지가 필요합니다');
+    // 1순위: 백엔드 서버
+    if (server.available && server.gemini) {
+      const r = await fetch('/api/analyze', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productImages }),
+      });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `서버 ${r.status}`);
+      return normalizeAnalysis((await r.json()).analysis);
+    }
+    // 2순위: 클라이언트 제미나이 키
+    const s = getSettings();
+    if (s.geminiKey) {
+      const model = 'gemini-2.5-flash';
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(s.geminiKey)}`;
+      const parts = [{ text: ANALYZE_PROMPT }, ...partsFromImages(productImages)];
+      const res = await fetch(url, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { responseMimeType: 'application/json', temperature: 0.4 } }),
+      });
+      if (!res.ok) { const t = await res.text().catch(() => ''); throw new Error(`Gemini ${res.status}: ${t.slice(0, 200)}`); }
+      const j = await res.json();
+      const txt = (j?.candidates?.[0]?.content?.parts || []).map(p => p.text).filter(Boolean).join('');
+      let data; try { data = parseAnalysisText(txt); } catch (e) { throw new Error('분석 결과 해석 실패'); }
+      return normalizeAnalysis(data);
+    }
+    // 3순위: 데모(로컬 팔레트 추출)
+    return demoAnalyze(productImages);
+  }
+
   /* ---------- 그록: 영상 생성 ----------
      반환: { url } (재생/다운로드 가능한 mp4 URL)
      엔드포인트/응답 스키마는 제공사에 맞춰 조정하세요.
@@ -511,7 +623,7 @@ const StudioAPI = (() => {
 
   return {
     getSettings, saveSettings, hasGemini, hasGrok,
-    geminiPhoto, grokVideo,
+    geminiPhoto, grokVideo, analyzeProduct,
     init, getServer,
   };
 })();

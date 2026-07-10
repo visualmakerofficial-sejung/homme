@@ -38,6 +38,7 @@ let state = {
   productType: 'clothing', // 'clothing' | 'beauty' | 'product'
   concepts: new Set(),     // 선택된 컨셉 pose (뷰티/제품컷 모드)
   palette: ['#e9e7e2', '#c8c1b6', '#9b958c', '#f8f7f4'], // 제품 대표색 (제품컷 배경 톤)
+  analysis: null,          // 제품 AI 분석 결과 (브랜드 톤앤매너 + 팔레트)
 };
 
 // 제품 이미지에서 대표 컬러 4개 추출 (제품컷 배경 톤 하모니)
@@ -219,6 +220,17 @@ function setProductType(pt) {
   const po = document.getElementById('prodOpts');
   if (po) po.hidden = pt !== 'product';
 
+  // 제품컷 AI 분석 패널
+  const aa = document.getElementById('aiAnalysis');
+  if (aa) {
+    if (pt === 'product' && (state.products.length || state.analysis)) {
+      aa.hidden = false;
+      if (state.products.length && !state.analysis) runAnalysis();
+    } else {
+      aa.hidden = true;
+    }
+  }
+
   // 모델 스텝 힌트 (제품컷은 모델 미사용)
   const mh = document.getElementById('modelHint');
   if (mh) mh.textContent = pt === 'product' ? '제품컷은 모델 없이 제품만 연출됩니다 (모델 선택 무시)' : '';
@@ -375,7 +387,11 @@ function addProduct(dataUrl) {
   state.products.push(dataUrl);
   renderThumbs(); updateGenInfo();
   // 첫 제품에서 대표색 추출 (제품컷 배경 톤에 사용)
-  if (state.products.length === 1) extractPalette(dataUrl).then(p => { state.palette = p; });
+  if (state.products.length === 1) {
+    extractPalette(dataUrl).then(p => { state.palette = p; });
+    // 제품컷 모드면 업로드 즉시 AI 분석 (브랜드 톤앤매너 + 컬러 팔레트)
+    if (state.productType === 'product') runAnalysis();
+  }
 }
 function renderThumbs() {
   const wrap = $('#thumbs');
@@ -384,9 +400,75 @@ function renderThumbs() {
     const t = document.createElement('div');
     t.className = 'thumb';
     t.innerHTML = `<img src="${src}"><button class="rm" title="제거">×</button>`;
-    t.querySelector('.rm').onclick = () => { state.products.splice(i, 1); renderThumbs(); updateGenInfo(); };
+    t.querySelector('.rm').onclick = () => {
+      state.products.splice(i, 1);
+      if (!state.products.length) { state.analysis = null; const aa = $('#aiAnalysis'); if (aa) aa.hidden = true; }
+      renderThumbs(); updateGenInfo();
+    };
     wrap.appendChild(t);
   });
+}
+
+/* ---- 제품 AI 분석 (브랜드 톤앤매너 + 컬러 팔레트 자동 추출) ---- */
+async function runAnalysis() {
+  if (!state.products.length) { toast('먼저 제품 이미지를 올려주세요'); return; }
+  const panel = $('#aiAnalysis'); if (!panel) return;
+  panel.hidden = false;
+  panel.classList.add('loading');
+  const btn = $('#btnAnalyze'); if (btn) btn.disabled = true;
+  $('#aiAnalysisBody').innerHTML = `<div class="aa-loading"><span class="spin"></span>제품 이미지를 분석하는 중…</div>`;
+  try {
+    const a = await StudioAPI.analyzeProduct(state.products);
+    state.analysis = a;
+    if (a.palette && a.palette.length >= 4) state.palette = a.palette.slice(0, 4);
+    applyAnalysisToOpts(a);
+    renderAnalysis(a);
+    updateGenInfo();
+  } catch (e) {
+    $('#aiAnalysisBody').innerHTML = `<div class="aa-err">분석 실패: ${escapeHtml(e.message)}</div>`;
+  } finally {
+    panel.classList.remove('loading');
+    if (btn) btn.disabled = false;
+  }
+}
+
+function renderAnalysis(a) {
+  const row = (k, v) => `<div class="aa-item"><span class="aa-k">${k}</span><div class="aa-v">${escapeHtml(v || '—')}</div></div>`;
+  const colorRow = (k, c) => `<div class="aa-item"><span class="aa-k">${k}</span><div class="aa-color"><i style="background:${escapeHtml(c)}"></i>${escapeHtml((c || '').toUpperCase())}</div></div>`;
+  const pal = (a.palette || []).map(c => `<i style="background:${escapeHtml(c)}" title="${escapeHtml(c)}"></i>`).join('');
+  const note = a.demo
+    ? '데모 분석 — 제미나이 키를 연결하면 브랜드 톤앤매너를 상세 분석해 반영합니다.'
+    : (a.toneSummary || '');
+  $('#aiAnalysisBody').innerHTML = `
+    <div class="aa-grid">
+      ${colorRow('제품 색상', a.productColor)}
+      ${colorRow('2차 색상', a.secondaryColor)}
+      ${row('병 모양', a.bottleShape)}
+      ${row('재료', a.material)}
+      ${row('레이블 위치', a.labelPosition)}
+      ${row('조명 연출', a.lighting)}
+    </div>
+    <div class="aa-palette">
+      <span class="aa-k">프리미엄 컬러 팔레트</span>
+      <div class="aa-swatches">${pal}</div>
+    </div>
+    ${note ? `<div class="aa-note">${escapeHtml(note)}</div>` : ''}`;
+}
+
+// 분석 결과 → 제품컷 옵션 셀렉트 자동 반영 (가장 가까운 항목 선택)
+function applyAnalysisToOpts(a) {
+  matchSelect('#prodCat', a.category);
+  matchSelect('#prodTexture', a.texture);
+  matchSelect('#prodMood', a.mood);
+}
+function matchSelect(sel, val) {
+  if (!val) return;
+  const el = $(sel); if (!el) return;
+  const v = val.replace(/\s/g, '');
+  for (const o of el.options) {
+    const t = o.textContent.replace(/\s/g, '');
+    if (t && (t.includes(v) || v.includes(t))) { el.value = o.value; return; }
+  }
 }
 
 function setupDropzone() {
@@ -503,13 +585,27 @@ function buildPhotoPrompt(model, angle, userExtra, productType) {
   // ===== 제품 단독 화장품 연출컷 (모델 없음) =====
   if (productType === 'product') {
     const gv = id => { const e = document.getElementById(id); return e ? e.value : ''; };
-    const type = gv('prodCat') || '스킨케어 제품';
-    const texture = gv('prodTexture') || '부드러운 크림 제형';
-    const mood = gv('prodMood') || '미니멀 프리미엄';
-    const pal = (state.palette && state.palette.length >= 4) ? state.palette : ['#e9e7e2', '#c8c1b6', '#9b958c', '#f8f7f4'];
-    const [base, light, deep, warm] = pal, cool = pal[0];
+    const an = state.analysis || null;
+    // AI 분석값을 우선 사용하고, 없으면 수동 셀렉트값
+    const type = (an && an.category) || gv('prodCat') || '스킨케어 제품';
+    const texture = (an && an.texture) || gv('prodTexture') || '부드러운 크림 제형';
+    const mood = (an && an.mood) || gv('prodMood') || '미니멀 프리미엄';
+    const dpal = ['#e9e7e2', '#c8c1b6', '#9b958c', '#f8f7f4', '#efe7e0'];
+    const pal = (an && an.palette && an.palette.length >= 5) ? an.palette
+      : (state.palette && state.palette.length >= 4) ? [...state.palette, state.palette[0]]
+        : dpal;
+    const base = pal[0], light = pal[1], deep = pal[2], warm = pal[3], cool = pal[4] || pal[0];
 
     const identity = `CRITICAL PRODUCT IDENTITY LOCK: Use the uploaded product as the only product reference. Preserve its exact bottle/tube/jar shape, proportions, cap or pump structure, label layout, typography, logo, packaging color, transparency, reflections, and material. Do not redesign, simplify, invent, replace, duplicate incorrectly, or add text. The product must look like a real commercial photograph, not a 3D render.`;
+
+    // 브랜드 톤앤매너 (AI 분석 결과를 프롬프트로 주입 → 톤에 맞는 이미지)
+    const brand = an ? [
+      an.toneSummary ? `Brand tone & manner to follow: ${an.toneSummary}` : '',
+      (an.bottleShape || an.material) ? `The real product is a ${an.bottleShape || ''}${an.material ? `, made of ${an.material}` : ''} — reproduce it faithfully.` : '',
+      an.labelPosition ? `Label layout: ${an.labelPosition}. Keep the label crisp and readable.` : '',
+      an.lighting ? `Preferred lighting: ${an.lighting}` : '',
+      (an.productColor || an.secondaryColor) ? `Keep the product's signature colors consistent (primary ${an.productColor || ''}${an.secondaryColor ? `, accent ${an.secondaryColor}` : ''}) and harmonize the whole scene with this palette.` : '',
+    ].filter(Boolean).join(' ') : '';
 
     const shot = (angle.tpl || '')
       .split('[PRODUCT_TYPE]').join(type)
@@ -525,6 +621,7 @@ function buildPhotoPrompt(model, angle, userExtra, productType) {
 
     return [
       identity,
+      brand,
       `Product category: ${type}. Formula/texture: ${texture}. Brand mood: ${mood}.`,
       shot,
       rules,
@@ -734,6 +831,9 @@ async function init() {
   // 컨셉 전체/해제
   $('#conceptAll').onclick = () => { state.concepts = new Set((ANGLE_SETS[state.productType] || []).map(a => a.pose)); renderConceptChips(); updateGenInfo(); };
   $('#conceptNone').onclick = () => { state.concepts.clear(); renderConceptChips(); updateGenInfo(); };
+
+  // 제품 AI 분석 다시 실행
+  const bAnal = $('#btnAnalyze'); if (bAnal) bAnal.onclick = () => { state.analysis = null; runAnalysis(); };
 
   // 모델 폼
   $('#modelForm').onsubmit = submitModelForm;

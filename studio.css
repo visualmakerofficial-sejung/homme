@@ -226,6 +226,30 @@ body {
 .prodopts select:focus { outline: none; border-color: var(--accent); }
 @media (max-width: 720px) { .prodopts { grid-template-columns: 1fr; } }
 
+/* ---- 제품 AI 분석 패널 ---- */
+.ai-analysis {
+  margin-top: 14px; background: var(--panel2); border: 1.5px solid var(--line);
+  border-radius: 14px; padding: 14px 16px 16px; transition: opacity .2s;
+}
+.ai-analysis[hidden] { display: none; }
+.ai-analysis.loading { opacity: .7; }
+.aa-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 13px; }
+.aa-title { font-size: 13.5px; font-weight: 800; color: var(--ink); }
+.aa-title span { display: block; font-size: 11px; font-weight: 500; color: var(--ink3); margin-top: 3px; line-height: 1.4; }
+.aa-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; }
+.aa-item { min-width: 0; }
+.aa-k { display: block; font-size: 10.5px; font-weight: 700; color: var(--ink3); margin-bottom: 4px; letter-spacing: .01em; }
+.aa-v { font-size: 12.5px; color: var(--ink); line-height: 1.5; word-break: keep-all; }
+.aa-color { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.aa-color i { width: 17px; height: 17px; border-radius: 50%; border: 1px solid var(--line2); flex: none; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.aa-palette { margin-top: 15px; padding-top: 13px; border-top: 1px dashed var(--line); }
+.aa-swatches { display: flex; gap: 8px; margin-top: 9px; }
+.aa-swatches i { flex: 1; height: 36px; border-radius: 9px; border: 1px solid var(--line2); }
+.aa-note { margin-top: 13px; font-size: 11.5px; color: var(--ink2); line-height: 1.55; background: var(--accent-soft); border-radius: 9px; padding: 9px 11px; }
+.aa-loading { display: flex; align-items: center; gap: 10px; color: var(--ink3); font-size: 12.5px; padding: 10px 0; }
+.aa-err { color: var(--red); font-size: 12px; padding: 6px 0; }
+@media (max-width: 720px) { .aa-grid { grid-template-columns: 1fr; } }
+
 /* ---- 생성 버튼 ---- */
 .gen-bar { display: flex; align-items: center; gap: 14px; margin: 28px 0 10px; flex-wrap: wrap; }
 .gen-btn {

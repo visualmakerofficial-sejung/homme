@@ -31,6 +31,7 @@ const PORT = process.env.PORT || 5173;
 const CFG = {
   geminiKey:     process.env.GEMINI_API_KEY || '',
   geminiModel:   process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image',
+  geminiTextModel: process.env.GEMINI_TEXT_MODEL || 'gemini-2.5-flash',
   videoProvider: (process.env.VIDEO_PROVIDER || '').toLowerCase(), // 'kling' | 'xai' | 'gemini_veo'
   xaiKey:        process.env.XAI_API_KEY || '',
   xaiVideoUrl:   process.env.XAI_VIDEO_URL || 'https://api.x.ai/v1/video/generations',
@@ -103,6 +104,62 @@ async function generatePhoto({ prompt, modelImage, productImages }) {
   const inl = found && (found.inline_data || found.inlineData);
   if (!inl) { const e = new Error('Gemini: 이미지가 반환되지 않음'); e.status = 502; throw e; }
   return { image: `data:${inl.mime_type || inl.mimeType || 'image/png'};base64,${inl.data}` };
+}
+
+/* ============================================================
+   제품 AI 분석 — 제미나이 (브랜드 톤앤매너 + 컬러 팔레트)
+   ============================================================ */
+const ANALYZE_PROMPT =
+`당신은 뷰티/제품 브랜드 아트디렉터입니다. 업로드된 제품 사진을 자세히 관찰해 브랜드 톤앤매너를 분석하고 JSON 객체 하나로만 답하세요. 설명 문장이나 코드블록 없이 순수 JSON만 출력합니다.
+필드:
+- productColor: 제품 용기/패키지의 대표 색상 HEX (#RRGGBB)
+- secondaryColor: 제품의 포인트/보조 색상 HEX (#RRGGBB)
+- bottleShape: 용기 모양을 한국어 짧은 구로 (예: 슬림 원통형 스포이드 병)
+- material: 재질을 한국어로 (예: 서리가 낀 유리 또는 투명 유리)
+- labelPosition: 라벨 위치·구성 한국어로 (예: 앞 중앙 라벨, 세로 텍스트 블록)
+- lighting: 이 제품에 가장 어울리는 조명 연출 제안 한국어 한 문장
+- category: 제품 종류 한국어 (예: 세럼 / 앰플)
+- texture: 예상 제형 한국어 (예: 투명하고 묽은 워터리 제형)
+- mood: 브랜드 무드 한국어 (예: 미니멀 프리미엄)
+- toneSummary: 브랜드 톤앤매너를 한 문장으로 요약 (한국어)
+- palette: 제품 톤과 어울리는 프리미엄 배경 컬러 팔레트 HEX 5개 배열`;
+
+const ANALYZE_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    productColor: { type: 'STRING' }, secondaryColor: { type: 'STRING' },
+    bottleShape: { type: 'STRING' }, material: { type: 'STRING' },
+    labelPosition: { type: 'STRING' }, lighting: { type: 'STRING' },
+    category: { type: 'STRING' }, texture: { type: 'STRING' }, mood: { type: 'STRING' },
+    toneSummary: { type: 'STRING' },
+    palette: { type: 'ARRAY', items: { type: 'STRING' } },
+  },
+  required: ['productColor', 'secondaryColor', 'bottleShape', 'material', 'labelPosition', 'lighting', 'palette'],
+};
+
+async function analyzeProduct({ productImages }) {
+  if (!CFG.geminiKey) { const e = new Error('GEMINI_API_KEY 미설정'); e.status = 400; throw e; }
+  const imgs = inlineParts(productImages);
+  if (!imgs.length) { const e = new Error('제품 이미지가 필요합니다'); e.status = 400; throw e; }
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(CFG.geminiTextModel)}:generateContent?key=${encodeURIComponent(CFG.geminiKey)}`;
+  const r = await fetch(url, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: ANALYZE_PROMPT }, ...imgs] }],
+      generationConfig: { responseMimeType: 'application/json', responseSchema: ANALYZE_SCHEMA, temperature: 0.4 },
+    }),
+  });
+  if (!r.ok) { const t = await r.text().catch(() => ''); const e = new Error(`Gemini ${r.status}: ${t.slice(0, 300)}`); e.status = 502; throw e; }
+  const j = await r.json();
+  const txt = (j?.candidates?.[0]?.content?.parts || []).map(p => p.text).filter(Boolean).join('');
+  let data;
+  try { data = JSON.parse(txt); }
+  catch (e) {
+    const s = txt.indexOf('{'), en = txt.lastIndexOf('}');
+    if (s >= 0 && en > s) { try { data = JSON.parse(txt.slice(s, en + 1)); } catch (e2) {} }
+  }
+  if (!data) { const e = new Error('분석 결과 해석 실패'); e.status = 502; throw e; }
+  return { analysis: data };
 }
 
 /* ============================================================
@@ -244,6 +301,10 @@ const server = http.createServer(async (req, res) => {
         const body = await readBody(req);
         if (!body.prompt) return sendJson(res, 400, { error: 'prompt 필요' });
         return sendJson(res, 200, await generatePhoto(body));
+      }
+      if (u.pathname === '/api/analyze' && req.method === 'POST') {
+        const body = await readBody(req);
+        return sendJson(res, 200, await analyzeProduct(body));
       }
       if (u.pathname === '/api/video' && req.method === 'POST') {
         const body = await readBody(req);
