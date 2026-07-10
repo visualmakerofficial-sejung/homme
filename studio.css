@@ -207,6 +207,16 @@ body {
 .chip .ck { width: 15px; height: 15px; border-radius: 5px; border: 1.5px solid var(--line2); display: inline-flex; align-items: center; justify-content: center; font-size: 10px; }
 .chip.on .ck { background: var(--accent); border-color: var(--accent); color: #fff; }
 
+/* ---- 제품컷 옵션 ---- */
+.prodopts { margin-top: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.prodopts label { display: flex; flex-direction: column; gap: 5px; font-size: 11.5px; font-weight: 700; color: var(--ink2); }
+.prodopts select {
+  background: var(--panel2); border: 1px solid var(--line2); color: var(--ink);
+  border-radius: 9px; padding: 9px 10px; font-family: inherit; font-size: 12.5px;
+}
+.prodopts select:focus { outline: none; border-color: var(--accent); }
+@media (max-width: 720px) { .prodopts { grid-template-columns: 1fr; } }
+
 /* ---- 생성 버튼 ---- */
 .gen-bar { display: flex; align-items: center; gap: 14px; margin: 28px 0 10px; flex-wrap: wrap; }
 .gen-btn {

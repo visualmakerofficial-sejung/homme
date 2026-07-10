@@ -37,7 +37,36 @@ let state = {
   products: [],            // dataURL[]
   productType: 'clothing', // 'clothing' | 'beauty' | 'product'
   concepts: new Set(),     // 선택된 컨셉 pose (뷰티/제품컷 모드)
+  palette: ['#e9e7e2', '#c8c1b6', '#9b958c', '#f8f7f4'], // 제품 대표색 (제품컷 배경 톤)
 };
+
+// 제품 이미지에서 대표 컬러 4개 추출 (제품컷 배경 톤 하모니)
+function extractPalette(src) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const c = document.createElement('canvas'), x = c.getContext('2d');
+        c.width = 80; c.height = 80; x.drawImage(img, 0, 0, 80, 80);
+        const d = x.getImageData(0, 0, 80, 80).data, bins = {};
+        for (let i = 0; i < d.length; i += 16) {
+          if (d[i + 3] < 180) continue;
+          const r = Math.round(d[i] / 32) * 32, g = Math.round(d[i + 1] / 32) * 32, b = Math.round(d[i + 2] / 32) * 32;
+          if (Math.max(r, g, b) > 245 && Math.min(r, g, b) > 245) continue; // 순백 배경 제외
+          const k = `${r},${g},${b}`; bins[k] = (bins[k] || 0) + 1;
+        }
+        let colors = Object.entries(bins).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k]) => {
+          const [r, g, b] = k.split(',').map(Number);
+          return '#' + [r, g, b].map(v => Math.min(255, v).toString(16).padStart(2, '0')).join('');
+        });
+        if (colors.length < 4) colors = [...colors, '#f1eee8', '#d8d0c4', '#b7ada0', '#ffffff'].slice(0, 4);
+        resolve(colors);
+      } catch (e) { resolve(['#e9e7e2', '#c8c1b6', '#9b958c', '#f8f7f4']); }
+    };
+    img.onerror = () => resolve(['#e9e7e2', '#c8c1b6', '#9b958c', '#f8f7f4']);
+    img.src = src;
+  });
+}
 
 /* ---------- 저장/불러오기 ---------- */
 function loadModels() {
@@ -187,6 +216,8 @@ function setProductType(pt) {
   const cs = document.getElementById('conceptSel');
   if (cw) cw.style.display = conceptMode ? 'none' : '';
   if (cs) cs.hidden = !conceptMode;
+  const po = document.getElementById('prodOpts');
+  if (po) po.hidden = pt !== 'product';
 
   // 모델 스텝 힌트 (제품컷은 모델 미사용)
   const mh = document.getElementById('modelHint');
@@ -340,7 +371,12 @@ function submitModelForm(e) {
 /* ============================================================
    2. 제품 업로드
    ============================================================ */
-function addProduct(dataUrl) { state.products.push(dataUrl); renderThumbs(); updateGenInfo(); }
+function addProduct(dataUrl) {
+  state.products.push(dataUrl);
+  renderThumbs(); updateGenInfo();
+  // 첫 제품에서 대표색 추출 (제품컷 배경 톤에 사용)
+  if (state.products.length === 1) extractPalette(dataUrl).then(p => { state.palette = p; });
+}
 function renderThumbs() {
   const wrap = $('#thumbs');
   wrap.innerHTML = '';
@@ -449,16 +485,16 @@ const BEAUTY_ANGLES = [
   { key: '제품 히어로', pose: 'hero', detail: true, hand: true, en: 'product hero shot held between the fingertips of ONE hand against a clean minimal background, packaging label crisp and centered, e-commerce beauty style' },
 ];
 
-// 제품 단독 연출 (모델 없이 제품만 다양하게)
+// 제품 단독 화장품 연출컷 8종 (모델 없이 제품만) — 상세페이지용
 const PRODUCT_ANGLES = [
-  { key: '단독 스튜디오', pose: 'p_studio',  en: 'clean studio product shot on a seamless light background with a soft natural shadow, product centered, premium e-commerce hero' },
-  { key: '단상 위',       pose: 'p_podium',  en: 'the product placed on a minimalist stone podium / pedestal, soft directional light, editorial mood' },
-  { key: '워터·물방울',   pose: 'p_water',   en: 'the product with fresh water droplets and a subtle splash, cool hydrating fresh mood, glossy highlights' },
-  { key: '자연·원료',     pose: 'p_nature',  en: 'the product styled with natural ingredients, leaves and flowers arranged around it, organic botanical mood' },
-  { key: '플랫레이',      pose: 'p_flatlay', en: 'top-down flat lay of the product with tasteful minimal props on a textured surface' },
-  { key: '그림자 연출',   pose: 'p_shadow',  en: 'the product with dramatic hard light and long shadows on a solid colored background, modern minimal' },
-  { key: '리플렉션',      pose: 'p_reflect', en: 'the product on a glossy reflective surface with a clean mirror reflection, luxury premium look' },
-  { key: '텍스처 매크로', pose: 'p_texture', en: 'macro shot of the product with its texture / formula swatched beside it, glossy detailed close-up' },
+  { key: '히어로 정면', pose: 'c_hero', tpl: `Centered hero product photograph, dead-center composition, product standing upright and fully in frame. Background: [BASE_PALETTE]. Soft premium studio lighting with a gentle shadow beneath the product. Sharp focus on the label. Advertising-grade, e-commerce hero shot.` },
+  { key: '듀얼 제품', pose: 'c_dual', tpl: `Premium cosmetic campaign featuring two identical units of the same product arranged diagonally with natural depth — one product sits slightly in front of the other, creating layering and dimension, the front unit in sharp focus and the rear unit softly receding. Background: [LIGHT_PALETTE]. Luxury beauty lighting, minimal composition, soft shadows, clean editorial styling.` },
+  { key: '손 연출', pose: 'c_hand', hand: true, tpl: `Premium beauty campaign close-up featuring the product naturally interacting with a young woman in her 20s — only her hand and part of her forearm are visible in frame, her face and body must remain completely out of frame. The hand is either gently holding the product or softly resting on it, fingers elegantly posed, skin smooth and well-lit. Shallow depth of field with the product and hand in sharp focus, background: [BASE_PALETTE] softly defocused behind them. Premium studio lighting, refined skincare photography. Keep the product label sharp and clearly readable — never obscured by the fingers.` },
+  { key: '매크로 디테일', pose: 'c_macro', tpl: `Ultra-macro commercial beauty photograph of the exact uploaded cosmetic product, tightly framing its most distinctive packaging details such as the cap, pump, dropper, label printing, glass texture, embossed logo, or material finish. Preserve exact geometry, typography, logo placement, color, and surface material. Crisp micro-texture, controlled specular highlights, shallow depth of field, premium optical sharpness. Background: [LIGHT_PALETTE], minimal and softly blurred.` },
+  { key: '텍스처 스와치', pose: 'c_texture', tpl: `High-end cosmetic texture campaign featuring the exact uploaded product next to a refined, realistic swatch of [TEXTURE]. The texture should look physically accurate, fresh, tactile, and premium, arranged as a graceful smear, droplet, ribbon, or translucent pool appropriate for [PRODUCT_TYPE]. Keep the product upright and fully recognizable, label unobstructed. Background: [WARM_PALETTE]. Clean studio lighting, soft directional shadow, editorial skincare advertisement.` },
+  { key: '워터 프레시', pose: 'c_water', tpl: `Refreshing premium skincare campaign with the exact uploaded product placed in or just above a shallow layer of crystal-clear water. Elegant ripples, small realistic droplets, subtle refraction and caustic light patterns communicate hydration without covering the label. Background and water tint: [COOL_PALETTE]. Bright clean daylight-style studio lighting, crisp product edges, high-end beauty advertising, physically realistic water.` },
+  { key: '성분 콘셉트', pose: 'c_ingredient', tpl: `Conceptual cosmetic ingredient campaign featuring the exact uploaded product with a restrained arrangement of premium ingredient-inspired elements suitable for [PRODUCT_TYPE] and [TEXTURE] — for example clear gel forms, botanical leaves, mineral stones, translucent bubbles, soft cream shapes, or laboratory glass. Use only 2–3 supporting elements, never cluttered. Background: [BASE_PALETTE]. Sophisticated art direction, realistic materials, luxury editorial lighting, label fully visible.` },
+  { key: '플로팅 오브제', pose: 'c_floating', tpl: `Surreal yet photorealistic luxury cosmetic campaign featuring the exact uploaded product floating in a carefully balanced composition with simple geometric podiums, translucent acrylic forms, or soft sculptural objects. Maintain believable shadows and perspective. Product remains the hero, fully readable and not distorted. Background: [DEEP_PALETTE] with tonal harmony derived from the product. Clean premium art direction, elegant negative space, advertising-grade finish.` },
 ];
 
 const ANGLE_SETS = { clothing: CLOTHING_ANGLES, beauty: BEAUTY_ANGLES, product: PRODUCT_ANGLES };
@@ -467,15 +503,36 @@ const CONCEPT_MODES = ['beauty', 'product']; // 컨셉 개별 선택 모드
 function buildPhotoPrompt(model, angle, userExtra, productType) {
   const extra = userExtra ? `Extra direction: ${userExtra}` : '';
 
-  // ===== 제품 단독 (모델 없음) =====
+  // ===== 제품 단독 화장품 연출컷 (모델 없음) =====
   if (productType === 'product') {
+    const gv = id => { const e = document.getElementById(id); return e ? e.value : ''; };
+    const type = gv('prodCat') || '스킨케어 제품';
+    const texture = gv('prodTexture') || '부드러운 크림 제형';
+    const mood = gv('prodMood') || '미니멀 프리미엄';
+    const pal = (state.palette && state.palette.length >= 4) ? state.palette : ['#e9e7e2', '#c8c1b6', '#9b958c', '#f8f7f4'];
+    const [base, light, deep, warm] = pal, cool = pal[0];
+
+    const identity = `CRITICAL PRODUCT IDENTITY LOCK: Use the uploaded product as the only product reference. Preserve its exact bottle/tube/jar shape, proportions, cap or pump structure, label layout, typography, logo, packaging color, transparency, reflections, and material. Do not redesign, simplify, invent, replace, duplicate incorrectly, or add text. The product must look like a real commercial photograph, not a 3D render.`;
+
+    const shot = (angle.tpl || '')
+      .split('[PRODUCT_TYPE]').join(type)
+      .split('[TEXTURE]').join(texture)
+      .split('[BASE_PALETTE]').join(`${base} and tonal variations`)
+      .split('[LIGHT_PALETTE]').join(`${light} and softer pastel variations`)
+      .split('[DEEP_PALETTE]').join(`${deep} and richer tonal variations`)
+      .split('[WARM_PALETTE]').join(`${warm} and warm tonal variations`)
+      .split('[COOL_PALETTE]').join(`${cool} and cool watery tonal variations`);
+
+    const rules = `Composition rules: single finished advertising image, no collage, no split screen, no watermark, no random lettering, no extra products unless the shot explicitly requests a dual product.` +
+      (angle.hand ? ' Render the hand with correct natural anatomy — exactly one hand with five fingers, no extra or malformed hands.' : '');
+
     return [
-      `Professional commercial product photography. Show ONLY the product — no people, no model, no hands, no face.`,
-      `Use the uploaded product exactly as shown — keep its packaging, label text, colors and shape faithful.`,
-      `Concept: ${angle.en}.`,
-      `Sharp focus on the product, tasteful high-end composition, realistic studio lighting, high detail, vertical 3:4.`,
-      extra,
-    ].filter(Boolean).join(' ');
+      identity,
+      `Product category: ${type}. Formula/texture: ${texture}. Brand mood: ${mood}.`,
+      shot,
+      rules,
+      extra ? `Additional request: ${userExtra}` : '',
+    ].filter(Boolean).join('\n');
   }
 
   // ===== 뷰티 제품 =====
