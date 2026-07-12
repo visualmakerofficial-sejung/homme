@@ -171,6 +171,13 @@ function download(url, filename) {
 function renderModels() {
   const grid = $('#modelGrid');
   grid.innerHTML = '';
+  // "모델 없이 · 제품만" 카드 (선택하면 제품 단독 연출)
+  const none = document.createElement('div');
+  none.className = 'model-card none-card' + (state.selectedModelId === NONE_ID ? ' sel' : '');
+  none.innerHTML = `<div class="mc-photo mc-none">🚫</div><div class="mc-name">모델 없이</div><div class="mc-desc">제품만 연출</div>`;
+  none.onclick = () => { state.selectedModelId = NONE_ID; renderModels(); refreshModeUI(); };
+  grid.appendChild(none);
+
   state.models.forEach(m => {
     const el = document.createElement('div');
     el.className = 'model-card' + (m.id === state.selectedModelId ? ' sel' : '');
@@ -178,7 +185,7 @@ function renderModels() {
       <div class="mc-photo">${modelImgTag(m)}</div>
       <div class="mc-name">${escapeHtml(m.name)}${m.nameEn ? ` <span style="color:var(--ink3);font-weight:600">(${escapeHtml(m.nameEn)})</span>` : ''}</div>
       <div class="mc-desc">${escapeHtml(m.desc || '')}</div>`;
-    el.onclick = () => { state.selectedModelId = m.id; renderModels(); updateGenInfo(); };
+    el.onclick = () => { state.selectedModelId = m.id; renderModels(); refreshModeUI(); };
     grid.appendChild(el);
   });
   // 추가 카드
@@ -193,13 +200,15 @@ function selectedModel() { return state.models.find(m => m.id === state.selected
 
 // 의류 / 뷰티 / 제품컷 전환
 const PTYPE_UI = {
-  clothing: { title: '옷 사진 업로드',        ic: '👕', word: '옷 사진',   sub: '드래그 앤 드롭 · 상의/하의/원피스 등 · JPG·PNG · 최대 15MB', photoT2: '앞·뒤·옆·디테일을 알아서 찾아 구성' },
-  beauty:   { title: '뷰티 제품 사진 업로드', ic: '💄', word: '제품 사진', sub: '드래그 앤 드롭 · 스킨케어/메이크업/향수 등 · JPG·PNG · 최대 15MB', photoT2: '들고·바르는·손+제품 등 홍보컷 (컨셉 선택)' },
-  product:  { title: '제품 사진 업로드',      ic: '📦', word: '제품 사진', sub: '앞·뒤 사진을 함께 올리면 제품명·용량·특장점까지 분석해요 · JPG·PNG · 최대 15MB', photoT2: '모델 없이 제품만 다양하게 연출 (컨셉 선택)' },
+  clothing:  { title: '옷 사진 업로드',       ic: '👕', word: '옷 사진',   sub: '앞·뒤·측면·디테일 등 여러 장을 함께 올리면 더 정확해요 · JPG·PNG · 최대 15MB' },
+  beauty:    { title: '화장품 사진 업로드',   ic: '💄', word: '제품 사진', sub: '앞·뒤 사진을 함께 올리면 제품명·용량·특장점까지 분석해요 · JPG·PNG · 최대 15MB' },
+  bag:       { title: '가방 사진 업로드',     ic: '👜', word: '가방 사진', sub: '앞·뒤·측면·디테일 여러 장을 올리면 형태를 정확히 인식해요 · JPG·PNG · 최대 15MB' },
+  accessory: { title: '악세사리 사진 업로드', ic: '💍', word: '제품 사진', sub: '여러 각도 사진을 올리면 형태를 정확히 인식해요 · JPG·PNG · 최대 15MB' },
 };
 
+// 카테고리 전환
 function setProductType(pt) {
-  const prev = state.productType;
+  if (!ANGLE_SETS[pt]) pt = 'clothing';
   state.productType = pt;
   document.querySelectorAll('#ptypeSeg .seg-btn').forEach(b => b.classList.toggle('on', b.dataset.pt === pt));
   const ui = PTYPE_UI[pt] || PTYPE_UI.clothing;
@@ -209,61 +218,58 @@ function setProductType(pt) {
   el('dropWord').textContent = ui.word;
   el('dropSub').textContent = ui.sub;
 
-  const conceptMode = CONCEPT_MODES.includes(pt);
+  // 제품(모델없음) 컷 세트로 컨셉 칩 초기화 (기본 전체 선택)
+  state.concepts = new Set((ANGLE_SETS[pt] ? ANGLE_SETS[pt].product : []).map(a => a.pose));
+  renderConceptChips();
 
-  // 출력 카드 설명
-  const pc = document.querySelector('.out-card[data-out="photo"] .out-t2');
-  if (pc) pc.textContent = ui.photoT2;
-  const vc = document.querySelector('.out-card[data-out="video"] .out-t2');
-  if (vc) vc.textContent = pt === 'clothing' ? '한 바퀴 회전 · 로고·단추·디테일 클로즈업 · 퇴장 · MP4'
-    : (pt === 'beauty' ? '제품 들고·사용 장면 · 제품 클로즈업 · MP4' : '제품 회전·연출 무빙 · MP4');
-  const vt1 = document.querySelector('.out-card[data-out="video"] .out-t1');
-  if (vt1) vt1.textContent = pt === 'clothing' ? '세로형 영상 10초' : (pt === 'beauty' ? '세로형 영상 10초 (제품 소개)' : '세로형 영상 10초 (제품 연출)');
-
-  // 장수(count) vs 컨셉 선택 UI
-  const cw = document.getElementById('photoCountWrap');
-  const cs = document.getElementById('conceptSel');
-  if (cw) cw.style.display = conceptMode ? 'none' : '';
-  if (cs) cs.hidden = !conceptMode;
-  const po = document.getElementById('prodOpts');
-  if (po) po.hidden = pt !== 'product';
-
-  // 제품컷 AI 분석 패널
-  const aa = document.getElementById('aiAnalysis');
-  if (aa) {
-    if (pt === 'product' && (state.products.length || state.analysis)) {
-      aa.hidden = false;
-      if (state.products.length && !state.analysis) runAnalysis();
-    } else {
-      aa.hidden = true;
-    }
-  }
-
-  // 모델 스텝 힌트 (제품컷은 모델 미사용)
-  const mh = document.getElementById('modelHint');
-  if (mh) mh.textContent = pt === 'product' ? '제품컷은 모델 없이 제품만 연출됩니다 (모델 선택 무시)' : '';
-
-  // 컨셉 모드 전환 시 칩 다시 렌더 (기본: 전체 선택)
-  if (conceptMode && prev !== pt) {
-    state.concepts = new Set((ANGLE_SETS[pt] || []).map(a => a.pose));
-    renderConceptChips();
-  }
-
-  // 영상 프롬프트 — 사용자가 손대지 않았으면 모드 기본값으로 교체
-  const ta = document.getElementById('videoPrompt');
+  // 영상 프롬프트 — 사용자가 손대지 않았으면 카테고리 기본값으로
+  const ta = el('videoPrompt');
   if (ta) {
-    const untouched = ['clothing', 'beauty', 'product'].some(m => m !== pt && ta.value.trim() === videoPromptFor(m).trim());
+    const untouched = ['clothing', 'beauty', 'bag', 'accessory'].some(m => m !== pt && ta.value.trim() === videoPromptFor(m).trim());
     if (untouched) ta.value = videoPromptFor(pt);
   }
+  refreshModeUI();
+}
 
+// 모델 선택 여부(=제품만/모델착용)에 따라 UI 갱신
+function refreshModeUI() {
+  const pt = state.productType;
+  const productOnly = isProductOnly();
+  const el = id => document.getElementById(id);
+
+  const pc = document.querySelector('.out-card[data-out="photo"] .out-t2');
+  if (pc) pc.textContent = productOnly ? '모델 없이 제품만 다양한 구도로 연출 (컷 선택)' : '모델이 착용·사용한 연출컷 (앞·뒤·옆·디테일)';
+  const vc = document.querySelector('.out-card[data-out="video"] .out-t2');
+  if (vc) vc.textContent = productOnly ? '제품 회전·연출 무빙 · MP4' : '착용 회전 · 디테일 클로즈업 · MP4';
+  const vt1 = document.querySelector('.out-card[data-out="video"] .out-t1');
+  if (vt1) vt1.textContent = productOnly ? '세로형 영상 10초 (제품 연출)' : '세로형 영상 10초 (모델 착용)';
+
+  // 컨셉(제품만) vs 장수(모델착용)
+  const cw = el('photoCountWrap'), cs = el('conceptSel');
+  if (cw) cw.style.display = productOnly ? 'none' : '';
+  if (cs) cs.hidden = !productOnly;
+
+  // 화장품 제품컷 옵션/분석 (화장품 + 제품만)
+  const isBeautyProduct = pt === 'beauty' && productOnly;
+  const po = el('prodOpts'); if (po) po.hidden = !isBeautyProduct;
+  const aa = el('aiAnalysis');
+  if (aa) {
+    if (isBeautyProduct && (state.products.length || state.analysis)) { aa.hidden = false; if (state.products.length && !state.analysis) runAnalysis(); }
+    else aa.hidden = true;
+  }
+
+  const mh = el('modelHint');
+  if (mh) mh.textContent = productOnly ? '지금은 제품만 연출됩니다 — 위에서 모델을 선택하면 모델 착용·연출컷이 나옵니다' : `모델 착용·연출 이미지가 생성됩니다`;
+
+  renderConceptChips();
   updateGenInfo();
 }
 
-// 컨셉 칩 렌더 (뷰티/제품컷)
+// 컷 칩 렌더 (제품만 모드에서 컷 선택)
 function renderConceptChips() {
   const wrap = document.getElementById('conceptChips');
   if (!wrap) return;
-  const set = ANGLE_SETS[state.productType] || [];
+  const set = ANGLE_SETS[state.productType] ? ANGLE_SETS[state.productType].product : [];
   wrap.innerHTML = '';
   set.forEach(a => {
     const on = state.concepts.has(a.pose);
@@ -397,8 +403,8 @@ function addProduct(dataUrl) {
   // 첫 제품에서 대표색 추출 (제품컷 배경 톤에 사용)
   if (state.products.length === 1) {
     extractPalette(dataUrl).then(p => { state.palette = p; });
-    // 제품컷 모드면 업로드 즉시 AI 분석 (브랜드 톤앤매너 + 컬러 팔레트)
-    if (state.productType === 'product') runAnalysis();
+    // 화장품 + 제품만 모드면 업로드 즉시 AI 분석 (브랜드 톤앤매너 + 컬러 팔레트)
+    if (state.productType === 'beauty' && isProductOnly()) runAnalysis();
   }
 }
 function renderThumbs() {
@@ -534,13 +540,12 @@ function setModelPhoto(data) {
    3/4. 프롬프트 & 생성
    ============================================================ */
 function updateGenInfo() {
+  const productOnly = isProductOnly();
   const m = selectedModel();
   const parts = [];
-  parts.push(state.productType === 'product' ? '제품컷 (모델 없음)' : (m ? `모델: ${m.name}` : '모델 미선택'));
-  parts.push(`이미지 ${state.products.length}장`);
-  const n = CONCEPT_MODES.includes(state.productType)
-    ? state.concepts.size
-    : parseInt(($('#photoCount') || {}).value || '6', 10);
+  parts.push(productOnly ? '제품만 (모델 없음)' : (m ? `모델: ${m.name}` : '모델 미선택'));
+  parts.push(`참조 ${state.products.length}장`);
+  const n = productOnly ? state.concepts.size : parseInt(($('#photoCount') || {}).value || '6', 10);
   parts.push(`사진 ${n}컷`);
   $('#genInfo').textContent = parts.join(' · ');
 }
@@ -594,14 +599,75 @@ const PRODUCT_ANGLES = [
   { key: '플로팅 오브제', pose: 'c_floating', tpl: `Surreal yet photorealistic luxury cosmetic campaign featuring the exact uploaded product floating in a carefully balanced composition with simple geometric podiums, translucent acrylic forms, or soft sculptural objects. Maintain believable shadows and perspective. Product remains the hero, fully readable and not distorted. Background: [DEEP_PALETTE] with tonal harmony derived from the product. Clean premium art direction, elegant negative space, advertising-grade finish.` },
 ];
 
-const ANGLE_SETS = { clothing: CLOTHING_ANGLES, beauty: BEAUTY_ANGLES, product: PRODUCT_ANGLES };
-const CONCEPT_MODES = ['beauty', 'product']; // 컨셉 개별 선택 모드
+// 의류 제품 단독(모델 없음) 컷
+const CLOTHING_PRODUCT_ANGLES = [
+  { key: '정면 컷', pose: 'cp_front', en: 'ghost-mannequin (invisible mannequin) front view of the garment, clean e-commerce product shot' },
+  { key: '뒷면 컷', pose: 'cp_back', en: 'ghost-mannequin back view of the garment' },
+  { key: '디테일', pose: 'cp_detail', detail: true, en: 'extreme close-up of fabric weave, stitching, buttons, zipper and logo' },
+  { key: '플랫레이', pose: 'cp_flat', en: 'top-down flat-lay of the garment neatly styled on a clean minimal surface' },
+];
+// 가방
+const BAG_MODEL_ANGLES = [
+  { key: '전신 착용', pose: 'bg_full', en: 'full-body shot of the model carrying the bag as the styled hero item, fashionable coordinated outfit, the bag clearly visible and in focus' },
+  { key: '들고 있는 컷', pose: 'bg_hold', en: 'the model holding the bag by its handle beside the body, showing the bag and hand, hardware and logo visible' },
+  { key: '숄더/크로스', pose: 'bg_shoulder', en: 'the model wearing the bag over the shoulder or crossbody, three-quarter view' },
+  { key: '디테일', pose: 'bg_detail', detail: true, en: 'extreme close-up of the bag hardware, zipper, stitching, logo and material texture' },
+];
+const BAG_PRODUCT_ANGLES = [
+  { key: '히어로 정면', pose: 'bp_hero', en: 'centered hero product shot of the bag standing upright, front view, clean minimal background, soft premium studio lighting and a subtle shadow' },
+  { key: '각도 컷', pose: 'bp_angle', en: 'three-quarter angle product shot of the bag showing front and side together, premium e-commerce styling' },
+  { key: '디테일', pose: 'bp_detail', detail: true, en: 'macro close-up of the bag hardware, zipper, logo and material texture' },
+  { key: '라이프스타일', pose: 'bp_life', en: 'the bag placed in a refined lifestyle setting (café table or styled shelf) with a few tasteful props, editorial mood' },
+];
+// 악세사리
+const ACC_MODEL_ANGLES = [
+  { key: '착용 클로즈업', pose: 'ac_wear', detail: true, en: 'close-up of the model wearing the accessory (on wrist, ear, neck, hand or face as appropriate), the accessory in sharp focus as the hero, tightly framed' },
+  { key: '정면 착용', pose: 'ac_front', en: 'upper-body shot of the model wearing the accessory with elegant styling, the accessory clearly visible' },
+  { key: '디테일', pose: 'ac_detail', detail: true, en: 'extreme macro close-up of the accessory on the skin, showing material, gemstones, engraving and finish' },
+  { key: '무드', pose: 'ac_mood', en: 'editorial beauty mood shot featuring the accessory worn by the model, soft dreamy lighting' },
+];
+const ACC_PRODUCT_ANGLES = [
+  { key: '히어로', pose: 'ap_hero', en: 'centered hero product shot of the accessory on a clean minimal surface, premium jewelry-style lighting with elegant reflections and a soft shadow' },
+  { key: '매크로', pose: 'ap_macro', detail: true, en: 'ultra-macro product shot of the accessory showing material, gemstones, engraving and fine detail' },
+  { key: '라이프스타일', pose: 'ap_life', en: 'the accessory styled on a refined surface (tray, fabric or stone) with minimal tasteful props, editorial mood' },
+  { key: '플로팅', pose: 'ap_float', en: 'the accessory elegantly floating or on a small pedestal, premium campaign styling with a tonal background' },
+];
 
-function buildPhotoPrompt(model, angle, userExtra, productType) {
+// 카테고리별 (모델 착용 / 제품 단독) 컷 세트
+const ANGLE_SETS = {
+  clothing:  { model: CLOTHING_ANGLES, product: CLOTHING_PRODUCT_ANGLES },
+  beauty:    { model: BEAUTY_ANGLES,   product: PRODUCT_ANGLES },
+  bag:       { model: BAG_MODEL_ANGLES, product: BAG_PRODUCT_ANGLES },
+  accessory: { model: ACC_MODEL_ANGLES, product: ACC_PRODUCT_ANGLES },
+};
+// 카테고리 메타 (프롬프트용 명사/착용 동작)
+const CATEGORY_META = {
+  clothing:  { noun: 'clothing outfit', wear: 'Dress the model in the uploaded clothing item exactly as shown (keep colors, print, logo and details faithful)' },
+  beauty:    { noun: 'cosmetic product', wear: 'Feature the model naturally with the uploaded cosmetic product' },
+  bag:       { noun: 'bag / handbag', wear: 'Have the model carry or hold the uploaded bag exactly as shown (keep shape, color, hardware and logo faithful)' },
+  accessory: { noun: 'fashion accessory', wear: 'Have the model wear the uploaded accessory exactly as shown (keep shape, material, gemstones and logo faithful)' },
+};
+
+const NONE_ID = '__none__'; // "모델 없이 · 제품만" 선택값
+function isProductOnly() { return state.selectedModelId === NONE_ID || !selectedModel(); }
+// 현재 카테고리 + (모델/제품) 모드에 맞는 컷 세트
+function anglesFor() {
+  const set = ANGLE_SETS[state.productType] || ANGLE_SETS.clothing;
+  return isProductOnly() ? set.product : set.model;
+}
+// 여러 참조 이미지를 하나의 동일 제품으로 고정 (다른 제품으로 바뀌는 오류 방지)
+function identityLock() {
+  const n = state.products.length || 1;
+  return `CRITICAL ITEM IDENTITY LOCK: The ${n} uploaded reference image${n > 1 ? 's' : ''} all show the EXACT SAME single item from different angles or styled shots. Study every reference together to understand the item's true 3D form, proportions, color, material, print, logo, hardware and label, then reproduce THAT identical item faithfully from the requested camera angle. Never invent, swap, merge or hallucinate a different product — the item in the result must be unmistakably the same real item shown in the references. Keep its colors, logo, text and details exactly as shown.`;
+}
+
+function buildPhotoPrompt(model, angle, userExtra, category, productOnly) {
   const extra = userExtra ? `Extra direction: ${userExtra}` : '';
+  const LOCK = identityLock();
+  const cat = CATEGORY_META[category] || CATEGORY_META.clothing;
 
-  // ===== 제품 단독 화장품 연출컷 (모델 없음) =====
-  if (productType === 'product') {
+  // ===== 화장품 제품 단독 연출컷 (전용 8종, 팔레트/분석 반영) =====
+  if (category === 'beauty' && productOnly) {
     const gv = id => { const e = document.getElementById(id); return e ? e.value : ''; };
     const an = state.analysis || null;
     // AI 분석값을 우선 사용하고, 없으면 수동 셀렉트값
@@ -641,6 +707,7 @@ function buildPhotoPrompt(model, angle, userExtra, productType) {
       (angle.hand ? ' Render the hand with correct natural anatomy — exactly one hand with five fingers, no extra or malformed hands.' : '');
 
     return [
+      LOCK,
       identity,
       brand,
       `Product category: ${type}. Formula/texture: ${texture}. Brand mood: ${mood}.`,
@@ -650,8 +717,8 @@ function buildPhotoPrompt(model, angle, userExtra, productType) {
     ].filter(Boolean).join('\n');
   }
 
-  // ===== 뷰티 제품 =====
-  if (productType === 'beauty') {
+  // ===== 화장품 뷰티 (모델이 제품 사용) =====
+  if (category === 'beauty' && !productOnly) {
     const noFace = !!angle.detail; // 손+제품 / 텍스처 / 히어로 = 얼굴 없음
     const who = noFace
       ? ''
@@ -662,7 +729,7 @@ function buildPhotoPrompt(model, angle, userExtra, productType) {
       ? `Render hands with correct natural human anatomy: show only the hand(s) described, exactly five fingers each, no extra, duplicated, merged or malformed hands or fingers.`
       : '';
     return [
-      who,
+      LOCK, who,
       `High-end beauty product advertising photo. Use the uploaded product exactly as shown — keep its packaging, label text, colors and shape faithful.`,
       `Shot: ${angle.en}.`,
       noFace ? `Do NOT show any face; keep the product the clear hero of the frame.` : '',
@@ -672,13 +739,26 @@ function buildPhotoPrompt(model, angle, userExtra, productType) {
     ].filter(Boolean).join(' ');
   }
 
-  // ===== 의류 =====
-  // 디테일 컷: 얼굴 없이 옷에만 집중
+  // ===== 제품 단독 (의류·가방·악세사리, 모델 없음) =====
+  if (productOnly) {
+    return [
+      LOCK,
+      `High-end ${cat.noun} product photography, e-commerce catalog quality, NO human model present.`,
+      `Shot: ${angle.en}.`,
+      angle.detail ? `Crop tightly to the item; do not show any person or face.` : '',
+      `Clean minimal studio background, realistic commercial photography, premium lighting, high detail, ${aspectPhrase()}.`,
+      extra,
+    ].filter(Boolean).join(' ');
+  }
+
+  // ===== 모델 착용/연출 (의류·가방·악세사리) =====
+  // 디테일 컷: 얼굴 없이 아이템에만 집중
   if (angle.detail) {
     return [
-      `Extreme close-up macro shot of the outfit worn on the body: ${angle.en}.`,
-      `Focus entirely on the clothing — show fabric weave, buttons, stitching, zipper and logo in sharp detail.`,
-      `Do NOT show the model's face or head; crop tightly to the garment so no face is visible.`,
+      LOCK,
+      `Extreme close-up macro shot focusing on the ${cat.noun} worn/used on the body: ${angle.en}.`,
+      `Focus entirely on the item — show its material, texture, hardware, stitching and logo in sharp detail.`,
+      `Do NOT show the model's face or head; crop tightly to the item so no face is visible.`,
       `Soft even studio lighting, photorealistic, high detail, ${aspectPhrase()}.`,
       extra,
     ].filter(Boolean).join(' ');
@@ -687,8 +767,8 @@ function buildPhotoPrompt(model, angle, userExtra, productType) {
     ? `Use the provided reference photo as the model (${model.name}${model.desc ? ', ' + model.desc : ''}). Keep the same face and body.`
     : `A professional fashion model.`;
   return [
-    who,
-    `Dress the model in the uploaded clothing item exactly as shown (keep colors, print, logo and details faithful).`,
+    LOCK, who,
+    `${cat.wear}.`,
     `Shot: ${angle.en}.`,
     `Clean studio background, realistic fashion catalog photography, high detail, ${aspectPhrase()}.`,
     extra,
@@ -698,7 +778,7 @@ function buildPhotoPrompt(model, angle, userExtra, productType) {
 // 모델 참조 이미지/메타 준비 (사진·영상 공용)
 async function resolveModel() {
   const model = selectedModel();
-  const usesModel = state.productType !== 'product';
+  const usesModel = !isProductOnly();
   const modelImg = (usesModel && model) ? (await ensureDataUrl(model.photo)) || model.photo || null : null;
   const modelMeta = (usesModel && model) ? { id: model.id, name: model.name, desc: model.desc } : null;
   return { model, modelImg, modelMeta };
@@ -706,20 +786,30 @@ async function resolveModel() {
 
 // 개별 사진 재생성용 컨텍스트 (마지막 생성 시점의 모델/제품 정보)
 let photoCtx = null;
+const photoImgs = {}; // 슬롯별 현재 이미지 (이미지→이미지 수정에 사용)
 
 // 사진 한 장 생성/재생성 → 해당 슬롯만 갱신 (다른 이미지는 유지)
+// editNote 가 있으면 현재 이미지를 기반으로 "그 부분만" 수정 (이미지→이미지)
 async function makePhoto(i, angle, editNote) {
   const slot = $(`#pg-${i}`);
   if (!slot || !photoCtx) return;
   slot.innerHTML = `<div class="pg-loading"><span class="spin"></span></div><div class="pg-cap"><span>${escapeHtml(angle.key)}</span></div>`;
-  const extra = [photoCtx.userExtra, editNote].filter(Boolean).join('. ');
-  const prompt = buildPhotoPrompt(photoCtx.model, angle, extra, photoCtx.productType);
+  let extra = [photoCtx.userExtra, editNote].filter(Boolean).join('. ');
+  const editBase = editNote && photoImgs[i] ? photoImgs[i] : null;
+  // 이미지→이미지 수정: 현재 결과를 마지막 참조로 넣고 "그 부분만 바꾸고 나머지는 유지"
+  let refs = state.products;
+  if (editBase) {
+    refs = [...state.products, editBase];
+    extra += '. The LAST reference image is the current generated result — keep its overall composition, product identity, pose and background, and ONLY change what the instruction asks (e.g. resize/reduce a specific element).';
+  }
+  const prompt = buildPhotoPrompt(photoCtx.model, angle, extra, photoCtx.category, photoCtx.productOnly);
   try {
-    const img = await StudioAPI.geminiPhoto(prompt, photoCtx.modelImg, state.products, {
+    const img = await StudioAPI.geminiPhoto(prompt, photoCtx.modelImg, refs, {
       pose: angle.pose, angleLabel: angle.key, model: photoCtx.modelMeta,
-      beauty: photoCtx.productType === 'beauty', productOnly: photoCtx.productType === 'product',
+      beauty: photoCtx.category === 'beauty', productOnly: photoCtx.productOnly,
       aspect: state.aspect,
     });
+    photoImgs[i] = img;
     renderPhotoSlot(slot, img, angle, i);
   } catch (err) {
     slot.innerHTML =
@@ -737,8 +827,8 @@ function renderPhotoSlot(slot, img, angle, i) {
     `<span class="pg-acts"><button class="pg-edit" type="button">✏ 수정</button>` +
     `<a class="pg-dl" href="#">저장 ↓</a></span></div>` +
     `<div class="pg-editbox" hidden>` +
-    `<input type="text" class="pg-editin" placeholder="이 컷만 이렇게 바꿔줘 (예: 배경 더 밝게, 각도 살짝 위)">` +
-    `<button class="pg-regen" type="button">재생성</button></div>`;
+    `<input type="text" class="pg-editin" placeholder="이 이미지에서 바꿀 부분 (예: 손등 크림 크기 줄여줘, 배경 더 밝게)">` +
+    `<button class="pg-regen" type="button">수정 적용</button></div>`;
   slot.querySelector('.pg-dl').onclick = e => { e.preventDefault(); download(img, `연출_${angle.key}_${i + 1}.png`); };
   const box = slot.querySelector('.pg-editbox');
   const input = slot.querySelector('.pg-editin');
@@ -765,20 +855,21 @@ async function generate() {
   try {
     /* ----- 사진 (제미나이) ----- */
     if (wantPhoto) {
-      const set = ANGLE_SETS[state.productType] || CLOTHING_ANGLES;
+      const set = anglesFor();
+      const productOnly = isProductOnly();
       let angles;
-      if (CONCEPT_MODES.includes(state.productType)) {
+      if (productOnly) {
         angles = set.filter(a => state.concepts.has(a.pose));
       } else {
         angles = set.slice(0, parseInt($('#photoCount').value, 10));
       }
       if (!angles.length) {
-        toast('컨셉을 하나 이상 선택하세요');
+        toast('컷을 하나 이상 선택하세요');
       } else {
         $('#resultPhotos').hidden = false;
         const userExtra = $('#photoPrompt').value.trim();
         // 재생성에 필요한 컨텍스트 저장 (개별 수정 시 사용)
-        photoCtx = { model, modelImg, modelMeta, productType: state.productType, userExtra };
+        photoCtx = { model, modelImg, modelMeta, category: state.productType, productOnly, userExtra };
         const gal = $('#photoGallery'); gal.innerHTML = '';
         angles.forEach((a, i) => {
           const it = document.createElement('div');
@@ -868,7 +959,7 @@ async function init() {
   setupDropzone();
   setupPaste();
   updateConnBanner();
-  updateGenInfo();
+  setProductType(state.productType); // 카테고리/모드 UI 초기화
   // 백엔드 서버 연결 확인 후 배너 갱신
   StudioAPI.init().then(updateConnBanner);
 
@@ -892,7 +983,7 @@ async function init() {
     $('#photoGallery')?.classList.toggle('ar916', state.aspect === '9:16');
   });
   // 컨셉 전체/해제
-  $('#conceptAll').onclick = () => { state.concepts = new Set((ANGLE_SETS[state.productType] || []).map(a => a.pose)); renderConceptChips(); updateGenInfo(); };
+  $('#conceptAll').onclick = () => { state.concepts = new Set((ANGLE_SETS[state.productType] ? ANGLE_SETS[state.productType].product : []).map(a => a.pose)); renderConceptChips(); updateGenInfo(); };
   $('#conceptNone').onclick = () => { state.concepts.clear(); renderConceptChips(); updateGenInfo(); };
 
   // 제품 AI 분석 다시 실행

@@ -91,7 +91,8 @@ const EXPORT = {
    공통 프롬프트 (모든 장면 앞에 자동 결합) + 네거티브
    ============================================================ */
 const COMMON_PROMPT =
-`Use the uploaded product image as the primary and strict visual reference.
+`Use the uploaded product image(s) as the primary and strict visual reference.
+When multiple reference images are provided (front, back, side, styled shots), they ALL show the SAME single product from different angles — study them together to understand its true 3D form, then reproduce THAT exact product. Never blend in, swap, or invent a different product.
 CRITICAL PRODUCT PRESERVATION:
 Preserve the exact product identity shown in the uploaded reference image.
 Do not change the product container shape, dimensions, proportions, cap shape, applicator shape, label size, label position, logo, typography, printed text, capacity text, material, transparency, formula color, fill level, or packaging structure.
@@ -503,8 +504,16 @@ async function generateOne(scene, editNote) {
   setCardStatus(scene, 'generating_background', '배경·제품 생성 중');
   try {
     let prompt = buildScenePrompt(scene);
-    if (editNote) prompt += `\n\nAdditional user direction for this scene: ${editNote}`;
-    const raw = await StudioAPI.geminiPhoto(prompt, null, state.products, { productOnly: true, aspect: state.settings.aspect });
+    let refs = state.products;
+    const prev = state.scenes[scene.id] && state.scenes[scene.id].finalDataUrl;
+    if (editNote) {
+      prompt += `\n\nAdditional user direction for this scene: ${editNote}.`;
+      if (prev) {
+        refs = [...state.products, prev];
+        prompt += ` The LAST reference image is the current generated result — keep its overall composition, product identity and background, and ONLY change what this instruction asks (for example, make a specific element such as the cream swatch smaller).`;
+      }
+    }
+    const raw = await StudioAPI.geminiPhoto(prompt, null, refs, { productOnly: true, aspect: state.settings.aspect });
     setCardStatus(scene, 'upscaling', `${state.settings.resolution} 출력 처리 중`);
     const out = await resizeExport(raw);
     state.scenes[scene.id] = { status: 'completed', finalDataUrl: out.dataUrl, ext: out.ext, w: out.width, h: out.height };
@@ -561,7 +570,7 @@ function renderCard(scene) {
         <button class="cs-mini" data-a="edit">수정</button>
         <a class="cs-mini cs-dl" data-a="dl">다운로드</a>
       </div>
-      <div class="cs-editbox" hidden><input type="text" placeholder="이 컷만 이렇게 바꿔줘 (예: 배경 더 밝게)"><button class="cs-mini cs-accent" data-a="rerun">재생성</button></div>`;
+      <div class="cs-editbox" hidden><input type="text" placeholder="이 이미지에서 바꿀 부분 (예: 크림 스와치 크기 줄여줘, 배경 밝게)"><button class="cs-mini cs-accent" data-a="rerun">수정 적용</button></div>`;
     const dl = el.querySelector('[data-a=dl]');
     dl.onclick = () => download(s.finalDataUrl, fileNameFor(scene));
     el.querySelector('[data-a=regen]').onclick = () => generateOne(scene);

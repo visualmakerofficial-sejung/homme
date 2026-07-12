@@ -122,6 +122,8 @@ body {
 .mc-photo img { width: 100%; height: 100%; object-fit: cover; }
 .mc-name { font-size: 13.5px; font-weight: 800; }
 .mc-desc { font-size: 11px; color: var(--ink3); margin-top: 3px; }
+.model-card.none-card .mc-none { background: var(--panel); color: var(--ink3); }
+.model-card.none-card .mc-desc { color: var(--accent2); font-weight: 700; }
 .model-card.add-card {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   border-style: dashed; color: var(--ink3); min-height: 150px;
