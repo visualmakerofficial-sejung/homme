@@ -736,7 +736,7 @@ function getPlaza(){try{var p=localStorage.getItem('modilMobilePlaza_v1');return
    AUTH
    ================================================================ */
 var currentAdmin=null;
-function doLogin(){
+window.doLogin=function(){
   var id=v('lgId'),pw=v('lgPw');
   var admins=getAdmins();
   var found=admins.find(function(a){return a.id===id&&a.pw===pw&&a.active!==false;});
@@ -746,8 +746,8 @@ function doLogin(){
   hide('loginScreen');
   show('adminApp','block');
   boot();
-}
-function doLogout(){currentAdmin=null;location.reload();}
+};
+window.doLogout=function(){currentAdmin=null;location.reload();};
 function isSuper(){return currentAdmin&&currentAdmin.role==='super';}
 function isSub(){return currentAdmin&&(currentAdmin.role==='super'||currentAdmin.role==='sub');}
 function isDealAdmin(){return currentAdmin&&currentAdmin.role==='deal';}
@@ -1257,7 +1257,20 @@ function showInfoModal(title,html){
   document.body.appendChild(ov);ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
 }
 
-document.getElementById('loginScreen').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+/* HTML onclick에서 직접 호출되는 모든 함수를 전역 노출 */
+var _expose=['nav','openDealModal','closeDealModal','editDeal','saveDeal','viewParticipants',
+  'renderMembers','exportMembers','smsOne','kakaoOne','renderOrders','confirmPayment',
+  'renderDelivery','trackUrl','openTrackingModal','saveTracking','renderReservations',
+  'plzTab','renderPlaza','pinPost','delPost','toggleWinner','hideReview',
+  'openAdminModal','closeAdminModal','saveAdmin','toggleAdmin','deleteAdmin',
+  'openAssignModal','renderDealAdminCards','activateRegion','openRegionModal',
+  'saveRegion','switchRegion','saveSettings','changePw','closeModal','showModal',
+  'doLottery','doSmsSend','doKakaoSend','renderSmsPreview','renderKakaoPreview'];
+_expose.forEach(function(fn){
+  try{if(typeof eval(fn)==='function')window[fn]=eval(fn);}catch(e){}
+});
+
+document.getElementById('loginScreen').addEventListener('keydown',function(e){if(e.key==='Enter')window.doLogin();});
 
 /* 비밀번호 표시 토글 */
 var pwVisible=false;
