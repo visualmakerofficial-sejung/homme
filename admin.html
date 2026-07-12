@@ -1216,13 +1216,17 @@ window.saveDeal=function(approve){
   }).filter(Boolean);
   var imgUrls=(v('dm-images')||'').split('\n').map(function(u){return u.trim();}).filter(Boolean);
   var dealType=v('dm-type')||'active';
-  var isApproved=approve===true?true:(editingDealId?(stored.find(function(x){return x.id===editingDealId;})||{}).approved||false:false);
+  var existingStored=editingDealId?stored.find(function(x){return x.id===editingDealId;}):null;
+  var existingBase=editingDealId?getAllDealsFull().find(function(x){return x.id===editingDealId;}):null;
+  var existing=existingStored||existingBase||{};
+  var isApproved=approve===true?true:(existing.approved||false);
   var deal={
     id: editingDealId||('admin-'+Date.now()),
     name: name, category: v('dm-cat'), icon: v('dm-icon')||'🛍️',
     dealType: dealType,
     origPrice: Number(v('dm-orig'))||0, nowPrice: Number(v('dm-now'))||0,
-    targetCount: Number(v('dm-target'))||100, currentCount: 0, participants: 0,
+    targetCount: Number(v('dm-target'))||100,
+    currentCount: existing.currentCount||0, participants: existing.participants||0,
     deadline: v('dm-deadline'),
     badges: (v('dm-badges')||'').split(',').map(function(b){return b.trim();}).filter(Boolean),
     reservable: v('dm-reservable')==='true',

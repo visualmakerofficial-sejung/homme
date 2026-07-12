@@ -844,6 +844,10 @@
           '<input id="authPhone" type="tel" placeholder="연락처 (선택)" class="auth-input" maxlength="13" oninput="fmtAuthPhone(this)">' +
         '</div>' +
         '<div id="authEmailErr" style="display:none;color:var(--coral);font-size:12px;margin:4px 0 8px;font-weight:700"></div>' +
+        '<div style="display:flex;align-items:center;gap:6px;margin:8px 0 4px">' +
+          '<input type="checkbox" id="authAutoLogin" style="width:15px;height:15px;accent-color:var(--coral);cursor:pointer">' +
+          '<label for="authAutoLogin" style="font-size:12px;color:var(--ink2);cursor:pointer">로그인 상태 유지 (자동로그인)</label>' +
+        '</div>' +
         '<div style="display:flex;gap:8px;margin-top:4px">' +
           '<button class="auth-email-btn" id="authLoginBtn" onclick="mEmailLogin()">로그인</button>' +
           '<button class="auth-email-btn ghost" id="authSignupBtn" onclick="mEmailSignup()">회원가입</button>' +
@@ -877,25 +881,55 @@
     var el=$('authEmailErr'); if(!el)return;
     el.textContent=msg; el.style.display='block';
   }
+  var AUTO_LOGIN_KEY = 'modilAutoLogin_v1';
+  function tryAutoLogin() {
+    try {
+      var saved = JSON.parse(localStorage.getItem(AUTO_LOGIN_KEY) || 'null');
+      if (!saved) return;
+      var users = getLocalUsers();
+      var found = users.find(function(u){ return u.email === saved.email && u.pw === saved.pw; });
+      if (found) {
+        setUser({ name: found.nick, av: found.av || AVS[0], channel: 'email', email: found.email });
+      } else {
+        localStorage.removeItem(AUTO_LOGIN_KEY);
+      }
+    } catch(e) {}
+  }
+
   window.mEmailLogin = function() {
     // 회원가입 모드에서 "취소" 역할
-    var loginBtn=$('authLoginBtn');
-    if(loginBtn && loginBtn.textContent==='취소') {
-      loginBtn.textContent='로그인';
-      var sb=$('authSignupBtn'); if(sb) sb.textContent='회원가입';
-      var nr=$('authNickRow'), pr=$('authPhoneRow');
-      if(nr) nr.style.display='none'; if(pr) pr.style.display='none';
-      var err=$('authEmailErr'); if(err) err.style.display='none';
+    var loginBtn = $('authLoginBtn');
+    if (loginBtn && loginBtn.textContent === '취소') {
+      loginBtn.textContent = '로그인';
+      var sb = $('authSignupBtn'); if (sb) sb.textContent = '회원가입';
+      var nr = $('authNickRow'), pr = $('authPhoneRow');
+      if (nr) nr.style.display = 'none'; if (pr) pr.style.display = 'none';
+      var err = $('authEmailErr'); if (err) err.style.display = 'none';
       return;
     }
-    var email=(($('authEmail')||{}).value||'').trim().toLowerCase();
-    var pw=(($('authPw')||{}).value||'');
-    if(!email){ showAuthErr('이메일을 입력해 주세요'); return; }
-    if(!pw){ showAuthErr('비밀번호를 입력해 주세요'); return; }
-    var users=getLocalUsers();
-    var found=users.find(function(u){ return u.email===email&&u.pw===pw; });
-    if(!found){ showAuthErr('이메일 또는 비밀번호가 올바르지 않아요 ❌'); return; }
-    _finishSocialSignup('email', found.nick, found.av||AVS[0], email);
+    var email = (($('authEmail') || {}).value || '').trim().toLowerCase();
+    var pw = (($('authPw') || {}).value || '');
+    if (!email) { showAuthErr('이메일을 입력해 주세요'); return; }
+    if (!pw) { showAuthErr('비밀번호를 입력해 주세요'); return; }
+    var users = getLocalUsers();
+    var found = users.find(function(u){ return u.email === email && u.pw === pw; });
+    if (!found) { showAuthErr('이메일 또는 비밀번호가 올바르지 않아요 ❌'); return; }
+    // 로그인 — 새 회원 추가 없이 세션만 설정
+    setUser({ name: found.nick, av: found.av || AVS[0], channel: 'email', email: found.email });
+    // 자동로그인 체크박스 확인
+    var autoChk = $('authAutoLogin');
+    if (autoChk && autoChk.checked) {
+      try { localStorage.setItem(AUTO_LOGIN_KEY, JSON.stringify({ email: found.email, pw: found.pw })); } catch(e) {}
+    } else {
+      localStorage.removeItem(AUTO_LOGIN_KEY);
+    }
+    $('authSheet').classList.remove('show');
+    toast('👋 환영해요, ' + found.nick + '님!');
+    if (pendingPay) {
+      var pid = pendingPay; pendingPay = null;
+      var pd = DATA.activeDeals.find(function(x){ return x.id === pid; });
+      if (pd) setTimeout(function(){ openPay(pd); }, 350);
+    }
   };
   window.mEmailSignup = function() {
     var nickRow=$('authNickRow'), phoneRow=$('authPhoneRow');
@@ -1371,17 +1405,22 @@
   var DEAL_STORE_KEY = 'modilDeals_v1';
 
   function getAllDealsForMobile() {
-    // localStorage에 admin이 등록한 딜 병합 (approved만)
     var stored = [];
     try { stored = JSON.parse(localStorage.getItem(DEAL_STORE_KEY) || '[]'); } catch(e) {}
-    var approved = stored.filter(function(d){ return d.approved === true; });
-    return DATA.activeDeals.concat(approved);
+    // 승인된 딜만, 네고 딜 제외
+    var approved = stored.filter(function(d){ return d.approved === true && d.dealType !== 'nego'; });
+    // 저장된 딜 ID → base 딜에서 해당 ID 제거 (저장된 버전이 우선)
+    var overrideIds = approved.map(function(d){ return d.id; });
+    var base = DATA.activeDeals.filter(function(d){ return overrideIds.indexOf(d.id) === -1; });
+    return base.concat(approved);
   }
   function getAllNegoDealsForMobile() {
     var stored = [];
     try { stored = JSON.parse(localStorage.getItem(DEAL_STORE_KEY) || '[]'); } catch(e) {}
     var approvedNego = stored.filter(function(d){ return d.approved === true && d.dealType === 'nego'; });
-    return DATA.negoDeals.concat(approvedNego);
+    var overrideIds = approvedNego.map(function(d){ return d.id; });
+    var base = DATA.negoDeals.filter(function(d){ return overrideIds.indexOf(d.id) === -1; });
+    return base.concat(approvedNego);
   }
 
   /* 멘션(댓글) 저장소 */
@@ -1411,7 +1450,7 @@
     var text = inp ? inp.value.trim() : '';
     if (!text) { toast('멘션 내용을 입력해주세요'); return; }
     if (text.length > 200) { toast('200자 이내로 작성해주세요'); return; }
-    var u = currentUser || {};
+    var u = currentUser() || {};
     var nick = u.nickname || u.nick || '소식이팬';
     saveMention(dealId, text, nick);
     if (inp) inp.value = '';
@@ -1554,6 +1593,7 @@
 
   /* ---------- init ---------- */
   function init() {
+    tryAutoLogin(); // 자동로그인 체크 (먼저 실행)
     plaza = loadPlaza();
     renderStats(); renderNego(); renderDeals(); renderReq3(); renderSucc();
     renderFeed(); renderLotto(); renderDongChips(); updateMap();
