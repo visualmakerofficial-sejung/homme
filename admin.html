@@ -848,12 +848,21 @@ function adminAutoLogin(){
   }catch(e){return false;}
 }
 
+var ADMIN_FAIL_KEY='modilAdminFails_v1';
+function getAdminFails(){try{return JSON.parse(localStorage.getItem(ADMIN_FAIL_KEY)||'{"n":0,"ts":0}');}catch(e){return{n:0,ts:0};}}
+function recordAdminFail(){var f=getAdminFails();f.n+=1;f.ts=Date.now();try{localStorage.setItem(ADMIN_FAIL_KEY,JSON.stringify(f));}catch(e){}}
+function clearAdminFails(){try{localStorage.removeItem(ADMIN_FAIL_KEY);}catch(e){}}
+function isAdminLocked(){var f=getAdminFails();if(f.n<5)return false;if(Date.now()-f.ts>10*60*1000){clearAdminFails();return false;}return true;}
+
 window.doLogin=function(){
   var id=v('lgId'),pw=v('lgPw');
+  var errEl=document.getElementById('lgErr');
+  if(isAdminLocked()){if(errEl){errEl.textContent='로그인 시도 초과. 10분 후 다시 시도해 주세요 🔒';errEl.style.display='block';}return;}
   var admins=getAdmins();
   var found=admins.find(function(a){return a.id===id&&a.pw===pw&&a.active!==false;});
-  if(!found){show('lgErr');return;}
-  hide('lgErr');
+  if(!found){recordAdminFail();if(errEl){errEl.textContent='아이디 또는 비밀번호가 올바르지 않습니다';errEl.style.display='block';}return;}
+  clearAdminFails();
+  if(errEl)errEl.style.display='none';
   // 자동로그인 체크 여부에 따라 저장
   var chk=document.getElementById('lgAutoLogin');
   if(chk&&chk.checked){

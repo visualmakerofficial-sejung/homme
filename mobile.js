@@ -68,7 +68,7 @@
 
   var reserveState = null;
   window.mReserve = function (id) {
-    var d = DATA.negoDeals.find(function (x) { return x.id === id; });
+    var d = getAllNegoDealsForMobile().find(function (x) { return x.id === id; });
     if (!d) return;
     reserveState = { dealId: id, dealName: d.name.replace('\n', ' ') };
     renderReserveSheet();
@@ -135,8 +135,18 @@
       };
       list.push(entry);
       saveReservations(list);
-      var d = DATA.negoDeals.find(function (x) { return x.id === reserveState.dealId; });
-      if (d) { d.currentCount += 1; saveData(DATA); renderNego(); }
+      var allNego = getAllNegoDealsForMobile();
+      var d = allNego.find(function (x) { return x.id === reserveState.dealId; });
+      if (d) {
+        d.currentCount = (d.currentCount || 0) + 1;
+        // if it's a stored deal, update the store
+        var stored2 = [];
+        try { stored2 = JSON.parse(localStorage.getItem(DEAL_STORE_KEY) || '[]'); } catch(e2) {}
+        var storedIdx = stored2.findIndex(function(x){ return x.id === d.id; });
+        if (storedIdx >= 0) { stored2[storedIdx].currentCount = d.currentCount; try { localStorage.setItem(DEAL_STORE_KEY, JSON.stringify(stored2)); } catch(e2) {} }
+        else { saveData(DATA); }
+        renderNego();
+      }
       $('reserveSheet').classList.remove('show');
       showReserveReceipt(entry);
       confetti(60);
@@ -881,6 +891,22 @@
     var el=$('authEmailErr'); if(!el)return;
     el.textContent=msg; el.style.display='block';
   }
+  /* ---- 로그인 시도 횟수 제한 ---- */
+  var LOGIN_FAIL_KEY = 'modilLoginFails_v1';
+  function getLoginFails() { try { return JSON.parse(localStorage.getItem(LOGIN_FAIL_KEY) || '{"n":0,"ts":0}'); } catch(e) { return {n:0,ts:0}; } }
+  function recordLoginFail() {
+    var f = getLoginFails(); f.n += 1; f.ts = Date.now();
+    try { localStorage.setItem(LOGIN_FAIL_KEY, JSON.stringify(f)); } catch(e) {}
+  }
+  function clearLoginFails() { try { localStorage.removeItem(LOGIN_FAIL_KEY); } catch(e) {} }
+  function isLoginLocked() {
+    var f = getLoginFails();
+    if (f.n < 5) return false;
+    var elapsed = Date.now() - f.ts;
+    if (elapsed > 5 * 60 * 1000) { clearLoginFails(); return false; } // 5분 후 해제
+    return true;
+  }
+
   var AUTO_LOGIN_KEY = 'modilAutoLogin_v1';
   function tryAutoLogin() {
     try {
@@ -911,9 +937,11 @@
     var pw = (($('authPw') || {}).value || '');
     if (!email) { showAuthErr('이메일을 입력해 주세요'); return; }
     if (!pw) { showAuthErr('비밀번호를 입력해 주세요'); return; }
+    if (isLoginLocked()) { showAuthErr('로그인 시도가 너무 많아요. 5분 후 다시 시도해 주세요 🔒'); return; }
     var users = getLocalUsers();
     var found = users.find(function(u){ return u.email === email && u.pw === pw; });
-    if (!found) { showAuthErr('이메일 또는 비밀번호가 올바르지 않아요 ❌'); return; }
+    if (!found) { recordLoginFail(); showAuthErr('이메일 또는 비밀번호가 올바르지 않아요 ❌'); return; }
+    clearLoginFails();
     // 로그인 — 새 회원 추가 없이 세션만 설정
     setUser({ name: found.nick, av: found.av || AVS[0], channel: 'email', email: found.email });
     // 자동로그인 체크박스 확인
@@ -954,7 +982,14 @@
     var av=AVS[Math.floor(Math.random()*AVS.length)];
     users.push({ email:email, pw:pw, nick:nick, phone:phone, av:av, joined:new Date().toISOString().slice(0,10) });
     saveLocalUsers(users);
-    _finishSocialSignup('email', nick, av, email);
+    // 자동로그인 체크 여부
+    var autoChk2 = $('authAutoLogin');
+    if (autoChk2 && autoChk2.checked) {
+      try { localStorage.setItem(AUTO_LOGIN_KEY, JSON.stringify({ email: email, pw: pw })); } catch(e) {}
+    }
+    setUser({ name: nick, av: av, channel: 'email', email: email });
+    $('authSheet').classList.remove('show');
+    confetti(40);
     toast('🎉 가입 완료! 환영해요 '+nick+'님!');
   };
   window.mForgotPw = function() {
@@ -1133,6 +1168,7 @@
   };
   window.mLogout = function () {
     try { localStorage.removeItem(USER_KEY); } catch (e) {}
+    try { localStorage.removeItem(AUTO_LOGIN_KEY); } catch (e) {}
     renderAcct(); window.mCloseAuth();
     toast('로그아웃 했어요. 또 만나요 🐴');
   };
@@ -1451,7 +1487,7 @@
     if (!text) { toast('멘션 내용을 입력해주세요'); return; }
     if (text.length > 200) { toast('200자 이내로 작성해주세요'); return; }
     var u = currentUser() || {};
-    var nick = u.nickname || u.nick || '소식이팬';
+    var nick = u.name || u.nickname || u.nick || '소식이팬';
     saveMention(dealId, text, nick);
     if (inp) inp.value = '';
     renderMentions(dealId);
@@ -1499,6 +1535,27 @@
       _slideIdx = (_slideIdx + dir + _slideLen) % _slideLen;
       mDetailGoSlide(_slideIdx);
     };
+    /* 터치 스와이프 */
+    if (imgs.length > 1) {
+      setTimeout(function() {
+        var wrap = document.getElementById('detailSlides');
+        if (!wrap) return;
+        var txStart = 0, tyStart = 0, swiping = false;
+        wrap.addEventListener('touchstart', function(e) {
+          txStart = e.touches[0].clientX; tyStart = e.touches[0].clientY; swiping = false;
+        }, { passive: true });
+        wrap.addEventListener('touchmove', function(e) {
+          if (!swiping && Math.abs(e.touches[0].clientX - txStart) > Math.abs(e.touches[0].clientY - tyStart)) {
+            swiping = true;
+          }
+        }, { passive: true });
+        wrap.addEventListener('touchend', function(e) {
+          if (!swiping) return;
+          var dx = e.changedTouches[0].clientX - txStart;
+          if (Math.abs(dx) > 40) { window.mDetailSlide(dx < 0 ? 1 : -1); }
+        }, { passive: true });
+      }, 100);
+    }
     window.mDetailGoSlide = function(idx) {
       _slideIdx = idx;
       var s = document.getElementById('detailSlides');
