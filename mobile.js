@@ -771,41 +771,73 @@
   }
   window.mClosePay = function () { $('paySheet').classList.remove('show'); };
   var PAYM = [
-    { k: 'vaccount', i: '🏦', t: '가상계좌 입금', on: true },
-    { k: 'kakaopay', i: '💬', t: '카카오페이',    on: false },
-    { k: 'naverpay', i: 'N',  t: '네이버페이',    on: false },
-    { k: 'card',     i: '💳', t: '신용·체크카드', on: false },
+    { k: 'vaccount', i: '🏦', t: '계좌 입금',      on: true },
+    { k: 'card',     i: '💳', t: '카드 결제',       on: true },
+    { k: 'naverpay', i: 'N',  t: '네이버페이',      on: true },
+    { k: 'kakaopay', i: '💬', t: '카카오페이',      on: false },
   ];
+  function payMethodDetail() {
+    var ps = payState;
+    var grand = ps.deal.nowPrice * ps.qty + (ps.pickup === '택배' ? 3000 : 0);
+    if (ps.method === 'vaccount') {
+      if (!ps.vaccount) ps.vaccount = genVAccount();
+      return '<div class="pay-block pay-transfer-info">' +
+        '<div class="pay-block-t">🏦 입금 계좌 (이 주문 전용)</div>' +
+        '<div class="transfer-acc"><span class="tacc-bank">신한</span><span class="tacc-num">' + ps.vaccount + '</span>' +
+        '<button class="tacc-copy" onclick="mCopyAcct()">복사</button></div>' +
+        '<div class="transfer-note">예금주: <b>주식회사 모딜</b> · 입금자명을 <b>닉네임</b>과 동일하게 입력해 주세요.<br>입금 확인 후 참여가 처리됩니다.</div>' +
+        '</div>' +
+        '<div class="pay-total"><span>총 입금금액</span><b>' + fmt(grand) + '원</b></div>' +
+        '<button class="pay-go" onclick="mDoPay()">입금 신청하기 🏦</button>';
+    }
+    if (ps.method === 'card') {
+      return '<div class="pay-block">' +
+        '<div class="pay-block-t">💳 카드 정보 입력</div>' +
+        '<div class="card-form">' +
+          '<input class="card-input" id="cardNum" placeholder="카드 번호 (16자리)" maxlength="19" oninput="mFmtCard(this)" inputmode="numeric">' +
+          '<div class="card-row">' +
+            '<input class="card-input half" id="cardExp" placeholder="MM / YY" maxlength="7" oninput="mFmtExp(this)" inputmode="numeric">' +
+            '<input class="card-input half" id="cardCvc" placeholder="CVC" maxlength="3" inputmode="numeric">' +
+          '</div>' +
+          '<input class="card-input" id="cardName" placeholder="카드 소유자 이름">' +
+        '</div>' +
+        '</div>' +
+        '<div class="pay-total"><span>결제금액</span><b>' + fmt(grand) + '원</b></div>' +
+        '<button class="pay-go card" onclick="mDoPay()">카드 결제하기 💳</button>';
+    }
+    if (ps.method === 'naverpay') {
+      return '<div class="pay-block">' +
+        '<div class="pay-block-t">N 네이버페이로 결제</div>' +
+        '<div class="npay-info">네이버 포인트 적립 최대 5% · 구매 안전 보장</div>' +
+        '</div>' +
+        '<div class="pay-total"><span>결제금액</span><b>' + fmt(grand) + '원</b></div>' +
+        '<button class="pay-go npay" onclick="mDoPay()"><span class="npay-n">N</span> 네이버페이로 결제하기</button>';
+    }
+    return '';
+  }
   function renderPay() {
     var ps = payState, d = ps.deal;
     var disc = Math.round((1 - d.nowPrice / d.origPrice) * 100);
-    var grand = d.nowPrice * ps.qty + (ps.pickup === '택배' ? 3000 : 0);
-    if (!ps.vaccount) ps.vaccount = genVAccount();
     $('payBody').innerHTML = sheetXTop('mClosePay') +
       '<div class="sheet-head" style="margin-bottom:4px"><div class="sheet-ic" style="background:var(--coral-bg)">💳</div>' +
-        '<div><div class="sheet-t1">공동구매 참여 신청</div><div class="sheet-t2">가상계좌로 입금하시면 참여가 확정돼요</div></div></div>' +
+        '<div><div class="sheet-t1">공동구매 참여 신청</div><div class="sheet-t2">결제 수단을 선택하고 참여를 확정하세요</div></div></div>' +
       '<div class="pay-deal"><div class="pay-thumb">' + (d.icon || '🛍️') + '</div>' +
         '<div><div class="pay-dname">' + esc(d.name) + '</div><div class="pay-dcat">' + esc(d.category) + ' · ' + disc + '% 할인 · ' + fmt(d.nowPrice) + '원</div></div></div>' +
       '<div class="pay-block"><div class="qty-row"><div class="pay-block-t" style="margin:0">수량</div>' +
         '<div class="qty-ctrl"><button class="qty-btn" onclick="mQty(-1)">−</button><span class="qty-n">' + ps.qty + '</span><button class="qty-btn" onclick="mQty(1)">+</button></div></div></div>' +
       '<div class="pay-block"><div class="pay-block-t">수령 방법</div><div class="pay-opts">' +
         pickOpt('거점', '📍', '거점 픽업 (무료)') + pickOpt('택배', '📦', '택배 발송 (+3,000원)') + '</div></div>' +
-      '<div class="pay-block"><div class="pay-block-t">결제 수단</div><div class="pay-opts">' +
+      '<div class="pay-block"><div class="pay-block-t">결제 수단</div><div class="pay-opts pay-methods">' +
         PAYM.map(function (m) {
           var sel = ps.method === m.k;
           var disabled = !m.on;
           return '<div class="pay-opt' + (sel ? ' on' : '') + (disabled ? ' soon' : '') + '" ' +
             (disabled ? '' : 'onclick="mPayMethod(\'' + m.k + '\')"') + '>' +
             '<span class="pi">' + m.i + '</span>' + m.t +
-            (disabled ? '<span class="pay-soon-badge">PG 준비중</span>' : '<span class="pr"></span>') +
+            (disabled ? '<span class="pay-soon-badge">준비중</span>' : '<span class="pr">' + (sel ? '✓' : '') + '</span>') +
             '</div>';
         }).join('') + '</div></div>' +
-      '<div class="pay-block pay-transfer-info"><div class="pay-block-t">🏦 입금 가상계좌 (1회용)</div>' +
-        '<div class="transfer-acc"><span class="tacc-bank">신한</span><span class="tacc-num">' + ps.vaccount + '</span></div>' +
-        '<div class="transfer-note">예금주: <b>주식회사 모딜</b> · 입금자명을 <b>닉네임</b>과 동일하게 입력해 주세요.<br>입금 확인 후 참여가 처리되며, 관리자가 문자로 안내드립니다.</div>' +
-      '</div>' +
-      '<div class="pay-total"><span>총 입금금액</span><b>' + fmt(grand) + '원</b></div>' +
-      '<button class="pay-go" onclick="mDoPay()">입금 신청하기 🏦</button>';
+      payMethodDetail();
   }
   function pickOpt(key, ic, label) {
     return '<div class="pay-opt' + (payState.pickup === key ? ' on' : '') + '" onclick="mPayPickup(\'' + key + '\')"><span class="pi">' + ic + '</span>' + label + '<span class="pr"></span></div>';
@@ -814,6 +846,21 @@
   window.mPayMethod = function (k) { var m = PAYM.find(function(x){ return x.k === k; }); if (!m || !m.on) return; payState.method = k; renderPay(); };
   window.mPayPickup = function (k) { payState.pickup = k; renderPay(); };
 
+  window.mCopyAcct = function () {
+    var ps = payState;
+    if (!ps || !ps.vaccount) return;
+    try { navigator.clipboard.writeText(ps.vaccount); } catch (e) {}
+    toast('계좌번호 복사됨 ✓');
+  };
+  window.mFmtCard = function (el) {
+    var v = el.value.replace(/\D/g, '').slice(0, 16);
+    el.value = v.match(/.{1,4}/g) ? v.match(/.{1,4}/g).join(' ') : v;
+  };
+  window.mFmtExp = function (el) {
+    var v = el.value.replace(/\D/g, '').slice(0, 4);
+    if (v.length >= 3) v = v.slice(0, 2) + ' / ' + v.slice(2);
+    el.value = v;
+  };
   window.mDoPay = function () {
     var ps = payState, d = ps.deal, u = currentUser();
     if (!u) { mClosePay(); mOpenAuth(); return; }
@@ -821,13 +868,27 @@
     var pickupLabel = ps.pickup === '택배' ? '택배발송' : '거점 픽업';
     var orderId = 'O-' + Date.now();
     var btn = $('payBody').querySelector('.pay-go');
-    if (btn) { btn.disabled = true; btn.textContent = '신청 중...'; }
+
+    if (ps.method === 'card') {
+      var num = $('cardNum') ? $('cardNum').value.replace(/\s/g, '') : '';
+      var exp = $('cardExp') ? $('cardExp').value : '';
+      var cvc = $('cardCvc') ? $('cardCvc').value : '';
+      if (num.length < 16 || !exp || cvc.length < 3) {
+        toast('카드 정보를 올바르게 입력해 주세요 ⚠️'); return;
+      }
+    }
+
+    if (btn) { btn.disabled = true; btn.textContent = '처리 중...'; }
+    var methodLabel = ps.method === 'card' ? '카드결제' : ps.method === 'naverpay' ? '네이버페이' : '계좌입금';
+    var statusLabel = ps.method === 'vaccount' ? '입금대기' : '결제완료';
+    var orderStatus = ps.method === 'vaccount' ? 'pending_transfer' : 'paid';
+
     setTimeout(function () {
       var order = { id: orderId, member: u.name, phone: u.email || '',
         deal: d.name + (ps.qty > 1 ? ' ×' + ps.qty : ''), amount: grand,
-        status: 'pending_transfer', payStatus: '입금대기',
-        pickup: pickupLabel, date: today(), method: '가상계좌',
-        vaccount: ps.vaccount, smsStatus: '' };
+        status: orderStatus, payStatus: statusLabel,
+        pickup: pickupLabel, date: today(), method: methodLabel,
+        vaccount: ps.method === 'vaccount' ? ps.vaccount : null, smsStatus: '' };
       DATA.orders.unshift(order);
       d.participants += ps.qty;
       var mm = DATA.members.find(function (m) { return m.name === u.name; });
@@ -840,26 +901,42 @@
   };
 
   function showReceipt(orderId, d, ps, grand) {
+    var isCard = ps.method === 'card';
+    var isNpay = ps.method === 'naverpay';
+    var isBank = ps.method === 'vaccount';
+    var icon = isCard ? '💳' : isNpay ? '🟢' : '🏦';
+    var title = isCard ? '카드 결제 완료!' : isNpay ? '네이버페이 결제 완료!' : '입금 신청 완료!';
+    var sub = isCard ? '카드 결제가 정상 처리됐어요 🎉' : isNpay ? '네이버페이 결제가 완료됐어요 🎉' : '아래 계좌로 입금하시면 참여가 확정돼요';
+    var extra = isBank
+      ? '<div style="background:#fffbe6;border:1.5px solid #ffe58f;border-radius:14px;padding:16px;margin-bottom:14px;font-size:13px">' +
+          '<div style="font-weight:900;margin-bottom:8px;font-size:14px">🏦 입금 계좌 (이 주문 전용)</div>' +
+          '<div style="font-size:18px;font-weight:900;letter-spacing:.5px;color:#1c4ea0">' + (ps.vaccount || '') + '</div>' +
+          '<div style="color:#888;font-size:12px;margin-top:4px">예금주: 주식회사 모딜 · 입금자명: <b>' + esc(currentUser() ? currentUser().name : '') + '</b></div>' +
+        '</div>'
+      : isCard
+      ? '<div style="background:#f0f7ff;border:1.5px solid #b3d4ff;border-radius:14px;padding:14px;margin-bottom:14px;font-size:13px;text-align:center;color:#1a4fa0;font-weight:700">카드 승인이 완료됐어요 ✓</div>'
+      : '<div style="background:#e8f9ef;border:1.5px solid #82dba4;border-radius:14px;padding:14px;margin-bottom:14px;font-size:13px;text-align:center;color:#0a5c2b;font-weight:700">N 네이버페이 결제가 완료됐어요 ✓</div>';
+    var amtLabel = isBank ? '입금금액' : '결제금액';
+    var note = isBank
+      ? '입금 확인 후 관리자가 안내 문자를 보내드려요.<br>내 계정 → 구매 내역에서 진행상황을 확인할 수 있어요.'
+      : '결제가 완료됐어요! 내 계정 → 구매 내역에서 진행상황을 확인할 수 있어요.';
     var overlay = document.createElement('div');
     overlay.id = 'receiptOverlay';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
     overlay.innerHTML =
       '<div style="background:#fff;border-radius:24px 24px 0 0;padding:28px 24px 48px;width:100%;max-width:480px;animation:fcardIn .35s ease;overflow-y:auto;max-height:90vh">' +
-        '<div style="text-align:center;font-size:44px;margin-bottom:4px">🏦</div>' +
-        '<div style="text-align:center;font-size:19px;font-weight:900;margin-bottom:2px">입금 신청 완료!</div>' +
-        '<div style="text-align:center;font-size:12px;color:#888;margin-bottom:20px">아래 계좌로 입금하시면 참여가 확정돼요</div>' +
-        '<div style="background:#fffbe6;border:1.5px solid #ffe58f;border-radius:14px;padding:16px;margin-bottom:14px;font-size:13px">' +
-          '<div style="font-weight:900;margin-bottom:8px;font-size:14px">🏦 입금 계좌 (이 주문 전용)</div>' +
-          '<div style="font-size:18px;font-weight:900;letter-spacing:.5px;color:#1c4ea0">' + (ps.vaccount || '') + '</div>' +
-          '<div style="color:#888;font-size:12px;margin-top:4px">예금주: 주식회사 모딜 · 입금자명: <b>' + esc(currentUser() ? currentUser().name : '') + '</b></div>' +
-        '</div>' +
+        '<div style="text-align:center;font-size:44px;margin-bottom:4px">' + icon + '</div>' +
+        '<div style="text-align:center;font-size:19px;font-weight:900;margin-bottom:2px">' + title + '</div>' +
+        '<div style="text-align:center;font-size:12px;color:#888;margin-bottom:20px">' + sub + '</div>' +
+        extra +
         '<div style="background:#fafafa;border-radius:14px;padding:16px;font-size:13px;line-height:2">' +
           '<div style="display:flex;justify-content:space-between"><span style="color:#888">주문번호</span><b style="font-size:11px">' + orderId + '</b></div>' +
           '<div style="display:flex;justify-content:space-between"><span style="color:#888">상품</span><span>' + esc(d.name) + (ps.qty > 1 ? ' ×' + ps.qty : '') + '</span></div>' +
+          '<div style="display:flex;justify-content:space-between"><span style="color:#888">결제수단</span><span>' + (isCard ? '💳 카드결제' : isNpay ? 'N 네이버페이' : '🏦 계좌입금') + '</span></div>' +
           '<div style="display:flex;justify-content:space-between"><span style="color:#888">수령방법</span><span>' + (ps.pickup === '택배' ? '📦 택배' : '📍 거점픽업') + '</span></div>' +
-          '<div style="display:flex;justify-content:space-between;margin-top:6px;padding-top:10px;border-top:1px solid #eee"><span style="font-weight:800">입금금액</span><b style="color:var(--coral-dark);font-size:16px">' + fmt(grand) + '원</b></div>' +
+          '<div style="display:flex;justify-content:space-between;margin-top:6px;padding-top:10px;border-top:1px solid #eee"><span style="font-weight:800">' + amtLabel + '</span><b style="color:var(--coral-dark);font-size:16px">' + fmt(grand) + '원</b></div>' +
         '</div>' +
-        '<div style="font-size:11.5px;color:#888;margin-top:12px;line-height:1.7;text-align:center">입금 확인 후 관리자가 안내 문자를 보내드려요.<br>내 계정 → 구매 내역에서 진행상황을 확인할 수 있어요.</div>' +
+        '<div style="font-size:11.5px;color:#888;margin-top:12px;line-height:1.7;text-align:center">' + note + '</div>' +
         '<button onclick="document.getElementById(\'receiptOverlay\').remove()" ' +
           'style="margin-top:18px;width:100%;padding:16px;background:var(--coral);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:900;cursor:pointer">확인</button>' +
       '</div>';
