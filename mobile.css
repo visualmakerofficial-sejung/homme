@@ -634,6 +634,17 @@ body {
 .auth-btn.insta { background: linear-gradient(105deg, #F58529, #DD2A7B 55%, #8134AF); color: #fff; }
 .auth-note { font-size: 10.5px; color: var(--ink3); text-align: center; line-height: 1.6; margin-top: 8px; }
 .auth-note a { color: var(--ink2); }
+.auth-soon { font-size: 9px; font-weight: 700; background: rgba(0,0,0,.13); color: inherit; border-radius: 6px; padding: 2px 5px; margin-left: 4px; opacity: .8; }
+.auth-divider { display: flex; align-items: center; gap: 10px; margin: 14px 0 10px; color: var(--ink3); font-size: 12px; }
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.auth-input-wrap { margin-bottom: 8px; }
+.auth-input { width: 100%; padding: 13px 14px; border: 1.5px solid var(--line); border-radius: 12px; font-size: 14px; font-weight: 600; background: var(--bg); color: var(--ink); outline: none; box-sizing: border-box; font-family: inherit; transition: border-color .15s; }
+.auth-input:focus { border-color: var(--coral); box-shadow: 0 0 0 3px var(--coral-bg); }
+.auth-pw-eye { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px; padding: 0; line-height: 1; }
+.auth-email-btn { width: 100%; padding: 14px; border: none; border-radius: 14px; font-size: 15px; font-weight: 800; cursor: pointer; background: var(--coral); color: #fff; margin-bottom: 8px; font-family: inherit; transition: background .15s; }
+.auth-email-btn:active { background: var(--coral-dark); }
+.auth-email-btn.ghost { background: var(--bg); color: var(--coral); border: 2px solid var(--coral); }
+.auth-email-btn.ghost:active { background: var(--coral-bg); }
 
 /* 로그인된 프로필 시트 */
 .prof-card { display: flex; align-items: center; gap: 13px; background: var(--paper); border-radius: 16px; padding: 15px; box-shadow: var(--shadow-sm); margin: 8px 0 14px; }

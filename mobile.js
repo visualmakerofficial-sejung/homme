@@ -794,29 +794,127 @@
   function sheetXTop(close) {
     return '<div class="sheet-grab"></div><div style="display:flex"><button class="sheet-x" style="margin-left:auto" onclick="' + close + '()">×</button></div>';
   }
+  var LOCAL_USERS_KEY = 'modilLocalUsers_v1';
+  function getLocalUsers() { try { return JSON.parse(localStorage.getItem(LOCAL_USERS_KEY) || '[]'); } catch(e) { return []; } }
+  function saveLocalUsers(u) { try { localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(u)); } catch(e) {} }
+
   function renderSignup() {
     var hasKakao  = !!SOCIAL_CFG.KAKAO_JS_KEY;
     var hasGoogle = !!SOCIAL_CFG.GOOGLE_CLIENT;
     var hasNaver  = !!SOCIAL_CFG.NAVER_CLIENT;
-    var anyReal   = hasKakao || hasGoogle || hasNaver;
     $('authBody').innerHTML = sheetXTop('mCloseAuth') +
       '<div class="auth-sosik"><img src="sosik.png" alt="소식이"></div>' +
       '<div class="auth-h"><div class="auth-t1">모딜 시작하기 🐴</div>' +
-      '<div class="auth-t2">소셜 계정으로 빠르게 가입하세요!</div></div>' +
+      '<div class="auth-t2">간편 로그인 또는 이메일로 시작하세요</div></div>' +
       (pendingPay ? '<div class="auth-note" style="color:var(--coral-dark);font-weight:700;margin:8px 0">🛒 공동구매 참여를 위해 가입이 필요해요</div>' : '') +
       '<div class="auth-btns">' +
-        '<button class="auth-btn kakao"  onclick="mSocialLogin(\'kakao\')"><span class="ai">💬</span>카카오톡으로 시작하기</button>' +
-        '<button class="auth-btn google" onclick="mSocialLogin(\'google\')"><span class="ai" style="font-style:normal;font-weight:900;color:#4285F4">G</span>구글로 시작하기</button>' +
-        '<button class="auth-btn naver"  onclick="mSocialLogin(\'naver\')"><span class="ai">N</span>네이버로 시작하기</button>' +
+        '<button class="auth-btn kakao" onclick="mSocialLogin(\'kakao\')">' +
+          '<span class="ai">💬</span>카카오톡으로 시작하기' +
+          (!hasKakao ? '<span class="auth-soon">키 미설정</span>' : '') + '</button>' +
+        '<button class="auth-btn google" onclick="mSocialLogin(\'google\')">' +
+          '<span class="ai" style="font-style:normal;font-weight:900;color:#4285F4">G</span>구글로 시작하기' +
+          (!hasGoogle ? '<span class="auth-soon">키 미설정</span>' : '') + '</button>' +
+        '<button class="auth-btn naver" onclick="mSocialLogin(\'naver\')">' +
+          '<span class="ai">N</span>네이버로 시작하기' +
+          (!hasNaver ? '<span class="auth-soon">키 미설정</span>' : '') + '</button>' +
       '</div>' +
-      (!anyReal ? '<div class="auth-note" style="color:var(--coral-dark);margin-top:8px">⚠️ 소셜 키 미설정 — 닉네임으로 임시 체험 가능</div>' +
-        '<div style="display:flex;gap:8px;margin-top:8px">' +
-          '<input id="signupNick" type="text" maxlength="12" placeholder="닉네임 입력" ' +
-          'style="flex:1;padding:10px 12px;border:1.5px solid var(--line2);border-radius:12px;font-size:13px;font-family:inherit;outline:none" />' +
-          '<button onclick="mDemoSignup()" style="padding:10px 14px;background:var(--coral);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:13px;cursor:pointer">체험</button>' +
-        '</div>' : '') +
-      '<div class="auth-note" style="margin-top:10px">가입 시 <a href="#">이용약관</a> · <a href="#">개인정보처리방침</a>에 동의합니다</div>';
+      '<div class="auth-divider"><span>또는 이메일로 로그인</span></div>' +
+      '<div id="authEmailForm">' +
+        '<div class="auth-input-wrap">' +
+          '<input id="authEmail" type="email" placeholder="이메일 주소" class="auth-input" oninput="authEmailInput()">' +
+        '</div>' +
+        '<div class="auth-input-wrap" style="position:relative">' +
+          '<input id="authPw" type="password" placeholder="비밀번호" class="auth-input" onkeydown="if(event.key===\'Enter\')mEmailLogin()">' +
+          '<button type="button" onclick="authTogglePw()" class="auth-pw-eye">👁</button>' +
+        '</div>' +
+        '<div id="authNickRow" style="display:none" class="auth-input-wrap">' +
+          '<input id="authNick" type="text" placeholder="닉네임 (2~12자)" class="auth-input" maxlength="12">' +
+        '</div>' +
+        '<div id="authPhoneRow" style="display:none" class="auth-input-wrap">' +
+          '<input id="authPhone" type="tel" placeholder="연락처 (선택)" class="auth-input" maxlength="13" oninput="fmtAuthPhone(this)">' +
+        '</div>' +
+        '<div id="authEmailErr" style="display:none;color:var(--coral);font-size:12px;margin:4px 0 8px;font-weight:700"></div>' +
+        '<div style="display:flex;gap:8px;margin-top:4px">' +
+          '<button class="auth-email-btn" id="authLoginBtn" onclick="mEmailLogin()">로그인</button>' +
+          '<button class="auth-email-btn ghost" id="authSignupBtn" onclick="mEmailSignup()">회원가입</button>' +
+        '</div>' +
+        '<div style="text-align:center;margin-top:10px"><button style="background:none;border:none;color:var(--ink3);font-size:12px;cursor:pointer" onclick="mForgotPw()">비밀번호를 잊으셨나요?</button></div>' +
+      '</div>' +
+      '<div class="auth-note" style="margin-top:12px">가입 시 <a href="#">이용약관</a> · <a href="#">개인정보처리방침</a>에 동의합니다</div>';
   }
+
+  window.authEmailInput = function() {
+    var email = ($('authEmail')||{}).value||'';
+    var existing = getLocalUsers().find(function(u){ return u.email===email; });
+    var err = $('authEmailErr');
+    if(err) err.style.display='none';
+    if(existing) {
+      if($('authNickRow')) $('authNickRow').style.display='none';
+      if($('authPhoneRow')) $('authPhoneRow').style.display='none';
+    }
+  };
+  window.authTogglePw = function() {
+    var inp=$('authPw'); if(!inp)return;
+    inp.type = inp.type==='password'?'text':'password';
+  };
+  window.fmtAuthPhone = function(el) {
+    var v=el.value.replace(/\D/g,'').slice(0,11);
+    if(v.length>7) v=v.slice(0,3)+'-'+v.slice(3,7)+'-'+v.slice(7);
+    else if(v.length>3) v=v.slice(0,3)+'-'+v.slice(3);
+    el.value=v;
+  };
+  function showAuthErr(msg) {
+    var el=$('authEmailErr'); if(!el)return;
+    el.textContent=msg; el.style.display='block';
+  }
+  window.mEmailLogin = function() {
+    var email=(($('authEmail')||{}).value||'').trim().toLowerCase();
+    var pw=(($('authPw')||{}).value||'');
+    if(!email){ showAuthErr('이메일을 입력해 주세요'); return; }
+    if(!pw){ showAuthErr('비밀번호를 입력해 주세요'); return; }
+    var users=getLocalUsers();
+    var found=users.find(function(u){ return u.email===email&&u.pw===pw; });
+    if(!found){ showAuthErr('이메일 또는 비밀번호가 올바르지 않아요 ❌'); return; }
+    _finishSocialSignup('email', found.nick, found.av||AVS[0], email);
+  };
+  window.mEmailSignup = function() {
+    var nickRow=$('authNickRow'), phoneRow=$('authPhoneRow');
+    if(nickRow && nickRow.style.display==='none') {
+      nickRow.style.display='block'; if(phoneRow) phoneRow.style.display='block';
+      $('authSignupBtn').textContent='가입 완료';
+      $('authLoginBtn').textContent='취소';
+      return;
+    }
+    if($('authLoginBtn').textContent==='취소') {
+      $('authLoginBtn').textContent='로그인';
+      $('authSignupBtn').textContent='회원가입';
+      if(nickRow) nickRow.style.display='none';
+      if(phoneRow) phoneRow.style.display='none';
+      return;
+    }
+    var email=(($('authEmail')||{}).value||'').trim().toLowerCase();
+    var pw=(($('authPw')||{}).value||'');
+    var nick=(($('authNick')||{}).value||'').trim();
+    var phone=(($('authPhone')||{}).value||'').trim();
+    if(!email||email.indexOf('@')===-1){ showAuthErr('올바른 이메일을 입력해 주세요'); return; }
+    if(pw.length<6){ showAuthErr('비밀번호는 6자 이상이어야 해요'); return; }
+    if(nick.length<2){ showAuthErr('닉네임을 2자 이상 입력해 주세요'); return; }
+    var users=getLocalUsers();
+    if(users.find(function(u){ return u.email===email; })){ showAuthErr('이미 가입된 이메일이에요 👀'); return; }
+    var av=AVS[Math.floor(Math.random()*AVS.length)];
+    users.push({ email:email, pw:pw, nick:nick, phone:phone, av:av, joined:new Date().toISOString().slice(0,10) });
+    saveLocalUsers(users);
+    _finishSocialSignup('email', nick, av, email);
+    toast('🎉 가입 완료! 환영해요 '+nick+'님!');
+  };
+  window.mForgotPw = function() {
+    var email=(($('authEmail')||{}).value||'').trim().toLowerCase();
+    if(!email){ showAuthErr('이메일을 먼저 입력해 주세요'); return; }
+    var users=getLocalUsers();
+    var found=users.find(function(u){ return u.email===email; });
+    if(!found){ showAuthErr('가입된 이메일이 아니에요'); return; }
+    showAuthErr('비밀번호: 관리자(hi@modil.kr)에게 문의해 주세요 📧');
+  };
   function renderProfile(u) {
     var mm = DATA.members.find(function (m) { return m.name === u.name; });
     var myOrders = DATA.orders.filter(function (o) { return o.member === u.name; });
