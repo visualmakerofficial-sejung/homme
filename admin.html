@@ -626,13 +626,37 @@ tr:hover td{background:#faf7f4}
 
     <!-- 탭2: 이미지·영상 -->
     <div id="dm-panel2" style="display:none">
-      <div class="notice info">이미지는 URL을 입력하세요. 여러 장은 줄바꿈으로 구분합니다.<br>직접 업로드 기능은 서버 연동 후 사용 가능합니다.</div>
-      <div class="form-row"><label class="form-label">상품 이미지 URL (첫 번째가 대표 이미지)</label>
-        <textarea class="form-ta" id="dm-images" rows="4" placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"></textarea>
+      <!-- 이미지 업로드 섹션 -->
+      <div class="form-row">
+        <label class="form-label">상품 이미지 <span style="color:var(--ink3);font-size:10px">첫 번째가 대표 이미지</span></label>
+        <div style="border:2px dashed var(--line2);border-radius:12px;padding:18px;background:var(--bg);text-align:center;margin-bottom:10px;cursor:pointer" onclick="document.getElementById('dm-file-input').click()">
+          <div style="font-size:28px;margin-bottom:6px">📸</div>
+          <div style="font-size:13px;font-weight:700;color:var(--ink2)">클릭하여 이미지 업로드</div>
+          <div style="font-size:11px;color:var(--ink3);margin-top:4px">JPG · PNG · WEBP 지원 · 여러 장 동시 선택 가능</div>
+          <input type="file" id="dm-file-input" accept="image/*" multiple style="display:none" onchange="handleImgUpload(this)">
+        </div>
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:6px">또는 이미지 URL 직접 입력 (줄바꿈으로 구분)</div>
+        <textarea class="form-ta" id="dm-images" rows="3" placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg" oninput="previewImgs()"></textarea>
       </div>
-      <div class="form-row"><label class="form-label">유튜브 영상 URL (선택)</label>
-        <input class="form-input" id="dm-video" placeholder="https://www.youtube.com/watch?v=XXXXXXXXXXX"></div>
-      <div style="margin-top:12px" id="dm-img-preview"></div>
+      <!-- 이미지 미리보기 -->
+      <div id="dm-img-preview" style="margin-bottom:14px"></div>
+      <!-- 영상 섹션 -->
+      <div style="border-top:1.5px solid var(--line);padding-top:14px">
+        <div class="form-row">
+          <label class="form-label">📺 유튜브 영상 URL <span style="color:var(--ink3);font-size:10px">선택</span></label>
+          <input class="form-input" id="dm-video" placeholder="https://www.youtube.com/watch?v=XXXXXXXXXXX" oninput="previewVideo()">
+        </div>
+        <div id="dm-video-preview" style="margin-top:8px"></div>
+        <div style="margin-top:12px">
+          <div class="form-label" style="margin-bottom:6px">🎬 동영상 파일 업로드 <span style="color:var(--ink3);font-size:10px">MP4 · 10MB 이하 권장</span></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn sm" onclick="document.getElementById('dm-video-file').click()" type="button">📁 동영상 파일 선택</button>
+            <span id="dm-video-filename" style="font-size:11px;color:var(--ink3)">선택된 파일 없음</span>
+            <input type="file" id="dm-video-file" accept="video/*" style="display:none" onchange="handleVideoUpload(this)">
+          </div>
+          <div id="dm-video-player" style="margin-top:10px"></div>
+        </div>
+      </div>
     </div>
 
     <!-- 탭3: 상세설명·스펙 -->
@@ -833,8 +857,54 @@ function seedSampleData(){
   }
   if(!DATA.negoDeals||!DATA.negoDeals.length){
     DATA.negoDeals=[
-      {id:'n1',name:'나이키 에어맥스 2024\n(협상 진행중)',category:'👟 스포츠/패션',origPrice:189000,nowPrice:119000,targetCount:80,participants:34,status:'nego',deadline:'2026-08-01',desc:'나이키 에어맥스 2024 신상 공구 협상중'},
-      {id:'n2',name:'닌텐도 스위치 번들',category:'🎮 게임/전자',origPrice:450000,nowPrice:320000,targetCount:50,participants:28,status:'nego',deadline:'2026-08-10',desc:'닌텐도 스위치 + 마리오카트 번들'},
+      {
+        id:'n1',
+        name:'나이키 에어맥스 2024\n(협상 진행중)',
+        category:'👟 스포츠/패션',
+        statusText:'소식이가 협상중',
+        origPrice:189000, nowPrice:null,
+        currentCount:34, targetCount:80,
+        reservable:true,
+        status:'nego',
+        deadline:'2026-08-01',
+        images:[
+          'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&q=80',
+          'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=600&q=80',
+        ],
+        videoUrl:'https://www.youtube.com/watch?v=sl0E3HwAb8w',
+        desc:'👟 나이키 에어맥스 2024 안산 공동구매!\n\n80명이 모이면 나이키 공식 파트너사를 통해 특가로 진행합니다.\n\n✅ 국내 정품 / 나이키 공식 1년 AS\n✅ 사이즈 220mm ~ 295mm 전 사이즈 선택\n✅ 색상: 블랙/화이트, 화이트/볼트, 블루/오렌지 중 선택\n✅ 거점 수령 or 택배 선택 가능',
+        specs:[
+          {k:'예상 공구가', v:'119,000원 예정 (정가 189,000원)'},
+          {k:'색상', v:'블랙/화이트 · 화이트/볼트 · 블루/오렌지'},
+          {k:'사이즈', v:'220 ~ 295mm (5mm 단위)'},
+          {k:'목표인원', v:'80명'},
+          {k:'수령방법', v:'안산 거점 픽업 or 택배 (+3,000원)'},
+        ],
+      },
+      {
+        id:'n2',
+        name:'닌텐도 스위치 OLED\n마리오카트 번들',
+        category:'🎮 게임/전자',
+        statusText:'소식이가 협상중',
+        origPrice:450000, nowPrice:null,
+        currentCount:28, targetCount:50,
+        reservable:true,
+        status:'nego',
+        deadline:'2026-08-10',
+        images:[
+          'https://images.unsplash.com/photo-1578303512597-81e6cc155b3e?w=600&q=80',
+          'https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?w=600&q=80',
+        ],
+        videoUrl:'https://www.youtube.com/watch?v=_3fmJO-fECs',
+        desc:'🎮 닌텐도 스위치 OLED + 마리오카트 8 번들 공구!\n\n50명이 모이면 공식 유통사를 통해 특가 진행합니다.\n\n✅ 닌텐도 공식 정품\n✅ 닌텐도 스위치 OLED 화이트 모델\n✅ 마리오카트 8 디럭스 다운로드 코드 포함\n✅ 국내 1년 AS 보증',
+        specs:[
+          {k:'예상 공구가', v:'329,000원 예정 (정가 450,000원)'},
+          {k:'구성', v:'스위치 OLED + 마리오카트 8DX 코드'},
+          {k:'색상', v:'화이트 (Joy-Con 화이트)'},
+          {k:'목표인원', v:'50명'},
+          {k:'수령방법', v:'택배 발송 (무료)'},
+        ],
+      },
     ];
   }
   if(!DATA.members||!DATA.members.length){
@@ -1026,10 +1096,77 @@ function previewImgs(){
   var imgs=urls.split('\n').map(function(u){return u.trim();}).filter(Boolean);
   var p=document.getElementById('dm-img-preview');
   if(!p)return;
-  p.innerHTML=imgs.length?'<div style="display:flex;gap:8px;flex-wrap:wrap">'+
-    imgs.map(function(u){return'<img src="'+u+'" style="width:120px;height:80px;object-fit:cover;border-radius:8px;border:1.5px solid var(--line)" onerror="this.style.opacity=.3">';}).join('')+
-  '</div>':'';
+  if(!imgs.length){p.innerHTML='';return;}
+  p.innerHTML='<div style="font-size:11px;color:var(--ink3);margin-bottom:6px">미리보기 ('+imgs.length+'장)</div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+    imgs.map(function(u,i){
+      return '<div style="position:relative;display:inline-block">'+
+        '<img src="'+u+'" style="width:120px;height:80px;object-fit:cover;border-radius:8px;border:1.5px solid var(--line)" onerror="this.style.opacity=.3">'+
+        (i===0?'<span style="position:absolute;top:4px;left:4px;background:var(--coral);color:#fff;font-size:8px;font-weight:800;padding:2px 5px;border-radius:4px">대표</span>':'')+
+        '<button onclick="removeImg('+i+')" style="position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;border:none;font-size:10px;cursor:pointer;line-height:1">✕</button>'+
+      '</div>';
+    }).join('')+
+  '</div>';
 }
+window.removeImg=function(idx){
+  var ta=document.getElementById('dm-images');
+  if(!ta)return;
+  var arr=ta.value.split('\n').map(function(u){return u.trim();}).filter(Boolean);
+  arr.splice(idx,1);
+  ta.value=arr.join('\n');
+  previewImgs();
+};
+window.handleImgUpload=function(input){
+  var files=Array.from(input.files||[]);
+  if(!files.length)return;
+  var ta=document.getElementById('dm-images');
+  var sizeWarn=false;
+  var remaining=files.length;
+  files.forEach(function(file){
+    if(file.size>3*1024*1024){sizeWarn=true;}
+    var reader=new FileReader();
+    reader.onload=function(e){
+      var url=e.target.result;
+      if(ta){ta.value=(ta.value.trim()?ta.value.trim()+'\n':'')+url;}
+      remaining--;
+      if(remaining===0){
+        previewImgs();
+        if(sizeWarn)toast('⚠️ 큰 파일은 localStorage 용량을 많이 차지해요. URL 입력을 권장합니다.');
+        else toast('✅ 이미지 '+files.length+'장이 추가됐어요!');
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value='';
+};
+function previewVideo(){
+  var url=(document.getElementById('dm-video')||{}).value||'';
+  var p=document.getElementById('dm-video-preview');
+  if(!p)return;
+  if(!url){p.innerHTML='';return;}
+  var ytId=url.match(/(?:youtu\.be\/|v=)([A-Za-z0-9_-]{11})/);
+  if(ytId){
+    p.innerHTML='<div style="font-size:11px;color:var(--ink3);margin-bottom:6px">유튜브 미리보기</div>'+
+      '<div style="position:relative;width:100%;padding-bottom:56.25%;border-radius:10px;overflow:hidden;background:#000">'+
+      '<iframe src="https://www.youtube.com/embed/'+ytId[1]+'" style="position:absolute;inset:0;width:100%;height:100%;border:none" allowfullscreen></iframe></div>';
+  } else {
+    p.innerHTML='<div style="font-size:11px;color:var(--coral)">유튜브 URL이 아닙니다. 유튜브 링크를 입력하세요.</div>';
+  }
+}
+window.handleVideoUpload=function(input){
+  var file=input.files&&input.files[0];
+  if(!file)return;
+  var fn=document.getElementById('dm-video-filename');
+  if(fn)fn.textContent=file.name+' ('+Math.round(file.size/1024)+'KB)';
+  var player=document.getElementById('dm-video-player');
+  if(player){
+    var url=URL.createObjectURL(file);
+    player.innerHTML='<video controls style="width:100%;border-radius:10px;max-height:220px" src="'+url+'"></video>'+
+      '<div style="font-size:11px;color:var(--ink3);margin-top:4px">⚠️ 업로드된 동영상은 이 브라우저 세션에서만 미리보기 가능합니다. 영구 저장은 유튜브 업로드 후 URL 입력을 이용하세요.</div>';
+  }
+  toast('🎬 동영상 미리보기 준비됐어요!');
+  input.value='';
+};
 
 function openDealModal(){
   editingDealId=null;
@@ -1513,7 +1650,7 @@ function showInfoModal(title,html){
 }
 
 /* HTML onclick에서 직접 호출되는 모든 함수를 전역 노출 */
-var _expose=['nav','openDealModal','closeDealModal','editDeal','saveDeal','dmTab','previewImgs','approveDeal','viewParticipants',
+var _expose=['nav','openDealModal','closeDealModal','editDeal','saveDeal','dmTab','previewImgs','previewVideo','handleImgUpload','handleVideoUpload','removeImg','approveDeal','viewParticipants',
   'renderMembers','exportMembers','smsOne','kakaoOne','renderOrders','confirmPayment',
   'renderDelivery','trackUrl','openTrackingModal','saveTracking','renderReservations',
   'plzTab','renderPlaza','pinPost','delPost','toggleWinner','hideReview',

@@ -33,7 +33,11 @@ const DEFAULT_DATA = {
       status: 'live', statusText: '소식이가 협상중',
       currentCount: 142, targetCount: 150, reservable: true,
       origPrice: 1199000, nowPrice: null,
-      images: ['https://images.unsplash.com/photo-1706026533859-ae2c3cf7b173?w=600&q=80'],
+      images: [
+        'https://images.unsplash.com/photo-1706026533859-ae2c3cf7b173?w=600&q=80',
+        'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=600&q=80',
+      ],
+      videoUrl: 'https://www.youtube.com/watch?v=k0PxkMF5dT0',
       desc: '🔥 목표 인원 8명 남았어요!\n\n150명이 모이면 실매장 특가로 공구를 진행합니다.\n지금 사전 예약하시면 오픈 즉시 알림을 보내드려요.\n\n✅ 삼성 공식 대리점 협력 예정\n✅ 자급제 · 색상 선택 가능\n✅ 거점 픽업 or 택배 선택',
       specs: [
         { k: '예상 공구가', v: '협상 완료 후 공개' },
@@ -49,7 +53,11 @@ const DEFAULT_DATA = {
       status: 'live', statusText: '소식이가 협상중',
       currentCount: 89, targetCount: 100, reservable: true,
       origPrice: 15000, nowPrice: null,
-      images: ['https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&q=80'],
+      images: [
+        'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&q=80',
+        'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=600&q=80',
+      ],
+      videoUrl: 'https://www.youtube.com/watch?v=2a-YSJJ4oG8',
       desc: 'CGV 안산점과 협상 진행 중!\n100명이 모이면 주말 영화 할인권 특가 공구를 시작합니다.\n\n✅ 주말 포함 전 시간 사용 가능 (예정)\n✅ 3D·4DX 추가 요금 적용\n✅ CGV 안산 1관 · 2관 모두 사용 가능',
       specs: [
         { k: '예상 공구가', v: '7,900원 예상 (협상중)' },

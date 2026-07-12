@@ -1454,10 +1454,43 @@
                 '<button class="detail-cta primary" onclick="mCloseDetail();mBuy(\'' + esc(d.id) + '\')">🛒 바로 참여하기</button>';
     }
 
+    var imgs = d.images && d.images.length ? d.images : (img ? [img] : []);
+    var imgHtml = '';
+    if (imgs.length === 0) {
+      imgHtml = '<div class="detail-img-placeholder">' + (d.icon || '🛍️') + '</div>';
+    } else if (imgs.length === 1) {
+      imgHtml = '<img id="detailMainImg" src="' + imgs[0] + '" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\'">';
+    } else {
+      imgHtml = '<div id="detailSlider" style="width:100%;height:100%;overflow:hidden;position:relative">' +
+        '<div id="detailSlides" style="display:flex;height:100%;transition:transform .3s ease;width:' + (imgs.length * 100) + '%">' +
+        imgs.map(function(u){ return '<div style="width:' + (100/imgs.length) + '%;flex-shrink:0"><img src="' + u + '" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background:\'#eee\'"></div>'; }).join('') +
+        '</div>' +
+        '<button onclick="mDetailSlide(-1)" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;border:none;font-size:16px;cursor:pointer;z-index:2">‹</button>' +
+        '<button onclick="mDetailSlide(1)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;border:none;font-size:16px;cursor:pointer;z-index:2">›</button>' +
+        '<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:5px">' +
+        imgs.map(function(_,i){ return '<div class="dslide-dot' + (i===0?' active':'') + '" onclick="mDetailGoSlide(' + i + ')" style="width:6px;height:6px;border-radius:50%;background:' + (i===0?'#fff':'rgba(255,255,255,.5)') + ';cursor:pointer;transition:background .2s"></div>'; }).join('') +
+        '</div>' +
+      '</div>';
+    }
+    var _slideIdx = 0;
+    var _slideLen = imgs.length;
+    window.mDetailSlide = function(dir) {
+      _slideIdx = (_slideIdx + dir + _slideLen) % _slideLen;
+      mDetailGoSlide(_slideIdx);
+    };
+    window.mDetailGoSlide = function(idx) {
+      _slideIdx = idx;
+      var slides = document.getElementById('detailSlides');
+      if (slides) slides.style.transform = 'translateX(-' + (idx * (100/_slideLen)) + '%)';
+      var dots = document.querySelectorAll('.dslide-dot');
+      dots.forEach(function(dot, i) {
+        dot.style.background = i === idx ? '#fff' : 'rgba(255,255,255,.5)';
+      });
+    };
+
     $('detailBody').innerHTML =
       '<div class="detail-img-wrap">' +
-        (img ? '<img src="' + img + '" alt="" onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\'">' : '') +
-        '<div class="detail-img-placeholder" style="' + (img ? 'display:none' : '') + '">' + (d.icon || '🛍️') + '</div>' +
+        imgHtml +
         '<button class="detail-close-btn" onclick="mCloseDetail()">✕</button>' +
         '<div class="detail-badge-row">' + (d.badges || []).map(function(b){ return '<span class="dbadge ' + b + '">' + b + '</span>'; }).join('') + '</div>' +
       '</div>' +
