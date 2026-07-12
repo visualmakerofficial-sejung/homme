@@ -187,8 +187,8 @@
       '<div class="fc-cat">#' + esc(p.cat) + (p.mine || mine ? ' · 🎁 성사되면 내가 공짜' : '') + '</div>' +
       '<div class="fc-title" id="fct-' + p.id + '">' + p.title + '</div>' +
       '<div class="fc-foot">' +
-        '<button class="fc-btn ' + (p.liked ? 'on' : '') + '" onclick="mLike(\'' + p.id + '\',this)">👍 <span>' + num(p.likes) + '</span></button>' +
-        '<button class="fc-btn ' + (p.lolled ? 'on' : '') + '" onclick="mLol(\'' + p.id + '\',this)">😂 <span>' + num(p.lols) + '</span></button>' +
+        '<button class="fc-btn like ' + (p.liked ? 'on' : '') + '" onclick="mLike(\'' + p.id + '\',this)">👍 <span>' + num(p.likes) + '</span></button>' +
+        '<button class="fc-btn comment" onclick="mComment(\'' + p.id + '\')">💬 <span>' + num(p.comments || 0) + '</span></button>' +
         '<button class="fc-btn share" onclick="mSummon(\'' + p.id + '\')">📤 추천</button>' +
         (mine ? '<button class="fc-btn edit" onclick="mEditPost(\'' + p.id + '\')">✏️</button>' +
                 '<button class="fc-btn del" onclick="mDeletePost(\'' + p.id + '\')">🗑️</button>' : '') +
@@ -199,9 +199,9 @@
   function renderFeed() {
     var el = $('feed'); if (!el) return;
     var pinned = plaza.posts.filter(function (p) { return p.pinned; })
-      .sort(function (a, b) { return (b.likes || 0) - (a.likes || 0); }).slice(0, 3);
+      .sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
     var unpinned = plaza.posts.filter(function (p) { return !p.pinned; })
-      .sort(function (a, b) { return (b.likes || 0) - (a.likes || 0); });
+      .sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
     var show = pinned.concat(unpinned).slice(0, 3);
     el.innerHTML = show.map(fcardHTML).join('');
     if ($('plazaWatch')) $('plazaWatch').textContent = num(plaza.watching);
@@ -220,6 +220,28 @@
     p.lolled = !p.lolled; p.lols += p.lolled ? 1 : -1;
     if (p.lolled) floatEmoji(btn, '😂');
     savePlaza(); renderFeed();
+  };
+  window.mComment = function (id) {
+    var p = findP(id); if (!p) return;
+    var foot = document.querySelector('#fc-' + id + ' .fc-foot');
+    if (!foot) return;
+    var existing = document.getElementById('cmt-box-' + id);
+    if (existing) { existing.remove(); return; }
+    var box = document.createElement('div');
+    box.id = 'cmt-box-' + id;
+    box.style.cssText = 'margin-top:8px;display:flex;gap:6px;align-items:center';
+    box.innerHTML = '<input id="cmt-in-' + id + '" placeholder="댓글을 입력하세요…" style="flex:1;border:1.5px solid var(--coral-soft);border-radius:100px;padding:7px 12px;font-size:11.5px;outline:none">' +
+      '<button onclick="mSubmitComment(\'' + id + '\')" style="background:var(--coral);color:#fff;border:none;border-radius:100px;padding:7px 14px;font-size:12px;font-weight:800;cursor:pointer">등록</button>';
+    foot.parentNode.appendChild(box);
+    document.getElementById('cmt-in-' + id).focus();
+  };
+  window.mSubmitComment = function (id) {
+    var inp = document.getElementById('cmt-in-' + id);
+    if (!inp || !inp.value.trim()) return;
+    var p = findP(id); if (!p) return;
+    p.comments = (p.comments || 0) + 1;
+    savePlaza(); renderFeed();
+    toast('💬 댓글이 등록됐어요!');
   };
   window.mSummon = function (id) {
     var p = findP(id); if (!p) return;
@@ -272,13 +294,13 @@
   };
 
   window.mPostDeal = function () {
-    var ti = $('composerInput'), ca = $('composerCat');
-    var title = (ti.value || '').trim();
-    if (!title) { ti.focus(); toast('어떤 딜을 열고 싶은지 적어주세요 🐴'); return; }
+    var ti = $('composerInput');
+    var title = (ti ? ti.value || '' : '').trim();
+    if (!title) { if (ti) ti.focus(); toast('어떤 딜을 열고 싶은지 적어주세요 🐴'); return; }
     if (!currentUser()) { toast('딜을 올리려면 먼저 가입해 주세요 🙋'); mOpenAuth(); return; }
     var u = currentUser();
-    var np = { id: 'mine-' + Date.now(), ava: u.av || ME[Math.floor(Math.random() * 3)], nick: u.name, lvl: 'LV.1',
-      ago: 0, cat: ca.value, likes: 1, lols: 0, liked: true, mine: true, fresh: true, title: esc(title) };
+    var np = { id: 'mine-' + Date.now(), ts: Date.now(), ava: u.av || ME[Math.floor(Math.random() * 3)], nick: u.name, lvl: 'LV.1',
+      ago: 0, cat: '기타', likes: 1, lols: 0, comments: 0, liked: true, mine: true, fresh: true, title: esc(title) };
     plaza.posts.unshift(np);
     if (plaza.posts.length > 12) plaza.posts = plaza.posts.slice(0, 12);
     savePlaza(); renderFeed();

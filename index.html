@@ -103,7 +103,16 @@
       <div class="free-banner-tx">🎁 내가 올린 딜이 성사되면? <b>제안자는 0원!</b> 아이디어만 좋으면 공짜로 받아요.</div>
     </div>
 
-    <!-- 인기 베스트 3 피드 -->
+    <!-- 딜 요청 작성 -->
+    <div class="composer" id="form">
+      <div class="composer-row">
+        <div class="composer-ava">🐴</div>
+        <input class="composer-input" id="composerInput" placeholder="어떤 딜 열고 싶어요? 😎">
+      </div>
+      <button class="composer-send" onclick="mPostDeal()">딜 올리기 🚀</button>
+    </div>
+
+    <!-- 최신 딜 요청 피드 -->
     <div class="feed" id="feed"></div>
     <a class="feed-more-link" href="plaza.html">전체 딜 광장 보기 →</a>
   </section>
@@ -123,35 +132,6 @@
   </section>
   <div class="hscroll" id="negoScroll"></div>
 
-  <!-- 직접 요청하기 -->
-  <section class="m-sec tight" id="form">
-    <div class="m-shead">
-      <div class="m-mini">📬 직접 요청하기</div>
-      <div class="m-title">이런 거 딜해주세요!</div>
-    </div>
-    <div class="reqform">
-      <div class="rf-head">
-        <div class="rf-ava"><img src="sosik.png" alt="소식이"><span class="dot"></span></div>
-        <div class="rf-htx">
-          <div class="rf-h1">소식이가 듣고 있어요 👂</div>
-          <div class="rf-h2">요청이 많을수록 협상이 빨라져요</div>
-        </div>
-        <div class="rf-count"><b id="totalReq">247</b><span>이번 달</span></div>
-      </div>
-      <form class="rf-grid" onsubmit="mSubmitReq(event)">
-        <div class="rf-2">
-          <select class="f-sel" id="reqCat" required>
-            <option value="">카테고리</option>
-            <option>📱 휴대폰/전자</option><option>🎬 엔터테인먼트</option><option>👶 키즈/육아</option>
-            <option>💆 뷰티/운동</option><option>🍕 음식/카페</option><option>🏠 생활서비스</option><option>🛍️ 기타</option>
-          </select>
-          <input class="f-in" id="reqName" type="text" placeholder="제품·매장명" required>
-        </div>
-        <textarea class="f-ta" id="reqDesc" placeholder="어떤 혜택을 원하세요? 자유롭게 알려주세요 🐴" required></textarea>
-        <button type="submit" class="f-sub">소식이에게 요청하기 🐴 →</button>
-      </form>
-    </div>
-  </section>
 
   <!-- 후기 이벤트 -->
   <section class="m-sec tight" id="lottery">
