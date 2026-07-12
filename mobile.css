@@ -811,3 +811,18 @@ body {
 .detail-cta.secondary { background: var(--coral-bg); color: var(--coral); border: 2px solid var(--coral); }
 .detail-cta.nego-cta { background: #FEE500; color: #3C1E1E; }
 .detail-cta.disabled { background: var(--line); color: var(--ink3); cursor: default; }
+
+/* 멘션 섹션 */
+.mention-input-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.mention-input { flex: 1; padding: 11px 14px; border: 1.5px solid var(--line); border-radius: 10px; font-size: 13px; font-family: inherit; outline: none; background: var(--bg); }
+.mention-input:focus { border-color: var(--coral); }
+.mention-send-btn { padding: 0 16px; background: var(--coral); color: #fff; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
+.mention-send-btn:active { background: var(--coral-dark); }
+.mention-item { padding: 11px 0; border-bottom: 1px solid var(--line); }
+.mention-item:last-child { border-bottom: none; }
+.mention-nick { font-size: 12px; font-weight: 700; color: var(--ink2); }
+.mention-at { font-size: 11px; color: var(--ink3); margin-left: 8px; }
+.mention-text { font-size: 13px; color: var(--ink); line-height: 1.6; margin-top: 5px; word-break: keep-all; }
+
+/* 이미지 카운터 배지 */
+.detail-img-counter { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,.45); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 100px; }

@@ -1120,6 +1120,10 @@ window.handleImgUpload=function(input){
   var files=Array.from(input.files||[]);
   if(!files.length)return;
   var ta=document.getElementById('dm-images');
+  var current=ta&&ta.value.trim()?ta.value.trim().split('\n').filter(Boolean):[];
+  var available=5-current.length;
+  if(available<=0){toast('⚠️ 이미지는 최대 5장까지 등록 가능해요.');input.value='';return;}
+  files=files.slice(0,available);
   var sizeWarn=false;
   var remaining=files.length;
   files.forEach(function(file){
@@ -1131,8 +1135,8 @@ window.handleImgUpload=function(input){
       remaining--;
       if(remaining===0){
         previewImgs();
-        if(sizeWarn)toast('⚠️ 큰 파일은 localStorage 용량을 많이 차지해요. URL 입력을 권장합니다.');
-        else toast('✅ 이미지 '+files.length+'장이 추가됐어요!');
+        if(sizeWarn)toast('⚠️ '+files.length+'장 추가됨. 큰 파일은 URL 입력을 권장해요.');
+        else toast('✅ 이미지 '+files.length+'장 추가! (최대 5장)');
       }
     };
     reader.readAsDataURL(file);

@@ -270,16 +270,20 @@ const DEFAULT_DATA = {
 
 function loadData() {
   try {
-    const saved = localStorage.getItem('modilData_v2');
+    var saved = localStorage.getItem('modilData_v3');
     if (saved) return JSON.parse(saved);
+    /* 구버전 데이터 자동 마이그레이션 */
+    var old = localStorage.getItem('modilData_v2');
+    if (old) { localStorage.removeItem('modilData_v2'); }
   } catch(e) {}
   return JSON.parse(JSON.stringify(DEFAULT_DATA));
 }
 function saveData(data) {
-  try { localStorage.setItem('modilData_v2', JSON.stringify(data)); }
+  try { localStorage.setItem('modilData_v3', JSON.stringify(data)); }
   catch(e) { console.error('Save failed:', e); }
 }
 function resetData() {
+  localStorage.removeItem('modilData_v3');
   localStorage.removeItem('modilData_v2');
   return JSON.parse(JSON.stringify(DEFAULT_DATA));
 }

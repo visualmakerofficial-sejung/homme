@@ -1384,10 +1384,43 @@
     return DATA.negoDeals.concat(approvedNego);
   }
 
+  /* 멘션(댓글) 저장소 */
+  var MENTION_KEY = 'modilMentions_v1';
+  function loadMentions(dealId) {
+    try { var all = JSON.parse(localStorage.getItem(MENTION_KEY) || '{}'); return all[dealId] || []; } catch(e) { return []; }
+  }
+  function saveMention(dealId, text, nick) {
+    try {
+      var all = JSON.parse(localStorage.getItem(MENTION_KEY) || '{}');
+      if (!all[dealId]) all[dealId] = [];
+      all[dealId].unshift({ nick: nick, text: text, at: new Date().toLocaleDateString('ko-KR', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) });
+      localStorage.setItem(MENTION_KEY, JSON.stringify(all));
+    } catch(e) {}
+  }
+  function renderMentions(dealId) {
+    var list = loadMentions(dealId);
+    var el = document.getElementById('detailMentionList');
+    if (!el) return;
+    if (!list.length) { el.innerHTML = '<div style="text-align:center;padding:18px 0;color:var(--ink3);font-size:13px">아직 멘션이 없어요. 첫 번째로 남겨보세요! 💬</div>'; return; }
+    el.innerHTML = list.map(function(m) {
+      return '<div class="mention-item"><span class="mention-nick">' + esc(m.nick || '익명') + '</span><span class="mention-at">' + esc(m.at) + '</span><div class="mention-text">' + esc(m.text) + '</div></div>';
+    }).join('');
+  }
+  window.mPostMention = function(dealId) {
+    var inp = document.getElementById('detailMentionInput');
+    var text = inp ? inp.value.trim() : '';
+    if (!text) { toast('멘션 내용을 입력해주세요'); return; }
+    if (text.length > 200) { toast('200자 이내로 작성해주세요'); return; }
+    var u = currentUser || {};
+    var nick = u.nickname || u.nick || '소식이팬';
+    saveMention(dealId, text, nick);
+    if (inp) inp.value = '';
+    renderMentions(dealId);
+    toast('✅ 멘션이 등록됐어요!');
+  };
+
   function openDetail(d, type) {
-    // type: 'active' | 'nego'
     var isNego = type === 'nego';
-    var img = (d.images && d.images[0]) ? d.images[0] : '';
     var disc = (!isNego && d.origPrice && d.nowPrice) ? Math.round((1 - d.nowPrice / d.origPrice) * 100) : 0;
     var pct = 0;
     if (isNego) {
@@ -1400,113 +1433,121 @@
       pct = Math.min(100, Math.round(cnt2 / tgt2 * 100));
     }
 
-    var priceHtml = '';
-    if (isNego) {
-      priceHtml = '<div class="detail-price-block">' +
-        (d.origPrice ? '<div class="detail-price-orig">정가 ' + fmt(d.origPrice) + '원</div>' : '') +
-        '<div class="detail-price-main"><span class="detail-nego-price">' +
-          (d.nowPrice ? fmt(d.nowPrice) + '원 (예정)' : '협상 완료 후 공개') +
-        '</span></div>' +
-        '<div class="detail-prog-wrap">' +
-          '<div class="detail-prog-label"><span>모인 사람 <b>' + (d.currentCount || d.participants || 0) + '명</b></span><span>목표 <b>' + (d.targetCount || 100) + '명</b></span></div>' +
-          '<div class="detail-prog-bar"><div class="detail-prog-fill" style="width:' + pct + '%"></div></div>' +
-        '</div></div>';
-    } else {
-      priceHtml = '<div class="detail-price-block">' +
-        (d.origPrice ? '<div class="detail-price-orig">정가 ' + fmt(d.origPrice) + '원</div>' : '') +
-        '<div class="detail-price-main"><span class="detail-price-now">' + fmt(d.nowPrice) + '원</span>' +
-          (disc > 0 ? '<span class="detail-price-disc">' + disc + '%↓</span>' : '') +
-        '</div>' +
-        '<div class="detail-prog-wrap">' +
-          '<div class="detail-prog-label"><span><b>' + (d.participants || 0) + '명</b> 참여 중</span>' +
-            (d.targetCount ? '<span>목표 <b>' + d.targetCount + '명</b></span>' : '') +
-          '</div>' +
-          '<div class="detail-prog-bar"><div class="detail-prog-fill" style="width:' + pct + '%"></div></div>' +
-        '</div></div>';
-    }
-
-    var specsHtml = '';
-    if (d.specs && d.specs.length) {
-      specsHtml = '<div class="detail-section"><div class="detail-section-title">📋 상품 정보</div>' +
-        '<table class="detail-spec-table">' +
-        d.specs.map(function(s){ return '<tr><td>' + esc(s.k) + '</td><td>' + esc(s.v) + '</td></tr>'; }).join('') +
-        '</table></div>';
-    }
-
-    var videoHtml = '';
-    if (d.videoUrl) {
-      var ytId = d.videoUrl.match(/(?:youtu\.be\/|v=)([A-Za-z0-9_-]{11})/);
-      if (ytId) {
-        videoHtml = '<div class="detail-section"><div class="detail-section-title">🎬 소개 영상</div>' +
-          '<div class="detail-video-wrap"><iframe src="https://www.youtube.com/embed/' + ytId[1] + '" allowfullscreen></iframe></div></div>';
-      }
-    }
-
-    var ctaHtml = '';
-    if (isNego) {
-      if (d.reservable !== false) {
-        ctaHtml = '<button class="detail-cta nego-cta" onclick="mCloseDetail();mReserve(\'' + esc(d.id) + '\')">🔔 사전예약 알림받기</button>';
-      } else {
-        ctaHtml = '<button class="detail-cta disabled">모집 준비중</button>';
-      }
-    } else {
-      ctaHtml = '<button class="detail-cta secondary" onclick="mCloseDetail();mReserve&&mReserve(\'' + esc(d.id) + '\')">🔔 알림받기</button>' +
-                '<button class="detail-cta primary" onclick="mCloseDetail();mBuy(\'' + esc(d.id) + '\')">🛒 바로 참여하기</button>';
-    }
-
-    var imgs = d.images && d.images.length ? d.images : (img ? [img] : []);
-    var imgHtml = '';
-    if (imgs.length === 0) {
-      imgHtml = '<div class="detail-img-placeholder">' + (d.icon || '🛍️') + '</div>';
-    } else if (imgs.length === 1) {
-      imgHtml = '<img id="detailMainImg" src="' + imgs[0] + '" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\'">';
-    } else {
-      imgHtml = '<div id="detailSlider" style="width:100%;height:100%;overflow:hidden;position:relative">' +
-        '<div id="detailSlides" style="display:flex;height:100%;transition:transform .3s ease;width:' + (imgs.length * 100) + '%">' +
-        imgs.map(function(u){ return '<div style="width:' + (100/imgs.length) + '%;flex-shrink:0"><img src="' + u + '" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background:\'#eee\'"></div>'; }).join('') +
-        '</div>' +
-        '<button onclick="mDetailSlide(-1)" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;border:none;font-size:16px;cursor:pointer;z-index:2">‹</button>' +
-        '<button onclick="mDetailSlide(1)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;border:none;font-size:16px;cursor:pointer;z-index:2">›</button>' +
-        '<div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:5px">' +
-        imgs.map(function(_,i){ return '<div class="dslide-dot' + (i===0?' active':'') + '" onclick="mDetailGoSlide(' + i + ')" style="width:6px;height:6px;border-radius:50%;background:' + (i===0?'#fff':'rgba(255,255,255,.5)') + ';cursor:pointer;transition:background .2s"></div>'; }).join('') +
-        '</div>' +
-      '</div>';
-    }
+    /* 이미지 — 최대 5장 */
+    var imgs = (d.images && d.images.length ? d.images : []).slice(0, 5);
     var _slideIdx = 0;
     var _slideLen = imgs.length;
+    var imgHtml = '';
+    if (!imgs.length) {
+      imgHtml = '<div class="detail-img-placeholder">' + esc(d.icon || '🛍️') + '</div>';
+    } else if (imgs.length === 1) {
+      imgHtml = '<img src="' + imgs[0] + '" alt="" style="width:100%;height:100%;object-fit:cover">';
+    } else {
+      imgHtml =
+        '<div style="position:relative;width:100%;height:100%;overflow:hidden">' +
+          '<div id="detailSlides" style="display:flex;height:100%;transition:transform .28s ease;width:' + (imgs.length * 100) + '%">' +
+            imgs.map(function(u){ return '<div style="width:' + (100/imgs.length) + '%;height:100%;flex-shrink:0;overflow:hidden"><img src="' + u + '" style="width:100%;height:100%;object-fit:cover"></div>'; }).join('') +
+          '</div>' +
+          '<button onclick="mDetailSlide(-1)" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;border:none;font-size:18px;line-height:1;cursor:pointer;z-index:3">‹</button>' +
+          '<button onclick="mDetailSlide(1)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;border:none;font-size:18px;line-height:1;cursor:pointer;z-index:3">›</button>' +
+          '<div id="detailDots" style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px">' +
+            imgs.map(function(_,i){ return '<div class="ds-dot" style="width:7px;height:7px;border-radius:50%;background:' + (i===0?'#fff':'rgba(255,255,255,.45)') + ';cursor:pointer;transition:background .2s" onclick="mDetailGoSlide(' + i + ')"></div>'; }).join('') +
+          '</div>' +
+          '<div style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,.45);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px" id="detailImgCounter">1 / ' + imgs.length + '</div>' +
+        '</div>';
+    }
     window.mDetailSlide = function(dir) {
       _slideIdx = (_slideIdx + dir + _slideLen) % _slideLen;
       mDetailGoSlide(_slideIdx);
     };
     window.mDetailGoSlide = function(idx) {
       _slideIdx = idx;
-      var slides = document.getElementById('detailSlides');
-      if (slides) slides.style.transform = 'translateX(-' + (idx * (100/_slideLen)) + '%)';
-      var dots = document.querySelectorAll('.dslide-dot');
-      dots.forEach(function(dot, i) {
-        dot.style.background = i === idx ? '#fff' : 'rgba(255,255,255,.5)';
-      });
+      var s = document.getElementById('detailSlides');
+      if (s) s.style.transform = 'translateX(-' + (idx * (100/_slideLen)) + '%)';
+      var counter = document.getElementById('detailImgCounter');
+      if (counter) counter.textContent = (idx+1) + ' / ' + _slideLen;
+      var dots = document.querySelectorAll('.ds-dot');
+      dots.forEach(function(dot, i){ dot.style.background = i===idx ? '#fff' : 'rgba(255,255,255,.45)'; });
     };
+
+    /* 가격 블록 */
+    var priceHtml = '';
+    if (isNego) {
+      priceHtml = '<div class="detail-price-block">' +
+        (d.origPrice ? '<div class="detail-price-orig">정가 ' + fmt(d.origPrice) + '원</div>' : '') +
+        '<div class="detail-price-main"><span class="detail-nego-price">' + (d.nowPrice ? fmt(d.nowPrice) + '원 (예정)' : '협상 완료 후 공개') + '</span></div>' +
+        '<div class="detail-prog-label"><span>모인 사람 <b>' + cnt + '명</b></span><span>목표 <b>' + tgt + '명</b></span></div>' +
+        '<div class="detail-prog-bar"><div class="detail-prog-fill" style="width:' + pct + '%"></div></div>' +
+      '</div>';
+    } else {
+      priceHtml = '<div class="detail-price-block">' +
+        (d.origPrice ? '<div class="detail-price-orig">정가 ' + fmt(d.origPrice) + '원</div>' : '') +
+        '<div class="detail-price-main"><span class="detail-price-now">' + fmt(d.nowPrice || 0) + '원</span>' + (disc > 0 ? '<span class="detail-price-disc">' + disc + '%↓</span>' : '') + '</div>' +
+        '<div class="detail-prog-label"><span><b>' + cnt2 + '명</b> 참여 중</span>' + (d.targetCount ? '<span>목표 <b>' + d.targetCount + '명</b></span>' : '') + '</div>' +
+        '<div class="detail-prog-bar"><div class="detail-prog-fill" style="width:' + pct + '%"></div></div>' +
+      '</div>';
+    }
+
+    /* 스펙 */
+    var specsHtml = d.specs && d.specs.length
+      ? '<div class="detail-section"><div class="detail-section-title">📋 상품 정보</div><table class="detail-spec-table">' +
+          d.specs.map(function(s){ return '<tr><td>' + esc(s.k) + '</td><td>' + esc(s.v) + '</td></tr>'; }).join('') +
+        '</table></div>'
+      : '';
+
+    /* 영상 — 유튜브 1개 */
+    var videoHtml = '';
+    if (d.videoUrl) {
+      var ytId = d.videoUrl.match(/(?:youtu\.be\/|v=)([A-Za-z0-9_-]{11})/);
+      if (ytId) {
+        videoHtml = '<div class="detail-section"><div class="detail-section-title">🎬 소개 영상</div>' +
+          '<div class="detail-video-wrap"><iframe src="https://www.youtube.com/embed/' + ytId[1] + '?rel=0" allowfullscreen></iframe></div></div>';
+      }
+    }
+
+    /* 멘션 섹션 */
+    var mentionHtml =
+      '<div class="detail-section" id="detailMentionSection">' +
+        '<div class="detail-section-title">💬 멘션 · 한마디</div>' +
+        '<div class="mention-input-row">' +
+          '<input id="detailMentionInput" class="mention-input" type="text" placeholder="이 딜에 대해 한마디 남겨보세요..." maxlength="200">' +
+          '<button class="mention-send-btn" onclick="mPostMention(\'' + esc(d.id) + '\')">등록</button>' +
+        '</div>' +
+        '<div id="detailMentionList"></div>' +
+      '</div>';
+
+    /* CTA 버튼 */
+    var ctaHtml = '';
+    if (isNego) {
+      ctaHtml = d.reservable !== false
+        ? '<button class="detail-cta nego-cta" onclick="mCloseDetail();mReserve(\'' + esc(d.id) + '\')">🔔 사전예약 알림받기</button>'
+        : '<button class="detail-cta disabled">모집 준비중</button>';
+    } else {
+      ctaHtml = '<button class="detail-cta secondary" onclick="mCloseDetail();mReserve&&mReserve(\'' + esc(d.id) + '\')">🔔 알림받기</button>' +
+                '<button class="detail-cta primary" onclick="mCloseDetail();mBuy(\'' + esc(d.id) + '\')">🛒 바로 참여하기</button>';
+    }
 
     $('detailBody').innerHTML =
       '<div class="detail-img-wrap">' +
         imgHtml +
         '<button class="detail-close-btn" onclick="mCloseDetail()">✕</button>' +
-        '<div class="detail-badge-row">' + (d.badges || []).map(function(b){ return '<span class="dbadge ' + b + '">' + b + '</span>'; }).join('') + '</div>' +
+        '<div class="detail-badge-row">' + (d.badges || []).map(function(b){ return '<span class="dbadge">' + esc(b) + '</span>'; }).join('') + '</div>' +
       '</div>' +
       '<div class="detail-scroll">' +
         '<div class="detail-cat">' + esc(d.category || '') + '</div>' +
-        '<div class="detail-title">' + esc((d.name || '').replace('\n', ' ')) + '</div>' +
+        '<div class="detail-title">' + esc((d.name || '').replace(/\n/g, ' ')) + '</div>' +
         (isNego ? '<div class="detail-status-row"><div class="detail-live-dot"></div><span style="font-size:12px;color:var(--ink3)">' + esc(d.statusText || '협상중') + '</span></div>' : '') +
         (d.deadline ? '<div style="margin-bottom:12px"><span class="detail-deadline">⏰ 마감 ' + esc(d.deadline) + '</span></div>' : '') +
         priceHtml +
-        (d.desc ? '<div class="detail-section"><div class="detail-section-title">📝 딜 안내</div><div class="detail-desc">' + esc(d.desc) + '</div></div>' : '') +
+        (d.desc ? '<div class="detail-section"><div class="detail-section-title">📝 딜 안내</div><div class="detail-desc">' + esc(d.desc).replace(/\\n/g,'<br>').replace(/\n/g,'<br>') + '</div></div>' : '') +
         specsHtml +
         videoHtml +
+        mentionHtml +
       '</div>' +
       '<div class="detail-cta-bar">' + ctaHtml + '</div>';
 
     $('detailSheet').classList.add('show');
+    renderMentions(d.id);
   }
 
   window.mCloseDetail = function() { $('detailSheet').classList.remove('show'); };
