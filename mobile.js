@@ -719,9 +719,23 @@
     document.querySelectorAll('#reviewStars .star').forEach(function (s, i) { s.classList.toggle('on', i < stars); });
   }
   window.mSetStar = function (i) { stars = i + 1; paintStars(); };
+  var REVIEW_KEY = 'modilReviews_v1';
+  var REVIEW_AVAS = ['🦊','🐧','🐻','🐰','🐱','🐨','🦝','🐹','🐤','🦦','🐲','🦔','🐢','🦉','🦥'];
   window.mSubmitReview = function () {
     var ta = $('reviewTa');
-    if (!ta.value.trim()) { ta.focus(); toast('한 줄 후기를 남겨주세요 ✍️'); return; }
+    var text = ta.value.trim();
+    if (!text) { ta.focus(); toast('한 줄 후기를 남겨주세요 ✍️'); return; }
+    var u = currentUser();
+    var nick = u ? u.name : '익명';
+    var ava = u ? (u.ava || REVIEW_AVAS[Math.floor(Math.random()*REVIEW_AVAS.length)]) : '🎭';
+    var lvl = u ? (u.lvl || 'LV.1') : '';
+    try {
+      var list = JSON.parse(localStorage.getItem(REVIEW_KEY) || '[]');
+      list.unshift({ id: 'rv-' + Date.now(), nick: nick, ava: ava, lvl: lvl,
+        product: '기타', stars: stars, text: text, likes: 0, liked: false,
+        winner: false, verified: !!u, ts: Date.now() });
+      localStorage.setItem(REVIEW_KEY, JSON.stringify(list));
+    } catch(e) {}
     plaza.lottery.entries += 1; plaza.lottery.myEntries += 1;
     savePlaza(); renderLotto(); window.mCloseReview();
     confetti(50);

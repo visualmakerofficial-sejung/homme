@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>모딜 후기 게시판</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --coral: #E32D21; --coral-dark: #c0251a; --coral-soft: #f26557;
+    --coral-bg: #FFF0EE; --bg: #FBF5EE; --paper: #FFFFFF;
+    --line: #EDE4DA; --ink: #1C1208; --ink2: #5C4A36; --ink3: #9B8A79;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #EFE2D2; display: flex; justify-content: center; font-family: 'Noto Sans KR', sans-serif; }
+  .app { width: 100%; max-width: 440px; min-height: 100vh; background: var(--bg); box-shadow: 0 0 60px rgba(45,20,16,.18); }
+  @media (max-width: 460px) { body { background: var(--bg); } .app { box-shadow: none; } }
+
+  /* 헤더 */
+  .rv-header { position: sticky; top: 0; z-index: 100; background: var(--paper); border-bottom: 1.5px solid var(--line); padding: 14px 16px 12px; display: flex; align-items: center; gap: 12px; }
+  .rv-back { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--ink); padding: 4px; }
+  .rv-header-title { flex: 1; }
+  .rv-header-title h1 { font-size: 17px; font-weight: 900; color: var(--ink); }
+  .rv-header-title p { font-size: 11px; color: var(--ink3); margin-top: 1px; }
+  .rv-write-btn { background: var(--coral); color: #fff; border: none; border-radius: 100px; padding: 8px 14px; font-size: 12px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+
+  /* 통계 배너 */
+  .rv-banner { background: linear-gradient(135deg, #fff8e1, #fff3cd); border-bottom: 1.5px solid #ffe082; padding: 14px 20px; display: flex; gap: 0; }
+  .rv-stat { flex: 1; text-align: center; }
+  .rv-stat b { display: block; font-size: 20px; font-weight: 900; color: var(--coral); }
+  .rv-stat span { font-size: 11px; color: var(--ink3); }
+  .rv-stat + .rv-stat { border-left: 1px solid #ffe082; }
+
+  /* 필터 탭 */
+  .rv-tabs { display: flex; gap: 6px; padding: 12px 16px 8px; overflow-x: auto; scrollbar-width: none; }
+  .rv-tabs::-webkit-scrollbar { display: none; }
+  .rv-tab { flex-shrink: 0; padding: 7px 14px; border-radius: 100px; border: 1.5px solid var(--line); background: var(--paper); font-size: 12px; font-weight: 700; color: var(--ink3); cursor: pointer; transition: all .15s; }
+  .rv-tab.on { background: var(--coral); border-color: var(--coral); color: #fff; }
+
+  /* 별점 평균 바 */
+  .rv-avg { margin: 0 16px 12px; background: var(--paper); border-radius: 16px; padding: 16px; display: flex; align-items: center; gap: 16px; border: 1.5px solid var(--line); }
+  .rv-avg-num { font-size: 36px; font-weight: 900; color: var(--ink); line-height: 1; }
+  .rv-avg-right { flex: 1; }
+  .rv-avg-stars { font-size: 18px; letter-spacing: 2px; color: #FFC107; margin-bottom: 4px; }
+  .rv-bars { display: flex; flex-direction: column; gap: 3px; }
+  .rv-bar-row { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--ink3); }
+  .rv-bar-track { flex: 1; height: 5px; background: var(--line); border-radius: 100px; overflow: hidden; }
+  .rv-bar-fill { height: 100%; background: #FFC107; border-radius: 100px; transition: width .5s; }
+
+  /* 카드 리스트 */
+  .rv-list { padding: 0 16px 24px; display: flex; flex-direction: column; gap: 12px; }
+  .rv-card { background: var(--paper); border-radius: 18px; padding: 16px; border: 1.5px solid var(--line); box-shadow: 0 2px 12px rgba(0,0,0,.05); }
+  .rv-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .rv-ava { width: 36px; height: 36px; border-radius: 50%; background: var(--coral-bg); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .rv-info { flex: 1; }
+  .rv-nick { font-size: 13px; font-weight: 800; color: var(--ink); }
+  .rv-meta { font-size: 11px; color: var(--ink3); margin-top: 1px; }
+  .rv-badge-wrap { display: flex; align-items: center; gap: 6px; }
+  .rv-stars-small { font-size: 13px; color: #FFC107; letter-spacing: 1px; }
+  .rv-time { font-size: 10px; color: var(--ink3); }
+  .rv-verified { font-size: 9px; font-weight: 800; background: #e8f5e9; color: #2e7d32; padding: 2px 6px; border-radius: 100px; }
+  .rv-product { font-size: 11px; font-weight: 700; color: var(--coral); background: var(--coral-bg); padding: 3px 8px; border-radius: 100px; margin-bottom: 10px; display: inline-block; }
+  .rv-text { font-size: 14px; color: var(--ink); line-height: 1.65; font-weight: 500; }
+  .rv-card-foot { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+  .rv-like-btn { background: none; border: 1.5px solid var(--line); border-radius: 100px; padding: 5px 12px; font-size: 12px; font-weight: 700; color: var(--ink3); cursor: pointer; transition: all .15s; }
+  .rv-like-btn.on { background: var(--coral-bg); border-color: var(--coral); color: var(--coral); }
+  .rv-helpful { font-size: 11px; color: var(--ink3); margin-left: auto; }
+  .rv-winner { font-size: 10px; font-weight: 800; background: #fff8e1; color: #c8a000; border: 1px solid #ffe082; padding: 2px 7px; border-radius: 100px; }
+
+  /* 빈 상태 */
+  .rv-empty { text-align: center; padding: 60px 20px; color: var(--ink3); }
+  .rv-empty-ic { font-size: 48px; margin-bottom: 12px; }
+  .rv-empty p { font-size: 14px; font-weight: 700; margin-bottom: 6px; color: var(--ink2); }
+  .rv-empty small { font-size: 12px; }
+
+  /* 작성 시트 */
+  .sheet-ov { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 500; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .25s; }
+  .sheet-ov.show { opacity: 1; pointer-events: all; }
+  .sheet { background: var(--paper); border-radius: 24px 24px 0 0; padding: 0 20px 48px; width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; animation: sheetUp .3s ease; }
+  @keyframes sheetUp { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .sheet-grab { width: 40px; height: 4px; background: var(--line); border-radius: 100px; margin: 12px auto 16px; }
+  .sheet-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+  .sheet-ic { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  .sheet-titles { flex: 1; }
+  .sheet-t1 { font-size: 17px; font-weight: 900; color: var(--ink); }
+  .sheet-t2 { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+  .sheet-x { background: none; border: none; font-size: 22px; color: var(--ink3); cursor: pointer; line-height: 1; padding: 2px; }
+  .star-row { display: flex; gap: 8px; justify-content: center; margin: 16px 0; }
+  .star { font-size: 38px; color: #ddd; cursor: pointer; transition: color .1s, transform .1s; user-select: none; }
+  .star.on { color: #FFC107; }
+  .star:hover { transform: scale(1.15); }
+  .product-sel { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .ps-chip { padding: 6px 13px; border-radius: 100px; border: 1.5px solid var(--line); background: var(--paper); font-size: 12px; font-weight: 700; color: var(--ink3); cursor: pointer; transition: all .15s; }
+  .ps-chip.on { background: var(--coral); border-color: var(--coral); color: #fff; }
+  .rw-label { font-size: 12px; font-weight: 800; color: var(--ink2); margin-bottom: 6px; }
+  .rw-ta { width: 100%; padding: 14px; border: 1.5px solid var(--line); border-radius: 14px; font-size: 14px; font-family: inherit; color: var(--ink); background: var(--bg); resize: none; outline: none; min-height: 100px; }
+  .rw-ta:focus { border-color: var(--coral); }
+  .rw-anon { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink3); margin: 10px 0 16px; cursor: pointer; }
+  .rw-anon input { accent-color: var(--coral); width: 15px; height: 15px; }
+  .rw-submit { width: 100%; padding: 17px; background: var(--coral); color: #fff; border: none; border-radius: 100px; font-size: 15px; font-weight: 900; cursor: pointer; box-shadow: 0 8px 20px rgba(227,45,33,.3); }
+  .rw-submit:disabled { opacity: .6; cursor: not-allowed; }
+
+  /* 플로팅 작성 버튼 */
+  .rv-fab { position: fixed; bottom: 24px; right: calc(50% - 220px + 16px); background: var(--coral); color: #fff; border: none; border-radius: 100px; padding: 14px 22px; font-size: 14px; font-weight: 900; cursor: pointer; box-shadow: 0 8px 24px rgba(227,45,33,.4); display: flex; align-items: center; gap: 8px; z-index: 200; }
+  @media (max-width: 460px) { .rv-fab { right: 16px; } }
+
+  /* 토스트 */
+  .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1C1208; color: #fff; padding: 11px 20px; border-radius: 100px; font-size: 13px; font-weight: 700; opacity: 0; transition: all .3s; z-index: 9999; white-space: nowrap; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- 헤더 -->
+  <div class="rv-header">
+    <button class="rv-back" onclick="history.back()">←</button>
+    <div class="rv-header-title">
+      <h1>⭐ 후기 게시판</h1>
+      <p>실제 구매자들의 생생한 후기</p>
+    </div>
+    <button class="rv-write-btn" onclick="openWriteSheet()">후기 쓰기 ✍️</button>
+  </div>
+
+  <!-- 통계 배너 -->
+  <div class="rv-banner" id="rvBanner">
+    <div class="rv-stat"><b id="statTotal">0</b><span>전체 후기</span></div>
+    <div class="rv-stat"><b id="statAvg">–</b><span>평균 별점</span></div>
+    <div class="rv-stat"><b id="statWeek">0</b><span>이번주 응모</span></div>
+  </div>
+
+  <!-- 별점 분포 -->
+  <div class="rv-avg" id="rvAvg" style="display:none">
+    <div class="rv-avg-num" id="avgNum">0.0</div>
+    <div class="rv-avg-right">
+      <div class="rv-avg-stars" id="avgStars">☆☆☆☆☆</div>
+      <div class="rv-bars" id="avgBars"></div>
+    </div>
+  </div>
+
+  <!-- 필터 탭 -->
+  <div class="rv-tabs">
+    <div class="rv-tab on" onclick="setFilter('all',this)">전체</div>
+    <div class="rv-tab" onclick="setFilter('5',this)">⭐⭐⭐⭐⭐ 5점</div>
+    <div class="rv-tab" onclick="setFilter('4',this)">⭐⭐⭐⭐ 4점</div>
+    <div class="rv-tab" onclick="setFilter('best',this)">👍 베스트</div>
+    <div class="rv-tab" onclick="setFilter('winner',this)">🏆 당첨자</div>
+  </div>
+
+  <!-- 카드 리스트 -->
+  <div class="rv-list" id="rvList"></div>
+
+  <!-- FAB -->
+  <button class="rv-fab" onclick="openWriteSheet()">✍️ 후기 쓰고 응모하기</button>
+</div>
+
+<!-- 후기 작성 시트 -->
+<div class="sheet-ov" id="writeSheet">
+  <div class="sheet">
+    <div class="sheet-grab"></div>
+    <div class="sheet-top">
+      <div class="sheet-ic" style="background:var(--coral-bg)">✍️</div>
+      <div class="sheet-titles">
+        <div class="sheet-t1">후기 쓰고 응모하기</div>
+        <div class="sheet-t2">한 줄 후기 → 이번 주 추첨 자동 응모 🎫</div>
+      </div>
+      <button class="sheet-x" onclick="closeWriteSheet()">×</button>
+    </div>
+
+    <div class="rw-label">어떤 딜을 이용하셨나요?</div>
+    <div class="product-sel" id="productSel">
+      <div class="ps-chip on" onclick="selProduct(this,'갤럭시 S24 FE')">📱 갤럭시 S24</div>
+      <div class="ps-chip" onclick="selProduct(this,'CGV 영화 할인권')">🎬 CGV 할인권</div>
+      <div class="ps-chip" onclick="selProduct(this,'스타벅스 쿠폰팩')">☕ 스타벅스</div>
+      <div class="ps-chip" onclick="selProduct(this,'안산 필라테스')">💆 필라테스</div>
+      <div class="ps-chip" onclick="selProduct(this,'기타')">기타</div>
+    </div>
+
+    <div class="rw-label" style="margin-top:4px">별점을 선택해 주세요</div>
+    <div class="star-row" id="writeStars">
+      <span class="star on" onclick="setStar(1)">★</span>
+      <span class="star on" onclick="setStar(2)">★</span>
+      <span class="star on" onclick="setStar(3)">★</span>
+      <span class="star on" onclick="setStar(4)">★</span>
+      <span class="star on" onclick="setStar(5)">★</span>
+    </div>
+
+    <div class="rw-label">후기를 남겨주세요</div>
+    <textarea class="rw-ta" id="writeTa" placeholder="예) 스벅 쿠폰팩 진짜 싸게 잘 샀어요! 소식이 최고 🐴" maxlength="200"></textarea>
+    <label class="rw-anon"><input type="checkbox" id="anonCheck"> 닉네임 익명으로 표시</label>
+    <button class="rw-submit" onclick="submitReview()">응모하고 후기 남기기 🎫</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="data.js"></script>
+<script>
+(function () {
+  var REVIEW_KEY = 'modilReviews_v1';
+  var USER_KEY = 'modilUser_v1';
+  var currentFilter = 'all';
+  var writeStar = 5;
+  var selectedProduct = '갤럭시 S24 FE';
+
+  var AVAS = ['🦊','🐧','🐻','🐰','🐱','🐨','🦝','🐹','🐤','🦦','🐲','🦔','🐢','🦉','🦥','🐳','🎃','🌸','🍀','⭐'];
+  var SEED_REVIEWS = [
+    { id:'rv-s1', nick:'공구마스터', ava:'🦊', lvl:'LV.9', product:'갤럭시 S24 FE', stars:5, text:'진짜 이 가격에 이 폰이라니… 소식이 덕분에 50만원 아꼈어요! 주변에 다 추천했어요 🔥', likes:34, liked:false, winner:true, verified:true, ts: Date.now()-86400000*3 },
+    { id:'rv-s2', nick:'탕비실요정', ava:'🐹', lvl:'LV.12', product:'스타벅스 쿠폰팩', stars:5, text:'스타벅스 쿠폰 10장에 14,900원?? 처음에 사기인줄 알았는데 진짜 왔어요ㅋㅋ 모딜 찐팬 됐습니다', likes:28, liked:false, winner:false, verified:true, ts: Date.now()-86400000*5 },
+    { id:'rv-s3', nick:'안산토박이', ava:'🐤', lvl:'LV.6', product:'CGV 영화 할인권', stars:4, text:'CGV 주말 영화 2장 할인권 8천원에 샀어요. 보통 14천원인데 대박이죠. 배송도 빠르고 좋아요!', likes:19, liked:false, winner:false, verified:true, ts: Date.now()-86400000*7 },
+    { id:'rv-s4', nick:'퇴근런너', ava:'🦝', lvl:'LV.7', product:'안산 필라테스', stars:5, text:'필라테스 체험권 2만원에 4회?! 원래 8만원인데 완전 가성비 터졌다. 이제 매주 모딜 확인하는 중 😂', likes:15, liked:false, winner:false, verified:true, ts: Date.now()-86400000*10 },
+    { id:'rv-s5', nick:'알뜰소비러', ava:'🐱', lvl:'LV.4', product:'기타', stars:3, text:'배송이 조금 늦긴 했는데 가격은 진짜 최저가 맞아요. 다음엔 더 빨랐으면 좋겠어요~', likes:7, liked:false, winner:false, verified:false, ts: Date.now()-86400000*14 },
+  ];
+
+  function loadReviews() {
+    try {
+      var s = localStorage.getItem(REVIEW_KEY);
+      var list = s ? JSON.parse(s) : [];
+      // 씨앗 리뷰 항상 포함
+      var ids = list.map(function(r){ return r.id; });
+      SEED_REVIEWS.forEach(function(sr) {
+        if (ids.indexOf(sr.id) === -1) list.push(JSON.parse(JSON.stringify(sr)));
+      });
+      return list;
+    } catch(e) { return SEED_REVIEWS.slice(); }
+  }
+  function saveReviews(list) {
+    try { localStorage.setItem(REVIEW_KEY, JSON.stringify(list)); } catch(e) {}
+  }
+  function currentUser() {
+    try { return JSON.parse(localStorage.getItem(USER_KEY)); } catch(e) { return null; }
+  }
+
+  function starsHTML(n, size) {
+    var s = size || 14;
+    var h = '';
+    for (var i = 1; i <= 5; i++) h += '<span style="color:' + (i <= n ? '#FFC107' : '#ddd') + ';font-size:' + s + 'px">★</span>';
+    return h;
+  }
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function num(n) { return Number(n).toLocaleString('ko-KR'); }
+  function ago(ts) {
+    var d = Date.now() - ts, m = Math.floor(d/60000), h = Math.floor(m/60), dd = Math.floor(h/24);
+    if (dd > 0) return dd + '일 전'; if (h > 0) return h + '시간 전'; if (m > 0) return m + '분 전'; return '방금 전';
+  }
+
+  function renderStats(list) {
+    var total = list.length;
+    var avg = total ? (list.reduce(function(a,r){ return a+r.stars; }, 0) / total) : 0;
+    var week = list.filter(function(r){ return Date.now() - r.ts < 7*86400000; }).length;
+    document.getElementById('statTotal').textContent = num(total);
+    document.getElementById('statAvg').textContent = avg ? avg.toFixed(1) + '⭐' : '–';
+    document.getElementById('statWeek').textContent = num(week);
+
+    if (total === 0) { document.getElementById('rvAvg').style.display = 'none'; return; }
+    document.getElementById('rvAvg').style.display = 'flex';
+    document.getElementById('avgNum').textContent = avg.toFixed(1);
+    document.getElementById('avgStars').innerHTML = starsHTML(Math.round(avg), 18);
+    var dist = [5,4,3,2,1].map(function(s) {
+      var cnt = list.filter(function(r){ return r.stars === s; }).length;
+      return { s: s, cnt: cnt, pct: total ? Math.round(cnt/total*100) : 0 };
+    });
+    document.getElementById('avgBars').innerHTML = dist.map(function(d) {
+      return '<div class="rv-bar-row">' +
+        '<span style="min-width:12px">' + d.s + '</span>' +
+        '<div class="rv-bar-track"><div class="rv-bar-fill" style="width:' + d.pct + '%"></div></div>' +
+        '<span style="min-width:22px;text-align:right">' + d.cnt + '</span>' +
+      '</div>';
+    }).join('');
+  }
+
+  function renderList(list) {
+    var filtered = list.slice();
+    if (currentFilter === '5') filtered = filtered.filter(function(r){ return r.stars === 5; });
+    else if (currentFilter === '4') filtered = filtered.filter(function(r){ return r.stars === 4; });
+    else if (currentFilter === 'best') filtered = filtered.filter(function(r){ return r.likes >= 10; });
+    else if (currentFilter === 'winner') filtered = filtered.filter(function(r){ return r.winner; });
+    filtered.sort(function(a,b){ return b.ts - a.ts; });
+
+    var el = document.getElementById('rvList');
+    if (filtered.length === 0) {
+      el.innerHTML = '<div class="rv-empty"><div class="rv-empty-ic">💬</div><p>아직 후기가 없어요</p><small>첫 후기를 남기고 추첨에 응모해 보세요!</small></div>';
+      return;
+    }
+    el.innerHTML = filtered.map(function(r) {
+      return '<div class="rv-card" id="rvc-' + r.id + '">' +
+        '<div class="rv-card-head">' +
+          '<div class="rv-ava">' + (r.ava || '🙂') + '</div>' +
+          '<div class="rv-info">' +
+            '<div class="rv-nick">' + esc(r.nick) + (r.lvl ? ' <span style="font-size:10px;color:var(--ink3);font-weight:600">' + esc(r.lvl) + '</span>' : '') + '</div>' +
+            '<div class="rv-meta">' + ago(r.ts) + '</div>' +
+          '</div>' +
+          '<div class="rv-badge-wrap">' +
+            (r.winner ? '<span class="rv-winner">🏆 당첨</span>' : '') +
+            (r.verified ? '<span class="rv-verified">✓ 구매확인</span>' : '') +
+          '</div>' +
+        '</div>' +
+        '<span class="rv-product">' + esc(r.product || '') + '</span>' +
+        '<div style="margin-bottom:8px">' + starsHTML(r.stars, 15) + '</div>' +
+        '<div class="rv-text">' + esc(r.text) + '</div>' +
+        '<div class="rv-card-foot">' +
+          '<button class="rv-like-btn ' + (r.liked ? 'on' : '') + '" onclick="toggleLike(\'' + r.id + '\',this)">👍 도움돼요 <span>' + num(r.likes) + '</span></button>' +
+          '<span class="rv-helpful">' + (r.likes > 0 ? num(r.likes) + '명에게 도움됨' : '') + '</span>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function render() {
+    var list = loadReviews();
+    renderStats(list);
+    renderList(list);
+  }
+
+  window.setFilter = function(f, el) {
+    currentFilter = f;
+    document.querySelectorAll('.rv-tab').forEach(function(t){ t.classList.remove('on'); });
+    el.classList.add('on');
+    render();
+  };
+
+  window.toggleLike = function(id, btn) {
+    var list = loadReviews();
+    var r = list.find(function(x){ return x.id === id; });
+    if (!r) return;
+    r.liked = !r.liked;
+    r.likes += r.liked ? 1 : -1;
+    saveReviews(list);
+    btn.classList.toggle('on', r.liked);
+    btn.querySelector('span').textContent = num(r.likes);
+    var el = btn.closest('.rv-card').querySelector('.rv-helpful');
+    if (el) el.textContent = r.likes > 0 ? num(r.likes) + '명에게 도움됨' : '';
+  };
+
+  /* 작성 시트 */
+  window.openWriteSheet = function() {
+    writeStar = 5; paintWriteStars();
+    document.getElementById('writeTa').value = '';
+    document.getElementById('anonCheck').checked = false;
+    document.getElementById('writeSheet').classList.add('show');
+  };
+  window.closeWriteSheet = function() { document.getElementById('writeSheet').classList.remove('show'); };
+  window.setStar = function(n) { writeStar = n; paintWriteStars(); };
+  function paintWriteStars() {
+    document.querySelectorAll('#writeStars .star').forEach(function(s,i){ s.classList.toggle('on', i < writeStar); });
+  }
+  window.selProduct = function(el, name) {
+    selectedProduct = name;
+    document.querySelectorAll('#productSel .ps-chip').forEach(function(c){ c.classList.remove('on'); });
+    el.classList.add('on');
+  };
+
+  window.submitReview = function() {
+    var ta = document.getElementById('writeTa');
+    var text = ta.value.trim();
+    if (!text) { ta.focus(); toast('후기 내용을 입력해 주세요 ✍️'); return; }
+    if (text.length < 10) { toast('10자 이상 작성해 주세요 📝'); return; }
+    var anon = document.getElementById('anonCheck').checked;
+    var u = currentUser();
+    var nick = anon ? '익명' : (u ? u.name : '익명');
+    var ava = anon ? '🎭' : (u ? (u.ava || AVAS[Math.floor(Math.random()*AVAS.length)]) : AVAS[Math.floor(Math.random()*AVAS.length)]);
+    var lvl = anon ? '' : (u ? (u.lvl || 'LV.1') : 'LV.1');
+
+    var btn = document.querySelector('.rw-submit');
+    if (btn) { btn.disabled = true; btn.textContent = '등록 중...'; }
+
+    setTimeout(function() {
+      var list = loadReviews();
+      var entry = {
+        id: 'rv-' + Date.now(),
+        nick: nick, ava: ava, lvl: lvl,
+        product: selectedProduct,
+        stars: writeStar,
+        text: text,
+        likes: 0, liked: false,
+        winner: false, verified: !!u,
+        ts: Date.now()
+      };
+      list.unshift(entry);
+      saveReviews(list);
+      closeWriteSheet();
+      render();
+      confetti && confetti(50);
+      toast('🎫 후기 등록 + 응모 완료! 일요일 밤 9시에 추첨해요');
+      if (btn) { btn.disabled = false; btn.textContent = '응모하고 후기 남기기 🎫'; }
+    }, 700);
+  };
+
+  function toast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(function(){ t.classList.remove('show'); }, 3000);
+  }
+
+  // 간단 confetti fallback
+  function confetti(n) {
+    for (var i = 0; i < n; i++) {
+      setTimeout((function(ii) { return function() {
+        var d = document.createElement('div');
+        d.style.cssText = 'position:fixed;top:0;left:' + (10+Math.random()*80) + '%;width:8px;height:8px;border-radius:50%;background:' +
+          ['#E32D21','#FFC107','#4CAF50','#2196F3','#9C27B0'][ii%5] + ';z-index:99999;pointer-events:none;animation:cf .8s ease forwards';
+        document.body.appendChild(d);
+        setTimeout(function(){ d.remove(); }, 900);
+      }; })(i), i * 20);
+    }
+    var st = document.createElement('style');
+    st.textContent = '@keyframes cf{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(60vh) scale(.3) rotate(360deg);opacity:0}}';
+    document.head.appendChild(st);
+  }
+
+  document.getElementById('writeSheet').addEventListener('click', function(e){
+    if (e.target === this) closeWriteSheet();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
