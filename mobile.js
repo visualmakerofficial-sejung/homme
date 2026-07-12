@@ -1011,7 +1011,7 @@
     var u = { name: nick, av: av, channel: channel, email: email || '' };
     DATA.members.unshift({ id: 'M-' + Date.now(), name: nick, phone: email || '소셜가입', joinDate: today(),
       status: 'active', deals: 0, channel: channel });
-    DATA.stats.totalMembers += 1;
+    if (DATA.stats) DATA.stats.totalMembers += 1;
     saveData(DATA);
     setUser(u);
     var chLabel = (CH[channel] && CH[channel].label) ? CH[channel].label : channel;
@@ -1022,6 +1022,9 @@
       $('authSheet').classList.remove('show');
       var pd = DATA.activeDeals.find(function (x) { return x.id === pid; });
       if (pd) setTimeout(function () { openPay(pd); }, 350);
+    } else if (channel === 'email') {
+      // 이메일 로그인/가입은 시트 닫고 메인으로
+      $('authSheet').classList.remove('show');
     } else {
       renderProfile(u);
     }
