@@ -211,7 +211,12 @@ tr:hover td{background:#faf7f4}
     </div>
     <div class="form-row">
       <div class="lf-label">비밀번호</div>
-      <input class="lf-input" id="lgPw" type="password" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')doLogin()">
+      <div style="position:relative">
+        <input class="lf-input" id="lgPw" type="password" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')doLogin()" oninput="updateCapsInfo(this)" style="padding-right:48px">
+        <button type="button" id="pwToggle" onclick="togglePw()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;color:#888;line-height:1;padding:4px">👁</button>
+      </div>
+      <div id="capsInfo" style="display:none;margin-top:6px;font-size:11.5px;padding:6px 10px;border-radius:7px;background:#fff3cd;color:#856404;font-weight:600">⚠️ 대문자 잠금(Caps Lock)이 켜져 있어요</div>
+      <div id="pwDisplay" style="display:none;margin-top:6px;font-size:13px;padding:8px 12px;border-radius:8px;background:#f0f7ff;color:#1a56db;letter-spacing:2px;font-family:monospace;font-weight:700;word-break:break-all"></div>
     </div>
     <button class="lf-btn" onclick="doLogin()">로그인</button>
     <div class="lf-err" id="lgErr">아이디 또는 비밀번호가 올바르지 않습니다</div>
@@ -694,7 +699,18 @@ var KAKAO_SAMPLE=[
    ================================================================ */
 function ls(k,def){try{var v=localStorage.getItem(k);return v?JSON.parse(v):def;}catch(e){return def;}}
 function ss(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
-function getAdmins(){var a=ls(ADMIN_KEY,null);if(!a){ss(ADMIN_KEY,DEFAULT_ADMINS);return DEFAULT_ADMINS;}return a;}
+function getAdmins(){
+  var a=ls(ADMIN_KEY,null);
+  if(!a){ss(ADMIN_KEY,DEFAULT_ADMINS);return JSON.parse(JSON.stringify(DEFAULT_ADMINS));}
+  // 최고관리자가 없거나 pw 필드 없으면 복원
+  var hasSuper=a.find(function(x){return x.role==='super'&&x.pw;});
+  if(!hasSuper){
+    var merged=JSON.parse(JSON.stringify(DEFAULT_ADMINS));
+    a.filter(function(x){return x.role!=='super';}).forEach(function(x){merged.push(x);});
+    ss(ADMIN_KEY,merged);return merged;
+  }
+  return a;
+}
 function saveAdmins(a){ss(ADMIN_KEY,a);}
 function getReviews(){return ls(REVIEW_KEY,[]);}
 function saveReviews(r){ss(REVIEW_KEY,r);}
@@ -1242,6 +1258,33 @@ function showInfoModal(title,html){
 }
 
 document.getElementById('loginScreen').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+
+/* 비밀번호 표시 토글 */
+var pwVisible=false;
+window.togglePw=function(){
+  pwVisible=!pwVisible;
+  var input=document.getElementById('lgPw');
+  var btn=document.getElementById('pwToggle');
+  var disp=document.getElementById('pwDisplay');
+  input.type=pwVisible?'text':'password';
+  btn.textContent=pwVisible?'🙈':'👁';
+  disp.style.display=pwVisible&&input.value?'block':'none';
+  if(pwVisible&&input.value)disp.textContent=input.value;
+};
+window.updateCapsInfo=function(el){
+  var disp=document.getElementById('pwDisplay');
+  if(pwVisible){disp.style.display=el.value?'block':'none';if(el.value)disp.textContent=el.value;}
+};
+document.addEventListener('keyup',function(e){
+  var caps=e.getModifierState&&e.getModifierState('CapsLock');
+  var info=document.getElementById('capsInfo');
+  if(info)info.style.display=caps?'block':'none';
+});
+document.getElementById('lgPw').addEventListener('keyup',function(e){
+  var caps=e.getModifierState&&e.getModifierState('CapsLock');
+  var info=document.getElementById('capsInfo');
+  if(info)info.style.display=caps?'block':'none';
+});
 })();
 </script>
 </body>
