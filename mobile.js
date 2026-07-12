@@ -162,7 +162,12 @@
 
   var plaza;
   function loadPlaza() {
-    try { var s = localStorage.getItem(PLZ_KEY); if (s) return JSON.parse(s); } catch (e) {}
+    try { var s = localStorage.getItem(PLZ_KEY); if (s) {
+      var d = JSON.parse(s);
+      var cutoff = Date.now() - 30 * 86400000;
+      d.posts = (d.posts || []).filter(function (p) { return !p.ts || p.ts > cutoff; });
+      return d;
+    } } catch (e) {}
     return { me: '나(소식이친구)', watching: 1287, expanded: false,
       posts: JSON.parse(JSON.stringify(SEED_POSTS)),
       lottery: { entries: 412, myEntries: 0 } };
@@ -193,19 +198,12 @@
 
   function renderFeed() {
     var el = $('feed'); if (!el) return;
-    var sorted = plaza.posts.slice().sort(function (a, b) { return (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0); });
-    var show = plaza.expanded ? sorted : sorted.slice(0, 5);
+    var sorted = plaza.posts.slice().sort(function (a, b) { return (b.likes || 0) - (a.likes || 0); });
+    var show = sorted.slice(0, 3);
     el.innerHTML = show.map(fcardHTML).join('');
     if ($('plazaWatch')) $('plazaWatch').textContent = num(plaza.watching);
-    var more = $('feedMore');
-    if (more) {
-      if (plaza.posts.length > 5) {
-        more.style.display = 'block';
-        more.textContent = plaza.expanded ? '접기 ▲' : '딜 ' + (plaza.posts.length - 5) + '개 더 보기 ▼';
-      } else { more.style.display = 'none'; }
-    }
   }
-  window.mFeedMore = function () { plaza.expanded = !plaza.expanded; savePlaza(); renderFeed(); };
+  window.mOpenSucc = function () { var s = $('succSheet'); if (s) s.classList.add('show'); };
 
   function findP(id) { return plaza.posts.find(function (p) { return p.id === id; }); }
   window.mLike = function (id, btn) {

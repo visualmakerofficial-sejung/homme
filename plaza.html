@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>딜 광장 | 모딜</title>
+<link rel="stylesheet" href="mobile.css">
+<style>
+body { background: var(--bg); min-height: 100vh; padding-bottom: 80px; }
+.plz-header {
+  background: linear-gradient(135deg, var(--coral) 0%, var(--coral-dark) 100%);
+  padding: 18px 18px 14px; display: flex; align-items: center; gap: 12px;
+  position: sticky; top: 0; z-index: 100;
+}
+.plz-back { background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 36px; height: 36px; font-size: 18px; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.plz-header-info { flex: 1; }
+.plz-title { font-size: 17px; font-weight: 900; color: #fff; }
+.plz-subtitle { font-size: 11.5px; color: rgba(255,255,255,0.8); margin-top: 2px; }
+.plz-body { padding: 14px 14px 0; }
+.plz-sort { display: flex; gap: 8px; margin-bottom: 14px; }
+.plz-sort-btn { padding: 7px 14px; border-radius: 100px; border: 1.5px solid var(--coral-soft); background: var(--paper); font-size: 12px; font-weight: 700; color: var(--coral-dark); cursor: pointer; }
+.plz-sort-btn.active { background: var(--coral); color: #fff; border-color: var(--coral); }
+.plz-empty { text-align: center; padding: 60px 20px; color: var(--ink2); font-size: 14px; }
+.plz-post-btn {
+  position: fixed; bottom: 20px; right: 18px; z-index: 200;
+  background: var(--coral); color: #fff; border: none; border-radius: 50px;
+  padding: 13px 20px; font-size: 14px; font-weight: 800; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(255,99,71,0.4);
+}
+</style>
+</head>
+<body>
+<div class="plz-header">
+  <button class="plz-back" onclick="history.back()">←</button>
+  <div class="plz-header-info">
+    <div class="plz-title">🔥 실시간 딜 광장</div>
+    <div class="plz-subtitle" id="plzCount"></div>
+  </div>
+</div>
+
+<div class="plz-body">
+  <div class="plz-sort">
+    <button class="plz-sort-btn active" id="sortLikes" onclick="setSort('likes')">👍 인기순</button>
+    <button class="plz-sort-btn" id="sortNew" onclick="setSort('new')">🆕 최신순</button>
+  </div>
+  <div id="plzFeed"></div>
+</div>
+
+<button class="plz-post-btn" onclick="goPost()">✍️ 딜 요청하기</button>
+
+<script src="data.js"></script>
+<script>
+var PLZ_KEY = 'modilMobilePlaza_v1';
+var USER_KEY = 'modilUser_v1';
+var sortMode = 'likes';
+
+function loadData() {
+  try { var s = localStorage.getItem(PLZ_KEY); if (s) {
+    var d = JSON.parse(s);
+    var cutoff = Date.now() - 30 * 86400000;
+    d.posts = (d.posts || []).filter(function (p) { return !p.ts || p.ts > cutoff; });
+    localStorage.setItem(PLZ_KEY, JSON.stringify(d));
+    return d;
+  } } catch(e) {}
+  return { posts: [] };
+}
+
+function currentUser() {
+  try { var s = localStorage.getItem(USER_KEY); return s ? JSON.parse(s) : null; } catch(e) { return null; }
+}
+
+function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function num(n) { return Number(n || 0).toLocaleString(); }
+function agoText(m) { if (!m || m < 1) return '방금 전'; if (m < 60) return m + '분 전'; if (m < 1440) return Math.floor(m/60) + '시간 전'; return Math.floor(m/1440) + '일 전'; }
+
+function isMyPost(p) { var u = currentUser(); return u && u.name === p.nick; }
+
+function cardHTML(p) {
+  var mine = isMyPost(p);
+  return '<div class="fcard' + (p.pinned ? ' pinned' : '') + '" id="plzfc-' + p.id + '">' +
+    '<div class="fc-head"><div class="fc-ava">' + esc(p.ava || '🙂') + '</div>' +
+      '<div><span class="fc-nick">' + esc(p.nick) + '</span><span class="fc-lvl">' + esc(p.lvl || 'LV.1') + '</span>' +
+      (mine ? '<span class="fc-mine">내 글</span>' : '') + '</div>' +
+      (p.pinned ? '<span class="fc-pin">📌 상단고정</span>' : '') +
+      '<span class="fc-time">' + agoText(p.ago || 0) + '</span>' +
+    '</div>' +
+    '<div class="fc-cat">#' + esc(p.cat) + '</div>' +
+    '<div class="fc-title" id="plzfct-' + p.id + '">' + esc(p.title) + '</div>' +
+    '<div class="fc-foot">' +
+      '<button class="fc-btn' + (p.liked ? ' on' : '') + '" onclick="doLike(\'' + p.id + '\',this)">👍 <span>' + num(p.likes) + '</span></button>' +
+      '<button class="fc-btn' + (p.lolled ? ' on' : '') + '" onclick="doLol(\'' + p.id + '\',this)">😂 <span>' + num(p.lols) + '</span></button>' +
+      '<button class="fc-btn share" onclick="doShare(\'' + p.id + '\',\'' + esc(p.title) + '\')">📤 추천</button>' +
+      (mine ? '<button class="fc-btn edit" onclick="doEdit(\'' + p.id + '\')">✏️</button>' +
+              '<button class="fc-btn del" onclick="doDel(\'' + p.id + '\')">🗑️</button>' : '') +
+    '</div></div>';
+}
+
+function render() {
+  var data = loadData();
+  var posts = data.posts.slice();
+  if (sortMode === 'likes') {
+    posts.sort(function(a,b) { return (b.pinned?1000:0) + (b.likes||0) - ((a.pinned?1000:0) + (a.likes||0)); });
+  } else {
+    posts.sort(function(a,b) { return (b.ts||0) - (a.ts||0); });
+  }
+  var feed = document.getElementById('plzFeed');
+  var cnt = document.getElementById('plzCount');
+  if (cnt) cnt.textContent = '총 ' + posts.length + '개의 딜 요청';
+  if (!posts.length) { feed.innerHTML = '<div class="plz-empty">아직 딜 요청이 없어요.<br>첫 딜을 요청해보세요! 🐴</div>'; return; }
+  feed.innerHTML = posts.map(cardHTML).join('');
+}
+
+function setSort(mode) {
+  sortMode = mode;
+  document.getElementById('sortLikes').classList.toggle('active', mode === 'likes');
+  document.getElementById('sortNew').classList.toggle('active', mode === 'new');
+  render();
+}
+
+function saveData(data) { try { localStorage.setItem(PLZ_KEY, JSON.stringify(data)); } catch(e) {} }
+
+function findPost(id) { var d = loadData(); return { data: d, post: d.posts.find(function(p){ return p.id===id; }) }; }
+
+function doLike(id) {
+  var r = findPost(id); if (!r.post) return;
+  r.post.liked = !r.post.liked; r.post.likes = (r.post.likes||0) + (r.post.liked ? 1 : -1);
+  saveData(r.data); render();
+}
+function doLol(id) {
+  var r = findPost(id); if (!r.post) return;
+  r.post.lolled = !r.post.lolled; r.post.lols = (r.post.lols||0) + (r.post.lolled ? 1 : -1);
+  saveData(r.data); render();
+}
+function doShare(id, title) {
+  var url = 'https://visualmakerofficial-sejung.github.io/homme/#post-' + id;
+  var text = '모딜 딜 광장: ' + title;
+  if (navigator.share) { navigator.share({ title: '모딜 딜 공유', text: text, url: url }); }
+  else { navigator.clipboard.writeText(url).then(function(){ alert('링크 복사됨!'); }); }
+}
+function doEdit(id) {
+  var r = findPost(id); if (!r.post || !isMyPost(r.post)) return;
+  var el = document.getElementById('plzfct-' + id); if (!el) return;
+  var cur = r.post.title;
+  el.innerHTML = '<textarea id="plzedit-' + id + '" style="width:100%;border:1.5px solid var(--coral);border-radius:8px;padding:8px;font-size:13px;resize:none;" rows="3">' + esc(cur) + '</textarea>' +
+    '<div style="display:flex;gap:6px;margin-top:6px;">' +
+    '<button onclick="doSaveEdit(\'' + id + '\')" style="flex:1;padding:7px;background:var(--coral);color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;">저장</button>' +
+    '<button onclick="render()" style="flex:1;padding:7px;background:var(--bg2);border:none;border-radius:8px;font-size:12px;cursor:pointer;">취소</button>' +
+    '</div>';
+}
+function doSaveEdit(id) {
+  var ta = document.getElementById('plzedit-' + id); if (!ta) return;
+  var val = ta.value.trim(); if (!val) { alert('내용을 입력해주세요.'); return; }
+  var r = findPost(id); if (!r.post) return;
+  r.post.title = val; saveData(r.data); render();
+}
+function doDel(id) {
+  if (!confirm('이 딜 요청을 삭제할까요?')) return;
+  var r = findPost(id); if (!r.post || !isMyPost(r.post)) return;
+  r.data.posts = r.data.posts.filter(function(p){ return p.id !== id; });
+  saveData(r.data); render();
+}
+function goPost() { location.href = 'index.html#feedPost'; }
+
+render();
+</script>
+</body>
+</html>
