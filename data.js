@@ -28,6 +28,7 @@ const DEFAULT_DATA = {
   negoDeals: [
     {
       id: 'nego-001',
+      dealType: 'nego',
       category: '📱 휴대폰',
       name: '삼성 갤럭시 S25\n안산 실매장 공동구매',
       status: 'live', statusText: '소식이가 협상중',
@@ -37,7 +38,7 @@ const DEFAULT_DATA = {
         'https://images.unsplash.com/photo-1706026533859-ae2c3cf7b173?w=600&q=80',
         'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=600&q=80',
       ],
-      videoUrl: 'https://www.youtube.com/watch?v=k0PxkMF5dT0',
+      videoUrl: null,
       desc: '🔥 목표 인원 8명 남았어요!\n\n150명이 모이면 실매장 특가로 공구를 진행합니다.\n지금 사전 예약하시면 오픈 즉시 알림을 보내드려요.\n\n✅ 삼성 공식 대리점 협력 예정\n✅ 자급제 · 색상 선택 가능\n✅ 거점 픽업 or 택배 선택',
       specs: [
         { k: '예상 공구가', v: '협상 완료 후 공개' },
@@ -48,6 +49,7 @@ const DEFAULT_DATA = {
     },
     {
       id: 'nego-002',
+      dealType: 'nego',
       category: '🎬 엔터테인먼트',
       name: 'CGV 안산점\n주말 영화 할인권',
       status: 'live', statusText: '소식이가 협상중',
@@ -57,7 +59,7 @@ const DEFAULT_DATA = {
         'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&q=80',
         'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=600&q=80',
       ],
-      videoUrl: 'https://www.youtube.com/watch?v=2a-YSJJ4oG8',
+      videoUrl: null,
       desc: 'CGV 안산점과 협상 진행 중!\n100명이 모이면 주말 영화 할인권 특가 공구를 시작합니다.\n\n✅ 주말 포함 전 시간 사용 가능 (예정)\n✅ 3D·4DX 추가 요금 적용\n✅ CGV 안산 1관 · 2관 모두 사용 가능',
       specs: [
         { k: '예상 공구가', v: '7,900원 예상 (협상중)' },
@@ -68,6 +70,7 @@ const DEFAULT_DATA = {
     },
     {
       id: 'nego-003',
+      dealType: 'nego',
       category: '👶 키즈/육아',
       name: '안산 트램폴린파크\n체험권 한정 딜',
       status: 'opening', statusText: '오픈 임박 · 잔여 8석',
@@ -84,6 +87,7 @@ const DEFAULT_DATA = {
     },
     {
       id: 'nego-004',
+      dealType: 'nego',
       category: '💆 뷰티/운동',
       name: '안산 필라테스\n체험권 네고중',
       status: 'live', statusText: '소식이가 협상중',
@@ -103,6 +107,7 @@ const DEFAULT_DATA = {
   activeDeals: [
     {
       id: 'deal-001',
+      dealType: 'active',
       category: '삼성 · 실매장 수령',
       name: '갤럭시 S24 FE 공동구매',
       icon: '📱',
@@ -124,6 +129,7 @@ const DEFAULT_DATA = {
     },
     {
       id: 'deal-002',
+      dealType: 'active',
       category: '애플 · 상담 후 조건공개',
       name: '아이폰 16 128GB 공구',
       icon: '🍎',
@@ -144,6 +150,7 @@ const DEFAULT_DATA = {
     },
     {
       id: 'deal-003',
+      dealType: 'active',
       category: '생활가전 · 봄 시즌',
       name: 'LG 공기청정기 공동구매',
       icon: '🏠',
@@ -163,6 +170,7 @@ const DEFAULT_DATA = {
     },
     {
       id: 'deal-004',
+      dealType: 'active',
       category: '카페 · 안산 지역 한정',
       name: '스타벅스 음료 쿠폰팩',
       icon: '☕',
@@ -270,21 +278,19 @@ const DEFAULT_DATA = {
 
 function loadData() {
   try {
-    var saved = localStorage.getItem('modilData_v3');
+    var saved = localStorage.getItem('modilData_v4');
     if (saved) return JSON.parse(saved);
-    /* 구버전 데이터 자동 마이그레이션 */
-    var old = localStorage.getItem('modilData_v2');
-    if (old) { localStorage.removeItem('modilData_v2'); }
+    /* 구버전 제거 */
+    ['modilData_v3','modilData_v2'].forEach(function(k){ localStorage.removeItem(k); });
   } catch(e) {}
   return JSON.parse(JSON.stringify(DEFAULT_DATA));
 }
 function saveData(data) {
-  try { localStorage.setItem('modilData_v3', JSON.stringify(data)); }
+  try { localStorage.setItem('modilData_v4', JSON.stringify(data)); }
   catch(e) { console.error('Save failed:', e); }
 }
 function resetData() {
-  localStorage.removeItem('modilData_v3');
-  localStorage.removeItem('modilData_v2');
+  ['modilData_v4','modilData_v3','modilData_v2'].forEach(function(k){ localStorage.removeItem(k); });
   return JSON.parse(JSON.stringify(DEFAULT_DATA));
 }
 function fmt(n) { return Number(n).toLocaleString('ko-KR'); }

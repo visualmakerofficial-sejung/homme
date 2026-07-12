@@ -860,6 +860,7 @@ function seedSampleData(){
     DATA.negoDeals=[
       {
         id:'n1',
+        dealType:'nego',
         name:'나이키 에어맥스 2024\n(협상 진행중)',
         category:'👟 스포츠/패션',
         statusText:'소식이가 협상중',
@@ -884,6 +885,7 @@ function seedSampleData(){
       },
       {
         id:'n2',
+        dealType:'nego',
         name:'닌텐도 스위치 OLED\n마리오카트 번들',
         category:'🎮 게임/전자',
         statusText:'소식이가 협상중',
@@ -1193,7 +1195,9 @@ function editDeal(id){
   setVal('dm-name',(d.name||'').replace(/\n/g,' '));
   setVal('dm-cat',d.category||d.cat||'');
   setVal('dm-icon',d.icon||'');
-  setVal('dm-type',d.dealType||'active');
+  /* dealType: 저장된 필드 우선, 없으면 negoDeals 배열에 있는지로 판단 */
+  var detectedType = d.dealType || (DATA&&DATA.negoDeals&&DATA.negoDeals.find(function(x){return x.id===id;})?'nego':'active');
+  setVal('dm-type', detectedType);
   setVal('dm-orig',d.origPrice||0); setVal('dm-now',d.nowPrice||0);
   setVal('dm-target',d.targetCount||d.target||100);
   setVal('dm-deadline',d.deadline||'');
