@@ -868,6 +868,16 @@
     el.textContent=msg; el.style.display='block';
   }
   window.mEmailLogin = function() {
+    // 회원가입 모드에서 "취소" 역할
+    var loginBtn=$('authLoginBtn');
+    if(loginBtn && loginBtn.textContent==='취소') {
+      loginBtn.textContent='로그인';
+      var sb=$('authSignupBtn'); if(sb) sb.textContent='회원가입';
+      var nr=$('authNickRow'), pr=$('authPhoneRow');
+      if(nr) nr.style.display='none'; if(pr) pr.style.display='none';
+      var err=$('authEmailErr'); if(err) err.style.display='none';
+      return;
+    }
     var email=(($('authEmail')||{}).value||'').trim().toLowerCase();
     var pw=(($('authPw')||{}).value||'');
     if(!email){ showAuthErr('이메일을 입력해 주세요'); return; }
@@ -879,19 +889,15 @@
   };
   window.mEmailSignup = function() {
     var nickRow=$('authNickRow'), phoneRow=$('authPhoneRow');
+    // 1단계: 닉네임/연락처 칸 보여주기
     if(nickRow && nickRow.style.display==='none') {
       nickRow.style.display='block'; if(phoneRow) phoneRow.style.display='block';
       $('authSignupBtn').textContent='가입 완료';
       $('authLoginBtn').textContent='취소';
+      if($('authNick')) $('authNick').focus();
       return;
     }
-    if($('authLoginBtn').textContent==='취소') {
-      $('authLoginBtn').textContent='로그인';
-      $('authSignupBtn').textContent='회원가입';
-      if(nickRow) nickRow.style.display='none';
-      if(phoneRow) phoneRow.style.display='none';
-      return;
-    }
+    // 2단계: 실제 가입 처리
     var email=(($('authEmail')||{}).value||'').trim().toLowerCase();
     var pw=(($('authPw')||{}).value||'');
     var nick=(($('authNick')||{}).value||'').trim();

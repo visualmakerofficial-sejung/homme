@@ -220,7 +220,7 @@ tr:hover td{background:#faf7f4}
     </div>
     <button class="lf-btn" onclick="doLogin()">로그인</button>
     <div class="lf-err" id="lgErr">아이디 또는 비밀번호가 올바르지 않습니다</div>
-    <div class="lf-hint">초기 계정: admin / modil2024 (최고관리자)</div>
+    <div class="lf-hint">초기 계정: admin / modil2024 (최고관리자)<br>부운영자는 발급받은 아이디/비밀번호로 로그인하세요</div>
   </div>
 </div>
 
@@ -509,13 +509,23 @@ tr:hover td{background:#faf7f4}
       <div class="section" id="sec-admins">
         <div class="ph">
           <div class="ph-left"><h2>🔑 운영자 계정 관리</h2><p>부운영자 생성 · 권한 설정</p></div>
-          <div class="ph-right"><button class="btn primary" onclick="openAdminModal()">+ 운영자 추가</button></div>
+          <div class="ph-right"><button class="btn primary" onclick="openAdminModal()">+ 직접 계정 생성</button></div>
         </div>
         <div class="notice info">
           <b>권한 체계:</b> 최고관리자(오너) → 부운영자(Sub Admin) → 공구별 관리자(Deal Admin)<br>
-          부운영자는 전체 공구와 회원 정보를 볼 수 있습니다. 공구별 관리자는 자신이 담당한 공구만 접근 가능합니다.
+          부운영자는 직접 계정을 만들거나, 모바일 앱에서 가입한 회원을 부운영자로 승격시킬 수 있습니다.
         </div>
-        <div class="tbl-wrap"><div id="adminTable"></div></div>
+        <div class="tabs">
+          <div class="tab on" onclick="adminTab('list',this)">운영자 목록</div>
+          <div class="tab" onclick="adminTab('promote',this)">📱 모바일 회원 → 부운영자 지정</div>
+        </div>
+        <div id="adminTabList">
+          <div class="tbl-wrap"><div id="adminTable"></div></div>
+        </div>
+        <div id="adminTabPromote" style="display:none">
+          <div class="notice warn">모바일 앱에서 이메일로 가입한 회원을 부운영자로 승격할 수 있습니다. 승격 후 해당 이메일 주소가 관리자 아이디가 됩니다.</div>
+          <div class="tbl-wrap"><div id="mobileUserTable"></div></div>
+        </div>
       </div>
 
       <!-- ===== 공구별 관리자 지정 ===== -->
@@ -1177,6 +1187,41 @@ function renderAdminTable(){
       return'<tr><td style="font-family:monospace;font-weight:700">'+esc(a.id)+'</td><td>'+esc(a.name)+'</td><td><span class="badge '+roleCls+'">'+roleLabel+'</span></td><td>'+esc(a.region||'–')+'</td><td>'+esc(a.phone||'–')+'</td><td>'+esc(a.created||'–')+'</td><td>'+(a.active!==false?'<span class="badge green">활성</span>':'<span class="badge gray">비활성</span>')+'</td><td style="display:flex;gap:4px">'+(a.role!=='super'?'<button class="btn xs" onclick="toggleAdmin(\''+a.id+'\')">'+((a.active!==false)?'비활성화':'활성화')+'</button><button class="btn xs danger" onclick="deleteAdmin(\''+a.id+'\')">삭제</button>':'<span style="color:var(--ink3);font-size:11px">변경불가</span>')+'</td></tr>';
     }).join('')+'</tbody></table>';
 }
+window.adminTab=function(tab,el){
+  document.querySelectorAll('#sec-admins .tab').forEach(function(t){t.classList.remove('on');});
+  el.classList.add('on');
+  document.getElementById('adminTabList').style.display=tab==='list'?'block':'none';
+  document.getElementById('adminTabPromote').style.display=tab==='promote'?'block':'none';
+  if(tab==='promote') renderMobileUsers();
+};
+function renderMobileUsers(){
+  var mobileUsers=[];
+  try{ mobileUsers=JSON.parse(localStorage.getItem('modilLocalUsers_v1')||'[]'); }catch(e){}
+  var admins=getAdmins();
+  var adminIds=admins.map(function(a){return a.id;});
+  document.getElementById('mobileUserTable').innerHTML='<table><thead><tr><th>닉네임</th><th>이메일(아이디)</th><th>연락처</th><th>가입일</th><th>관리자 여부</th><th>액션</th></tr></thead><tbody>'+
+    (mobileUsers.length?mobileUsers.map(function(u){
+      var isAdmin=adminIds.indexOf(u.email)!==-1;
+      return'<tr><td><b>'+esc(u.nick)+'</b></td><td style="font-family:monospace;font-size:11px">'+esc(u.email)+'</td><td>'+esc(u.phone||'–')+'</td><td>'+esc(u.joined||'–')+'</td><td>'+(isAdmin?'<span class="badge green">운영자</span>':'<span class="badge gray">일반 회원</span>')+'</td><td>'+(isAdmin?'<button class="btn xs danger" onclick="demoteUser(\''+esc(u.email)+'\')">권한 해제</button>':'<button class="btn xs primary" onclick="promoteUser(\''+esc(u.email)+'\',\''+esc(u.nick)+'\',\''+esc(u.phone||'')+'\')">부운영자로 승격</button>')+'</td></tr>';
+    }).join(''):
+    '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--ink3)">모바일 앱에서 이메일로 가입한 회원이 없습니다<br><small>앱에서 이메일 회원가입을 완료하면 여기에 표시됩니다</small></td></tr>')+'</tbody></table>';
+}
+window.promoteUser=function(email,nick,phone){
+  if(!confirm('['+nick+'] 님을 부운영자로 승격하시겠습니까?\n아이디: '+email+'\n\n승격 후 임시 비밀번호를 설정해 주세요.'))return;
+  var pw=prompt('임시 비밀번호를 설정해 주세요 (6자 이상):','');
+  if(!pw||pw.length<6){toast('비밀번호는 6자 이상이어야 해요');return;}
+  var admins=getAdmins();
+  if(admins.find(function(a){return a.id===email;})){toast('이미 운영자로 등록된 계정이에요');return;}
+  admins.push({id:email,name:nick,pw:pw,role:'sub',phone:phone,region:'안산',created:new Date().toISOString().slice(0,10),active:true});
+  saveAdmins(admins);renderMobileUsers();renderAdminTable();
+  toast('✅ '+nick+'님이 부운영자로 승격됐어요! (아이디: '+email+')');
+};
+window.demoteUser=function(email){
+  if(!confirm(email+' 운영자 권한을 해제하시겠습니까?'))return;
+  var admins=getAdmins().filter(function(a){return a.id!==email;});
+  saveAdmins(admins);renderMobileUsers();renderAdminTable();
+  toast('권한이 해제됐어요');
+};
 function openAdminModal(){showModal('adminModal');}
 function closeAdminModal(){closeModal('adminModal');}
 function saveAdmin(){
@@ -1306,6 +1351,7 @@ var _expose=['nav','openDealModal','closeDealModal','editDeal','saveDeal','viewP
   'renderMembers','exportMembers','smsOne','kakaoOne','renderOrders','confirmPayment',
   'renderDelivery','trackUrl','openTrackingModal','saveTracking','renderReservations',
   'plzTab','renderPlaza','pinPost','delPost','toggleWinner','hideReview',
+  'adminTab','renderMobileUsers','promoteUser','demoteUser',
   'openAdminModal','closeAdminModal','saveAdmin','toggleAdmin','deleteAdmin',
   'openAssignModal','renderDealAdminCards','activateRegion','openRegionModal',
   'saveRegion','switchRegion','saveSettings','changePw','closeModal','showModal',
