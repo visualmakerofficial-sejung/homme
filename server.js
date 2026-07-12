@@ -92,7 +92,8 @@ const IMAGE_MODELS = [CFG.geminiModel, 'gemini-2.5-flash-image', 'gemini-2.5-fla
 
 async function generatePhoto({ prompt, modelImage, productImages, aspect }) {
   if (!CFG.geminiKey) { const e = new Error('GEMINI_API_KEY 미설정'); e.status = 400; throw e; }
-  const ar = aspect === '3:4' ? '3:4' : '9:16';
+  const AR_OK = { '1:1': 1, '3:4': 1, '4:3': 1, '9:16': 1, '16:9': 1 };
+  const ar = AR_OK[aspect] ? aspect : '9:16';
   const parts = [{ text: prompt }];
   if (modelImage) parts.push(...inlineParts([modelImage]));
   parts.push(...inlineParts(productImages));

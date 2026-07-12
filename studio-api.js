@@ -72,8 +72,12 @@ const StudioAPI = (() => {
   // 이미지 생성 모델 후보 (구모델 404 대비 폴백)
   const IMAGE_MODELS = ['gemini-2.5-flash-image', 'gemini-2.5-flash-image-preview', 'gemini-2.0-flash-preview-image-generation'];
 
+  // 요청 비율 → 제미나이 imageConfig 지원 비율 매핑 (미지원 비율은 근접값, 최종 크기는 캔버스로 보정)
+  const AR_MAP = { '1:1': '1:1', '3:4': '3:4', '4:3': '4:3', '9:16': '9:16', '16:9': '16:9', '4:5': '3:4', '5:4': '4:3', '2:3': '3:4', '3:2': '4:3' };
+
   async function geminiPhoto(prompt, modelImage, productImages, opts = {}) {
-    const aspect = opts.aspect === '3:4' ? '3:4' : '9:16';
+    const reqAr = AR_MAP[opts.aspect] ? opts.aspect : '9:16';
+    const aspect = AR_MAP[reqAr]; // 서버/모델에 보낼 지원 비율
     // 1순위: 백엔드 서버(키를 서버가 보관)
     if (server.available && server.gemini) {
       const r = await fetch('/api/photo', {
@@ -521,7 +525,8 @@ const StudioAPI = (() => {
 
   // 데모 사진: 모델이 옷을 입은 연출 컷 PNG (뷰티/제품컷은 별도)
   async function demoPhoto(prompt, modelImage, productImages, opts = {}) {
-    const W = 768, H = opts.aspect === '3:4' ? 1024 : 1365;
+    const RATIO = { '1:1': [1024, 1024], '4:5': [960, 1200], '3:4': [768, 1024], '9:16': [768, 1365], '16:9': [1365, 768], '4:3': [1024, 768] };
+    const [W, H] = RATIO[opts.aspect] || RATIO['9:16'];
     if (opts.beauty || opts.productOnly) {
       let product = null;
       try { if (productImages && productImages[0]) product = await loadImg(productImages[0]); } catch (e) {}

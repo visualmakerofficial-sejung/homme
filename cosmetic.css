@@ -1,0 +1,83 @@
+/* cosmetic.css — 화장품 9컷 생성기 전용 (studio.css 토큰/공통요소 재사용) */
+
+.cs-wrap { max-width: 1120px; margin: 0 auto; padding: 30px 22px 90px; }
+
+.cs-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+.cs-brand h1 { font-size: 25px; font-weight: 900; letter-spacing: -.02em; display: flex; align-items: center; gap: 10px; }
+.cs-brand p { margin-top: 7px; font-size: 13px; color: var(--ink3); line-height: 1.5; }
+.cs-top-actions { display: flex; gap: 8px; }
+
+.cs-conn { font-size: 12px; font-weight: 600; padding: 9px 13px; border-radius: 10px; margin-bottom: 22px; }
+.cs-conn.ok { background: rgba(46,160,120,.12); color: #1f8a63; }
+.cs-conn.demo { background: var(--accent-soft); color: var(--accent2); }
+
+/* 업로드 썸네일 */
+.cs-thumbs { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.cs-thumbs[hidden] { display: none; }
+.cs-thumb { position: relative; width: 88px; height: 88px; border-radius: 11px; overflow: hidden; border: 1px solid var(--line2); }
+.cs-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.cs-rm { position: absolute; top: 3px; right: 3px; width: 20px; height: 20px; border-radius: 50%; border: none; background: rgba(0,0,0,.55); color: #fff; cursor: pointer; font-size: 14px; line-height: 1; }
+.cs-badge { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,.5); color: #fff; font-size: 9.5px; text-align: center; padding: 2px 0; }
+
+.seg-wrap { flex-wrap: wrap; }
+
+/* 분석 폼 */
+.cs-loading { display: flex; align-items: center; gap: 10px; color: var(--ink3); font-size: 12.5px; padding: 10px 2px; }
+.cs-err { color: var(--red); font-size: 12.5px; line-height: 1.6; }
+.cs-warn { background: rgba(232,85,58,.10); border: 1px solid rgba(232,85,58,.3); color: var(--accent2); font-size: 12px; border-radius: 9px; padding: 9px 11px; margin-bottom: 14px; line-height: 1.5; }
+.cs-sec { font-size: 12px; font-weight: 800; color: var(--ink2); margin: 6px 0 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cs-sec span { font-size: 10.5px; font-weight: 500; color: var(--ink3); }
+.cs-cat { margin-left: auto; font-style: normal; font-size: 11px; font-weight: 800; color: var(--accent2); background: var(--accent-soft); padding: 3px 10px; border-radius: 20px; }
+.cs-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-bottom: 16px; }
+.cs-form-3 { grid-template-columns: 1fr 1fr 1fr; }
+.cs-f { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.cs-f > span { font-size: 10.5px; font-weight: 700; color: var(--ink3); }
+.cs-f-wide { grid-column: 1 / -1; }
+.cs-f input { background: var(--panel); border: 1px solid var(--line2); color: var(--ink); border-radius: 8px; padding: 8px 10px; font-family: inherit; font-size: 12.5px; width: 100%; box-sizing: border-box; }
+.cs-f input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.cs-color { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 800; color: var(--ink); }
+.cs-color i { width: 17px; height: 17px; border-radius: 50%; border: 1px solid var(--line2); }
+.cs-pal { display: flex; align-items: center; gap: 12px; }
+.cs-pal > span { font-size: 10.5px; font-weight: 700; color: var(--ink3); }
+.cs-sw { display: flex; gap: 7px; flex: 1; }
+.cs-sw i { flex: 1; height: 30px; border-radius: 8px; border: 1px solid var(--line2); }
+.cs-note { margin-top: 13px; font-size: 11.5px; color: var(--ink2); line-height: 1.55; background: var(--accent-soft); border-radius: 9px; padding: 9px 11px; }
+
+/* 옵션/설정 */
+.cs-opts { margin-top: 14px; display: flex; flex-direction: column; gap: 12px; }
+.cs-check { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink2); cursor: pointer; }
+.cs-check input { width: 16px; height: 16px; accent-color: var(--accent); }
+.cs-set { display: flex; flex-direction: column; gap: 14px; }
+.cs-set-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.cs-set-k { font-size: 12px; font-weight: 800; color: var(--ink2); width: 72px; flex: none; }
+
+/* 결과 그리드/카드 */
+.cs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.cs-card { border: 1px solid var(--line2); border-radius: 13px; overflow: hidden; background: var(--panel2); display: flex; flex-direction: column; }
+.cs-card-img { width: 100%; background: var(--panel); }
+.cs-card-img img { width: 100%; display: block; }
+.cs-card-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 9px 11px 4px; font-size: 12px; }
+.cs-card-h b { font-weight: 800; }
+.cs-st { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+.cs-st-completed { background: rgba(46,160,120,.14); color: #1f8a63; }
+.cs-st-failed { background: rgba(210,63,63,.14); color: var(--red); }
+.cs-st-idle { background: var(--panel); color: var(--ink3); }
+.cs-st-generating, .cs-st-generating_background, .cs-st-upscaling, .cs-st-validating, .cs-st-compositing_product { background: var(--accent-soft); color: var(--accent2); }
+.cs-card-meta { font-size: 10.5px; color: var(--ink3); padding: 0 11px 8px; }
+.cs-card-act { display: flex; gap: 6px; padding: 0 11px 11px; flex-wrap: wrap; }
+.cs-mini { font-family: inherit; font-size: 11px; font-weight: 700; color: var(--ink2); background: var(--panel); border: 1px solid var(--line2); border-radius: 7px; padding: 5px 9px; cursor: pointer; text-decoration: none; }
+.cs-mini:hover { border-color: var(--accent); color: var(--accent2); }
+.cs-mini.cs-accent { background: var(--accent); color: #fff; border: none; }
+.cs-mini.cs-dl { color: var(--accent2); font-weight: 800; }
+.cs-editbox { display: flex; gap: 6px; padding: 0 11px 11px; }
+.cs-editbox[hidden] { display: none; }
+.cs-editbox input { flex: 1; min-width: 0; background: var(--panel); border: 1px solid var(--line2); color: var(--ink); border-radius: 7px; padding: 6px 8px; font-family: inherit; font-size: 11.5px; }
+.cs-editbox input:focus { outline: none; border-color: var(--accent); }
+.cs-card-load { aspect-ratio: 4/5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--ink3); font-size: 12px; }
+.cs-card-fail { aspect-ratio: 4/5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--red); font-size: 11.5px; text-align: center; padding: 14px; line-height: 1.5; }
+
+@media (max-width: 900px) { .cs-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 720px) {
+  .cs-form, .cs-form-3 { grid-template-columns: 1fr; }
+  .cs-grid { grid-template-columns: 1fr; }
+}

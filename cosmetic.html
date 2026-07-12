@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>화장품 연출 9컷 · VISUAL MAKER STUDIO</title>
+<link rel="stylesheet" href="studio.css">
+<link rel="stylesheet" href="cosmetic.css">
+</head>
+<body>
+<div class="cs-wrap">
+
+  <header class="cs-top">
+    <div class="cs-brand">
+      <h1>화장품 연출 <span class="stu-badge">9컷</span></h1>
+      <p>제품 사진 1장을 분석해 <b>상세페이지·SNS용 연출컷 9종</b>을 각각 <b>독립 이미지</b>로 생성합니다.</p>
+    </div>
+    <div class="cs-top-actions">
+      <button class="tbtn" id="btnSettings">🔑 API 연결</button>
+      <a class="tbtn ghost" href="studio.html">← 스튜디오</a>
+    </div>
+  </header>
+
+  <div class="cs-conn" id="connBanner"></div>
+
+  <!-- 1. 업로드 -->
+  <section class="step">
+    <div class="step-head"><div class="step-t"><span class="step-n">1</span><span class="step-dot">·</span> 제품 사진 업로드</div></div>
+    <div class="drop" id="drop" tabindex="0">
+      <input type="file" id="file" accept="image/*" multiple hidden>
+      <div class="drop-inner">
+        <div class="drop-ic">🧴</div>
+        <div class="drop-t"><b>제품 정면</b> 사진을 끌어다 놓거나 눌러서 선택하세요</div>
+        <div class="drop-s">정면 라벨·용기 전체가 선명한 사진 1장(권장 긴 변 1500px↑) · 박스/옆면/뒷면/제형은 선택 추가</div>
+        <div class="drop-paste">📋 캡처 후 <b>Ctrl+V</b> 붙여넣기도 됩니다 · JPG·PNG·WEBP · 최대 15MB</div>
+      </div>
+    </div>
+    <div class="cs-thumbs" id="thumbs" hidden></div>
+  </section>
+
+  <!-- 2. 제품 종류 -->
+  <section class="step">
+    <div class="step-head"><div class="step-t"><span class="step-n">2</span><span class="step-dot">·</span> 제품 종류</div></div>
+    <div class="seg seg-wrap" id="typeSeg"></div>
+  </section>
+
+  <!-- AI 분석 -->
+  <section class="step">
+    <div class="step-head">
+      <div class="step-t"><span class="step-n">3</span><span class="step-dot">·</span> 제품 분석 & 수기 수정</div>
+      <button class="link-btn" id="btnReanalyze">다시 분석</button>
+    </div>
+    <div class="ai-analysis" id="analysis" hidden>
+      <div class="aa-body" id="analysisBody"></div>
+    </div>
+    <p class="step-note">제품을 올리면 자동 분석됩니다. 값이 틀리면 직접 수정하세요 — <b>수기 입력이 자동 분석보다 우선</b>합니다.</p>
+  </section>
+
+  <!-- 4. 연출컷 선택 -->
+  <section class="step">
+    <div class="step-head">
+      <div class="step-t"><span class="step-n">4</span><span class="step-dot">·</span> 연출컷 선택</div>
+      <div class="concepts-quick"><button type="button" class="mini-link" id="sceneAll">전체</button><button type="button" class="mini-link" id="sceneNone">해제</button></div>
+    </div>
+    <div class="concepts-chips" id="sceneChips"></div>
+    <div class="cs-opts">
+      <label class="cs-check"><input type="checkbox" id="optBox"> 제품 박스 사진을 함께 올림 (박스 포함 연출 허용)</label>
+      <label class="cs-f cs-f-wide"><span>핵심 성분 (선택 · 성분 연출컷에 사용)</span><input type="text" id="optIng" placeholder="예: 병풀 추출물, 히알루론산"></label>
+    </div>
+  </section>
+
+  <!-- 5. 출력 설정 -->
+  <section class="step">
+    <div class="step-head"><div class="step-t"><span class="step-n">5</span><span class="step-dot">·</span> 출력 설정</div></div>
+    <div class="cs-set">
+      <div class="cs-set-row"><span class="cs-set-k">화면 비율</span><div class="seg" id="aspectSeg"></div></div>
+      <div class="cs-set-row"><span class="cs-set-k">출력 화질</span><div class="seg" id="resSeg"></div></div>
+      <div class="cs-set-row"><span class="cs-set-k">파일 형식</span><div class="seg" id="fmtSeg"></div></div>
+    </div>
+  </section>
+
+  <!-- 생성 -->
+  <div class="gen-bar">
+    <button class="gen-btn" id="btnGen">🖼️ 9컷 개별 생성</button>
+    <button class="gen-btn ghost" id="btnFailed" disabled>실패만 재생성</button>
+    <span class="gen-info" id="genInfo"></span>
+  </div>
+
+  <!-- 결과 -->
+  <section class="results" id="results" hidden>
+    <div class="step-head">
+      <div class="step-t">결과</div>
+      <div class="concepts-quick">
+        <button type="button" class="mini-link" id="btnDlAll" disabled>전체 다운로드</button>
+        <button type="button" class="mini-link" id="btnZip" disabled>ZIP 다운로드</button>
+      </div>
+    </div>
+    <div class="cs-grid" id="resultGrid"></div>
+  </section>
+
+</div>
+
+<!-- API 연결 모달 -->
+<div class="modal-ov" id="settingsModal">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-t">🔑 API 연결</div><button class="modal-x" data-close>×</button></div>
+    <div class="modal-body">
+      <p class="modal-sub">서버에 키가 설정돼 있으면 자동 연동됩니다. 개인 브라우저에서 쓸 땐 아래에 제미나이 키를 넣으세요(localStorage 저장).</p>
+      <div class="set-block">
+        <div class="set-title">🖼️ 제미나이 (사진 생성·분석)</div>
+        <label>Gemini API Key<input type="password" id="setKey" placeholder="AIza..."></label>
+        <label>이미지 모델 ID<input type="text" id="setModel" placeholder="gemini-2.5-flash-image"></label>
+      </div>
+      <div class="af-actions"><button class="btn primary" id="btnSaveKey">저장</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="studio-api.js"></script>
+<script src="cosmetic.js"></script>
+<script>
+  // API 연결 모달 (studio-api 재사용)
+  (function () {
+    const open = () => { const s = StudioAPI.getSettings(); document.getElementById('setKey').value = s.geminiKey || ''; document.getElementById('setModel').value = s.geminiModel || ''; document.getElementById('settingsModal').classList.add('open'); };
+    document.getElementById('btnSettings').onclick = open;
+    document.querySelector('#settingsModal [data-close]').onclick = () => document.getElementById('settingsModal').classList.remove('open');
+    document.getElementById('settingsModal').addEventListener('click', e => { if (e.target.id === 'settingsModal') e.currentTarget.classList.remove('open'); });
+    document.getElementById('btnSaveKey').onclick = () => {
+      StudioAPI.saveSettings({ geminiKey: document.getElementById('setKey').value.trim(), geminiModel: document.getElementById('setModel').value.trim() || 'gemini-2.5-flash-image' });
+      document.getElementById('settingsModal').classList.remove('open');
+      const t = document.getElementById('toast'); t.textContent = '저장되었습니다'; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200);
+      const b = document.getElementById('connBanner'); if (StudioAPI.hasGemini()) { b.className = 'cs-conn ok'; b.textContent = '● 실연동: 제미나이 연결됨 — 실제 이미지가 생성됩니다'; }
+    };
+  })();
+</script>
+</body>
+</html>
