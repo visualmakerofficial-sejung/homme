@@ -165,15 +165,20 @@
 
   var plaza;
   function loadPlaza() {
+    var d;
     try { var s = localStorage.getItem(PLZ_KEY); if (s) {
-      var d = JSON.parse(s);
+      d = JSON.parse(s);
       var cutoff = Date.now() - 30 * 86400000;
       d.posts = (d.posts || []).filter(function (p) { return !p.ts || p.ts > cutoff; });
-      return d;
     } } catch (e) {}
-    return { me: '나(소식이친구)', watching: 1287, expanded: false,
-      posts: JSON.parse(JSON.stringify(SEED_POSTS)),
-      lottery: { entries: 412, myEntries: 0 } };
+    if (!d) d = { me: '나(소식이친구)', watching: 1287, expanded: false,
+      posts: [], lottery: { entries: 412, myEntries: 0 } };
+    // 샘플 딜이 항상 피드에 포함되도록 유지
+    var ids = d.posts.map(function(p){ return p.id; });
+    SEED_POSTS.forEach(function(sp) {
+      if (ids.indexOf(sp.id) === -1) d.posts.push(JSON.parse(JSON.stringify(sp)));
+    });
+    return d;
   }
   function savePlaza() { try { localStorage.setItem(PLZ_KEY, JSON.stringify(plaza)); } catch (e) {} }
 
