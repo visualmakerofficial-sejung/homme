@@ -27,29 +27,8 @@
     <button class="m-acct" id="mAcct" onclick="mOpenAuth()"><span class="av">👤</span><span class="nm">가입</span></button>
   </header>
 
-  <!-- HERO -->
-  <section class="m-hero">
-    <div class="m-hero-row">
-      <div class="m-hero-txt">
-        <span class="m-hero-badge"><span class="badge-dot"></span>안녕! 나는 소식이야 🐴</span>
-        <h1 class="m-hero-h1">모이면<br><em>딜이 된다</em></h1>
-        <p class="m-hero-sub">우리 동네 원하는 제품·매장을 알려주면, 모딜이 직접 협상해 공동구매를 열어드려요.</p>
-      </div>
-      <div class="m-hero-sosik"><img src="sosik.png" alt="소식이"></div>
-    </div>
-    <div class="m-hero-cta">
-      <button class="m-btn primary" onclick="mScroll('form')">딜 요청하기 →</button>
-      <button class="m-btn ghost" onclick="mScroll('plaza')">실시간 딜 보기</button>
-    </div>
-    <div class="m-stats">
-      <div class="m-stat"><div class="m-stat-n" id="st1">38</div><div class="m-stat-l">성사된 딜</div></div>
-      <div class="m-stat"><div class="m-stat-n" id="st2">1,240</div><div class="m-stat-l">함께한 친구</div></div>
-      <div class="m-stat"><div class="m-stat-n" id="st3">94%</div><div class="m-stat-l">만족도</div></div>
-    </div>
-  </section>
-
-  <!-- 모딜 이용방법 (아코디언) -->
-  <div class="howto open" id="howto">
+  <!-- 모딜 이용방법 (상단 바로 아래, 기본 닫힘) -->
+  <div class="howto" id="howto">
     <div class="howto-head" onclick="mToggleHowto()">
       <div class="howto-ic">⚡</div>
       <div class="howto-tt">
@@ -76,12 +55,46 @@
     </div>
   </div>
 
-  <!-- ============ 실시간 딜 광장 (중심) ============ -->
+  <!-- HERO -->
+  <section class="m-hero">
+    <div class="m-hero-row">
+      <div class="m-hero-txt">
+        <h1 class="m-hero-h1">모이면<br><em>딜이 된다</em></h1>
+        <p class="m-hero-sub">우리 동네 원하는 제품·매장을 알려주면, 모딜이 직접 협상해 공동구매를 열어드려요.</p>
+      </div>
+      <div class="m-hero-sosik"><img src="sosik.png" alt="소식이"></div>
+    </div>
+    <div class="m-hero-cta">
+      <button class="m-btn primary" onclick="mScroll('form')">딜 요청하기 →</button>
+      <button class="m-btn ghost" onclick="mScroll('plaza')">실시간 딜 보기</button>
+    </div>
+    <div class="m-stats">
+      <div class="m-stat"><div class="m-stat-n" id="st1">38</div><div class="m-stat-l">성사된 딜</div></div>
+      <div class="m-stat"><div class="m-stat-n" id="st2">1,240</div><div class="m-stat-l">함께한 친구</div></div>
+      <div class="m-stat"><div class="m-stat-n" id="st3">94%</div><div class="m-stat-l">만족도</div></div>
+    </div>
+  </section>
+
+  <!-- 공동구매 진행중 (실시간 딜 광장 위로 이동) -->
+  <section class="m-sec tight">
+    <div class="m-srow m-shead">
+      <div>
+        <div class="m-mini">🛒 지금 구매 가능</div>
+        <div class="m-title">공동구매 진행 중</div>
+      </div>
+      <div class="hs-arrows">
+        <button class="hs-arrow l off" data-for="dealScroll" onclick="mNudge('dealScroll',-1)">‹</button>
+        <button class="hs-arrow r" data-for="dealScroll" onclick="mNudge('dealScroll',1)">›</button>
+      </div>
+    </div>
+  </section>
+  <div class="hscroll" id="dealScroll"></div>
+
+  <!-- ============ 실시간 딜 광장 (인기 TOP 3만 노출) ============ -->
   <section class="plaza" id="plaza" data-screen-label="실시간 딜 광장">
     <div class="plaza-mini">🎉 실시간 딜 광장</div>
     <div class="plaza-title">지금 안산에서 끓는 딜</div>
 
-    <!-- 보는 중 카운터 (가장 중심) -->
     <div class="watch-hero">
       <span class="watch-live"><span class="ld"></span>LIVE</span>
       <div>
@@ -91,7 +104,6 @@
       <div class="watch-bars"><i></i><i></i><i></i><i></i><i></i></div>
     </div>
 
-    <!-- 제안자 무료 -->
     <div class="free-banner">
       <div class="free-banner-tx">🎁 내가 올린 딜이 성사되면? <b>제안자는 0원!</b> 아이디어만 좋으면 공짜로 받아요.</div>
     </div>
@@ -111,9 +123,9 @@
       </div>
     </div>
 
-    <!-- 피드 (5개 먼저) -->
+    <!-- 인기 TOP 3 피드 -->
     <div class="feed" id="feed"></div>
-    <button class="feed-more" id="feedMore" onclick="mFeedMore()">더 보기 ▼</button>
+    <a class="feed-more-link" href="plaza.html">전체 딜 광장 보기 →</a>
   </section>
 
   <!-- 네고 진행중 (가로) -->
@@ -131,21 +143,6 @@
   </section>
   <div class="hscroll" id="negoScroll"></div>
 
-  <!-- 공동구매 진행중 (가로) -->
-  <section class="m-sec tight">
-    <div class="m-srow m-shead">
-      <div>
-        <div class="m-mini">🛒 지금 구매 가능</div>
-        <div class="m-title">공동구매 진행 중</div>
-      </div>
-      <div class="hs-arrows">
-        <button class="hs-arrow l off" data-for="dealScroll" onclick="mNudge('dealScroll',-1)">‹</button>
-        <button class="hs-arrow r" data-for="dealScroll" onclick="mNudge('dealScroll',1)">›</button>
-      </div>
-    </div>
-  </section>
-  <div class="hscroll" id="dealScroll"></div>
-
   <!-- 요청 TOP 3 -->
   <section class="m-sec tight">
     <div class="m-shead">
@@ -155,7 +152,7 @@
     <div class="req3" id="req3"></div>
   </section>
 
-  <!-- 직접 요청하기 (컴팩트) -->
+  <!-- 직접 요청하기 -->
   <section class="m-sec tight" id="form">
     <div class="m-shead">
       <div class="m-mini">📬 직접 요청하기</div>
@@ -185,22 +182,7 @@
     </div>
   </section>
 
-  <!-- 이미 열린 딜 (가로) -->
-  <section class="m-sec tight">
-    <div class="m-srow m-shead">
-      <div>
-        <div class="m-mini">✅ 실제로 성사된 딜</div>
-        <div class="m-title">이미 열린 딜들</div>
-      </div>
-      <div class="hs-arrows">
-        <button class="hs-arrow l off" data-for="succScroll" onclick="mNudge('succScroll',-1)">‹</button>
-        <button class="hs-arrow r" data-for="succScroll" onclick="mNudge('succScroll',1)">›</button>
-      </div>
-    </div>
-  </section>
-  <div class="hscroll" id="succScroll"></div>
-
-  <!-- 후기 이벤트 (심플) -->
+  <!-- 후기 이벤트 -->
   <section class="m-sec tight" id="lottery">
     <div class="m-shead">
       <div class="m-mini">🎁 후기 이벤트</div>
@@ -224,7 +206,7 @@
     </div>
   </section>
 
-  <!-- 거점 지도 (구글 + 모션) -->
+  <!-- 거점 지도 -->
   <section class="m-sec tight" id="spots">
     <div class="m-shead">
       <div class="m-mini">📍 안산 17개 거점</div>
@@ -249,39 +231,18 @@
     </div>
   </section>
 
-  <!-- ============ 하단 콘솔 ============ -->
-  <div class="console">
-    <div class="console-title">⚙️ 모딜 콘솔</div>
-    <div class="console-grid">
-      <button class="con-card shop" onclick="mOpenShop()">
-        <span class="con-ic">🏪</span>
-        <div>
-          <div class="con-t1">사장님 딜 신청</div>
-          <div class="con-t2">우리 매장 혜택 직접 제안하기</div>
-        </div>
-      </button>
-      <button class="con-card" onclick="mOpenAuth()" style="text-align:left">
-        <span class="con-ic">🙋</span>
-        <div>
-          <div class="con-t1">모딜 가입하기</div>
-          <div class="con-t2">카카오·네이버·인스타로 3초 가입</div>
-        </div>
-      </button>
-    </div>
-  </div>
-
-  <!-- ============ 코랄 CTA (이미지처럼) ============ -->
+  <!-- 코랄 CTA -->
   <section class="m-cta">
     <div class="m-cta-sosik"><img src="sosik.png" alt="소식이"></div>
     <h2 class="m-cta-title">소식이가 기다리고 있어요!</h2>
     <p class="m-cta-sub">지금 요청하면, 우리 동네에 딜이 시작돼요</p>
     <div class="m-cta-btns">
       <button class="m-cta-btn fill" onclick="mScroll('form')">딜 요청하기</button>
-      <button class="m-cta-btn line" onclick="location.href='franchise.html'">분양 문의</button>
+      <button class="m-cta-btn line" onclick="mOpenShop()">사장님 딜 신청</button>
     </div>
   </section>
 
-  <!-- ============ 다크 푸터 (이미지처럼) ============ -->
+  <!-- 다크 푸터 -->
   <footer class="m-footer">
     <div class="mf-top">
       <div class="mf-brand">
@@ -292,7 +253,7 @@
         </div>
       </div>
       <div class="mf-links">
-        <a href="admin.html">관리자 콘솔</a>
+        <a href="admin.html">관리자</a>
         <a href="franchise.html">분양 안내</a>
         <a href="#">이용약관</a>
         <a href="#">개인정보처리방침</a>
@@ -308,9 +269,25 @@
   <button class="bnav-i on" onclick="window.scrollTo({top:0,behavior:'smooth'})"><span class="bnav-ic">🏠</span>홈</button>
   <button class="bnav-i" onclick="mScroll('plaza')"><span class="bnav-ic">🎉</span>실시간</button>
   <button class="bnav-i" onclick="mScroll('form')"><span class="bnav-ic">📬</span>딜요청</button>
-  <button class="bnav-i" onclick="mScroll('spots')"><span class="bnav-ic">📍</span>거점</button>
+  <button class="bnav-i" onclick="mOpenSucc()"><span class="bnav-ic">✅</span>성사딜</button>
   <button class="bnav-i" onclick="mOpenAuth()"><span class="bnav-ic">🙋</span>내정보</button>
 </nav>
+
+<!-- 성사딜 시트 (하단 네비에서 열림) -->
+<div class="sheet-ov" id="succSheet">
+  <div class="sheet" style="max-height:85vh;overflow-y:auto">
+    <div class="sheet-grab"></div>
+    <div class="sheet-head">
+      <div class="sheet-ic" style="background:#e8f5e9">✅</div>
+      <div>
+        <div class="sheet-t1">이미 열린 딜들</div>
+        <div class="sheet-t2">모딜이 실제로 성사시킨 공동구매예요</div>
+      </div>
+      <button class="sheet-x" onclick="document.getElementById('succSheet').classList.remove('show')">×</button>
+    </div>
+    <div class="hscroll" id="succScroll" style="margin:0 -20px;padding:0 20px 4px"></div>
+  </div>
+</div>
 
 <!-- 사장님 제휴 시트 -->
 <div class="sheet-ov" id="shopSheet">
@@ -320,7 +297,7 @@
       <div class="sheet-ic">🏪</div>
       <div>
         <div class="sheet-t1">사장님 딜 신청</div>
-        <div class="sheet-t2">“우리 매장은 이런 곳인데, 이런 혜택 드릴게요” — 사장님이 먼저 딜을 열 수 있어요</div>
+        <div class="sheet-t2">"우리 매장은 이런 곳인데, 이런 혜택 드릴게요" — 사장님이 먼저 딜을 열 수 있어요</div>
       </div>
       <button class="sheet-x" onclick="mCloseShop()">×</button>
     </div>
