@@ -68,11 +68,6 @@
       <button class="m-btn primary" onclick="mScroll('form')">딜 요청하기 →</button>
       <button class="m-btn ghost" onclick="mScroll('plaza')">실시간 딜 보기</button>
     </div>
-    <div class="m-stats">
-      <div class="m-stat"><div class="m-stat-n" id="st1">38</div><div class="m-stat-l">성사된 딜</div></div>
-      <div class="m-stat"><div class="m-stat-n" id="st2">1,240</div><div class="m-stat-l">함께한 친구</div></div>
-      <div class="m-stat"><div class="m-stat-n" id="st3">94%</div><div class="m-stat-l">만족도</div></div>
-    </div>
   </section>
 
   <!-- 공동구매 진행중 (실시간 딜 광장 위로 이동) -->
@@ -90,10 +85,10 @@
   </section>
   <div class="hscroll" id="dealScroll"></div>
 
-  <!-- ============ 실시간 딜 광장 (인기 TOP 3만 노출) ============ -->
-  <section class="plaza" id="plaza" data-screen-label="실시간 딜 광장">
-    <div class="plaza-mini">🎉 실시간 딜 광장</div>
-    <div class="plaza-title">지금 안산에서 끓는 딜</div>
+  <!-- ============ 실시간 딜 요청 (인기 TOP 3만 노출) ============ -->
+  <section class="plaza" id="plaza" data-screen-label="실시간 딜 요청">
+    <div class="plaza-mini">🔥 실시간 딜 요청</div>
+    <div class="plaza-title plaza-title-lg">실시간 딜 요청</div>
 
     <div class="watch-hero">
       <span class="watch-live"><span class="ld"></span>LIVE</span>
@@ -142,15 +137,6 @@
     </div>
   </section>
   <div class="hscroll" id="negoScroll"></div>
-
-  <!-- 요청 TOP 3 -->
-  <section class="m-sec tight">
-    <div class="m-shead">
-      <div class="m-mini">🔥 요청 많은 딜</div>
-      <div class="m-title">요청 TOP 3</div>
-    </div>
-    <div class="req3" id="req3"></div>
-  </section>
 
   <!-- 직접 요청하기 -->
   <section class="m-sec tight" id="form">
@@ -218,7 +204,7 @@
       <input class="ms-input" id="dongSearch" placeholder="우리 동네 검색  예) 고잔동">
       <button class="ms-go" onclick="mDongSearch()">검색</button>
     </div>
-    <div class="dchips" id="dchips"></div>
+    <div class="dchips" id="dchips" style="display:none"></div>
     <div class="map-box">
       <iframe id="mapFrame" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="안산 거점 지도"></iframe>
       <div class="map-fx">
@@ -229,6 +215,9 @@
       <div class="map-badge"><span class="ld"></span>안산 17개 거점 LIVE</div>
       <div class="map-where" id="mapWhere"></div>
     </div>
+    <a class="map-spot-cta" href="#spots" onclick="mScroll('spots');return false">
+      📍 가까운 거래공간 확인하기 · 소식이가 기다리고 있어요 →
+    </a>
   </section>
 
   <!-- 코랄 CTA -->

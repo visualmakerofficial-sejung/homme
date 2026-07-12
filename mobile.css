@@ -201,6 +201,13 @@ body {
 }
 .plaza-mini { font-size: 11px; font-weight: 800; color: var(--coral-light); letter-spacing: 0.03em; }
 .plaza-title { font-size: 19px; font-weight: 900; margin-top: 3px; letter-spacing: -0.02em; }
+.plaza-title-lg { font-size: 28px; letter-spacing: -0.03em; color: var(--ink); }
+.map-spot-cta {
+  display: block; margin: 12px 0 0; padding: 14px 16px;
+  background: var(--coral); color: #fff; border-radius: 14px;
+  font-size: 13.5px; font-weight: 800; text-align: center; text-decoration: none;
+  box-shadow: 0 4px 14px rgba(227,45,33,0.28);
+}
 
 /* 보는 중 카운터 — 가장 중심 */
 .watch-hero {

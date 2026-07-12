@@ -198,8 +198,11 @@
 
   function renderFeed() {
     var el = $('feed'); if (!el) return;
-    var sorted = plaza.posts.slice().sort(function (a, b) { return (b.likes || 0) - (a.likes || 0); });
-    var show = sorted.slice(0, 3);
+    var pinned = plaza.posts.filter(function (p) { return p.pinned; })
+      .sort(function (a, b) { return (b.likes || 0) - (a.likes || 0); }).slice(0, 3);
+    var unpinned = plaza.posts.filter(function (p) { return !p.pinned; })
+      .sort(function (a, b) { return (b.likes || 0) - (a.likes || 0); });
+    var show = pinned.concat(unpinned).slice(0, 3);
     el.innerHTML = show.map(fcardHTML).join('');
     if ($('plazaWatch')) $('plazaWatch').textContent = num(plaza.watching);
   }
