@@ -138,25 +138,28 @@
      ============================================================ */
   var PLZ_KEY = 'modilMobilePlaza_v1';
   var SEED_POSTS = [
-    { id: 'p1', ava: '🦝', nick: '퇴근런너', lvl: 'LV.7', ago: 2, cat: '운동', likes: 142, lols: 88, fresh: false,
-      title: '헬스장 끊고 3일 나간 사람들… <b>PT 양도권 공동구매</b> 가실 분? 😇' },
-    { id: 'p2', ava: '🐹', nick: '간식요정', lvl: 'LV.12', ago: 6, cat: '간식', likes: 301, lols: 41, fresh: false,
-      title: '회사 탕비실 1년치 간식 <b>대량 공구</b> 🍪 안산 직장인 구함' },
-    { id: 'p3', ava: '🐤', nick: '고잔동붕어', lvl: 'LV.4', ago: 11, cat: '음식', likes: 230, lols: 19, fresh: false,
-      title: '<b>고잔동 슈크림 붕어빵 200개</b> 단체주문 — 모이면 깎아준대요 🥐' },
-    { id: 'p4', ava: '🦦', nick: '집순이대표', lvl: 'LV.9', ago: 18, cat: '리빙', likes: 167, lols: 95, fresh: false,
-      title: '퇴근하면 바로 눕는 사람들 <b>라꾸라꾸 침대 공구</b> 🛏️' },
-    { id: 'p5', ava: '🐙', nick: '커피수혈', lvl: 'LV.10', ago: 24, cat: '카페', likes: 120, lols: 12, fresh: false,
-      title: '하루 4잔 마시는 안산 직장인 <b>원두 5kg 공구</b> ☕ 잠은 죽어서' },
+    { id: 'p1', ts: Date.now()-7200000, ava: '🦝', nick: '퇴근런너', lvl: 'LV.7', ago: 2, cat: '운동', likes: 142, comments: 7, fresh: false,
+      title: '헬스장 끊고 3일 만에 탈퇴한 사람들 모여라 🏋️ <b>PT 양도권 단체공구</b> 50명 모으면 80% 할인!' },
+    { id: 'p2', ts: Date.now()-3600000, ava: '🐹', nick: '탕비실요정', lvl: 'LV.12', ago: 6, cat: '간식', likes: 301, comments: 23, fresh: false,
+      title: '사장님 몰래 탕비실 간식 <b>셀프 리필 공구</b> 🍪 안산 직장인만 — "열심히 일했으니까"' },
+    { id: 'p3', ts: Date.now()-1800000, ava: '🐤', nick: '고잔동붕어', lvl: 'LV.4', ago: 11, cat: '음식', likes: 230, comments: 11, fresh: false,
+      title: '새벽 2시 치킨 혼자 먹기 미안한 사람들 <b>🍗 치킨 100마리 단체주문</b> 동네 나눠먹기 프로젝트' },
+    { id: 'p4', ts: Date.now()-900000, ava: '🦦', nick: '방구석CEO', lvl: 'LV.9', ago: 18, cat: '리빙', likes: 189, comments: 5, fresh: false,
+      title: '재택근무 3년차의 깨달음 — <b>안마의자 공동임대</b> 🛋️ 월 2만원에 사무실 복지 누리기' },
+    { id: 'p5', ts: Date.now()-300000, ava: '🐙', nick: '카페인중독자', lvl: 'LV.10', ago: 24, cat: '카페', likes: 177, comments: 9, fresh: false,
+      title: '☕ 안산 스타벅스 <b>아메리카노 100잔 선결제</b> 공구 — 1잔당 2,000원 목표!' },
   ];
   var POOL = [
-    { ava: '🐲', nick: '층간소음피해자', lvl: 'LV.3', cat: '리빙', title: '<b>두꺼운 슬리퍼 공구</b> 합니다 발소리 줄이기 운동 🥿' },
-    { ava: '🦔', nick: '다이어트0일차', lvl: 'LV.6', cat: '식품', title: '<b>닭가슴살 한 박스 공구</b> 🍗 이번엔 진짜… 진짜임' },
-    { ava: '🐢', nick: '캠핑은장비', lvl: 'LV.8', cat: '캠핑', title: 'MBTI별 캠핑의자 공구 — <b>E는 접이식 / I는 칸막이형</b> ⛺' },
-    { ava: '🦉', nick: '등골브레이커맘', lvl: 'LV.5', cat: '전자', title: '수능 끝난 자녀 <b>노트북 공구</b> + 부모 등골 보호 💻' },
-    { ava: '🦥', nick: '귀차니즘끝판', lvl: 'LV.2', cat: '반려', title: '<b>강아지 간식 대용량 공구</b> 🐶 미안해 멍멍아' },
-    { ava: '🐳', nick: '플랜테리어', lvl: 'LV.7', cat: '리빙', title: '식물 또 죽인 사람 <b>안 죽는 스투키 공구</b> 🌵' },
-    { ava: '🍜', nick: '안산맛집헌터', lvl: 'LV.11', cat: '음식', title: '중앙동 줄서는 그 집 <b>밀키트 공구</b> 🍜' },
+    { ava: '🐲', nick: '층간소음피해자', lvl: 'LV.3', cat: '리빙', title: '윗집 때문에 신경 쓰인다면 — <b>방음 슬리퍼 + 매트 세트 공구</b> 🥿 보복은 조용히' },
+    { ava: '🦔', nick: '다이어트0일차', lvl: 'LV.6', cat: '식품', title: '월요일마다 다이어트 선언하는 사람들 <b>닭가슴살 10kg 공구</b> 🍗 "이번엔 다름"' },
+    { ava: '🐢', nick: '캠핑은장비', lvl: 'LV.8', cat: '캠핑', title: 'MBTI별 캠핑의자 공구 🏕️ <b>E는 오픈형 / I는 등받이 칸막이형</b> — 내향인 배려 버전 포함' },
+    { ava: '🦉', nick: '등골브레이커맘', lvl: 'LV.5', cat: '전자', title: '수능 끝난 자녀에게 <b>노트북 공구</b> 💻 — "등골이 부러질 것 같지만 해줘야지…"' },
+    { ava: '🦥', nick: '귀차니즘끝판왕', lvl: 'LV.2', cat: '반려', title: '산책 나가기 귀찮은 집사들 <b>강아지 자동 공놀이 기계 공구</b> 🐶 미안해 대신 사줄게' },
+    { ava: '🐳', nick: '식물장의사', lvl: 'LV.7', cat: '리빙', title: '3번 연속 식물 죽인 사람 🌵 <b>진짜 안 죽는 선인장 세트 공구</b> — 이번에도 죽이면 포기' },
+    { ava: '🍜', nick: '안산맛집헌터', lvl: 'LV.11', cat: '음식', title: '2시간 줄 서는 그 집 🍜 <b>중앙동 유명 떡볶이 밀키트 공구</b> — 집에서 같은 맛으로!' },
+    { ava: '📱', nick: '폰노예탈출', lvl: 'LV.5', cat: '전자', title: '유튜브 알고리즘에 4시간 뺏긴 사람들 🔒 <b>스마트폰 잠금 타이머 박스 공구</b>' },
+    { ava: '🚗', nick: '카풀요정', lvl: 'LV.9', cat: '기타', title: '매일 같은 시간 안산↔서울 출근하는 분들 🚗 <b>카풀 정기권 공구</b> — 기름값 + 톨 N분의1' },
+    { ava: '🧴', nick: '스킨루틴10단계', lvl: 'LV.6', cat: '뷰티', title: '올리브영 장바구니에만 2년째 있는 화장품들 💄 <b>뷰티 공동구매 카트 합치기</b> 함께 사면 포인트 2배!' },
   ];
   var ME = ['🐴', '🦄', '🐎'];
 
@@ -202,7 +205,7 @@
       .sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
     var unpinned = plaza.posts.filter(function (p) { return !p.pinned; })
       .sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
-    var show = pinned.concat(unpinned).slice(0, 3);
+    var show = pinned.concat(unpinned).slice(0, 2);
     el.innerHTML = show.map(fcardHTML).join('');
     if ($('plazaWatch')) $('plazaWatch').textContent = num(plaza.watching);
   }
