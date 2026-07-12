@@ -3,1361 +3,1246 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>모딜 — 관리자 콘솔</title>
+<title>모딜 관리자 콘솔</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
 <style>
-body { background: var(--cream2); }
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --coral:#E32D21;--cd:#c0251a;--cs:#f26557;--cbg:#FFF0EE;
+  --bg:#F7F4F0;--paper:#fff;--line:#E8E0D8;--line2:#d4c9be;
+  --ink:#1C1208;--ink2:#5C4A36;--ink3:#9B8A79;
+  --green:#1E7A3C;--blue:#1a56db;--yellow:#c8a000;--purple:#6B21A8;
+  --sb:240px;
+}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--ink);min-width:1200px}
 
-.admin-layout {
-  display: grid;
-  grid-template-columns: 240px 1fr;
-  min-height: 100vh;
-}
-.sidebar {
-  background: var(--paper);
-  border-right: 1px solid var(--line);
-  padding: 1.5rem 0;
-  box-shadow: 2px 0 12px rgba(228,53,52,0.04);
-}
-.sb-brand {
-  padding: 0 1.25rem 1.25rem;
-  border-bottom: 1px solid var(--line);
-  margin-bottom: 1rem;
-  display: flex; align-items: center; gap: 10px;
-  text-decoration: none;
-}
-.sb-brand-img {
-  width: 40px; height: 40px;
-  background: var(--coral-soft);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-.sb-brand-img img { width: 130%; margin-top: 6%; }
-.sb-brand-text h1 { font-size: 16px; font-weight: 900; color: var(--coral-dark); line-height: 1; }
-.sb-brand-text small { font-size: 9px; color: var(--ink3); letter-spacing: 0.1em; display: block; margin-top: 4px; }
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#1a0a06 0%,#3d1a12 50%,#1a0a06 100%);display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-box{background:var(--paper);border-radius:24px;padding:48px 40px;width:420px;box-shadow:0 24px 80px rgba(0,0,0,.4)}
+.login-logo{text-align:center;margin-bottom:28px}
+.login-logo .ic{font-size:48px}
+.login-logo h1{font-size:22px;font-weight:900;color:var(--coral);margin-top:8px}
+.login-logo p{font-size:12px;color:var(--ink3);margin-top:4px}
+.lf-label{font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:6px}
+.lf-input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;outline:none;margin-bottom:14px;background:var(--bg)}
+.lf-input:focus{border-color:var(--coral)}
+.lf-btn{width:100%;padding:14px;background:var(--coral);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:900;cursor:pointer;margin-top:4px}
+.lf-btn:hover{background:var(--cd)}
+.lf-err{color:var(--coral);font-size:12px;text-align:center;margin-top:10px;display:none}
+.lf-hint{font-size:11px;color:var(--ink3);text-align:center;margin-top:14px}
 
-.sb-section { padding: 0.5rem 1.25rem; font-size: 10px; letter-spacing: 0.1em; color: var(--ink3); text-transform: uppercase; margin-top: 1rem; font-weight: 700; }
-.sb-link {
-  display: flex; align-items: center; gap: 10px;
-  padding: 11px 1.25rem;
-  font-size: 13px; font-weight: 600; color: var(--ink2);
-  cursor: pointer; transition: background 0.15s, color 0.15s;
-  border-left: 3px solid transparent;
-}
-.sb-link:hover { background: var(--cream); color: var(--coral-dark); }
-.sb-link.active {
-  background: var(--coral-soft); color: var(--coral-dark);
-  border-left-color: var(--coral);
-}
-.sb-icon { font-size: 16px; }
-.sb-back {
-  margin: 1.5rem 1.25rem 0;
-  padding: 10px 12px;
-  background: var(--cream);
-  color: var(--ink2);
-  border-radius: 8px;
-  font-size: 12px; font-weight: 600;
-  text-decoration: none;
-  display: block;
-  text-align: center;
-}
-.sb-back:hover { background: var(--coral-soft); color: var(--coral-dark); }
+/* LAYOUT */
+#adminApp{display:none;min-height:100vh}
+.layout{display:grid;grid-template-columns:var(--sb) 1fr;min-height:100vh}
 
-.main { padding: 2rem; overflow-x: auto; }
-.page-head {
-  display: flex; justify-content: space-between; align-items: flex-end;
-  margin-bottom: 1.5rem; padding-bottom: 1rem;
-  border-bottom: 1px solid var(--line);
-}
-.page-title { font-size: 24px; font-weight: 900; color: var(--ink); }
-.page-sub { font-size: 12px; color: var(--ink3); margin-top: 4px; }
-.page-actions { display: flex; gap: 8px; }
-.btn {
-  font-size: 12px; font-weight: 600;
-  padding: 9px 14px; border-radius: 8px;
-  cursor: pointer; border: 1px solid var(--line2);
-  background: var(--paper); color: var(--ink);
-  transition: all 0.15s;
-}
-.btn:hover { border-color: var(--coral); color: var(--coral); }
-.btn.primary { background: var(--coral); color: #fff; border-color: var(--coral); }
-.btn.primary:hover { background: var(--coral-dark); color: #fff; }
-.btn.danger { background: var(--paper); color: var(--coral-dark); border-color: var(--coral-soft); }
-.btn.danger:hover { background: var(--coral-dark); color: #fff; border-color: var(--coral-dark); }
-.btn.sm { padding: 5px 11px; font-size: 11px; }
+/* SIDEBAR */
+.sb{background:#1a0a06;color:#fff;display:flex;flex-direction:column;position:fixed;top:0;left:0;width:var(--sb);height:100vh;overflow-y:auto;z-index:100}
+.sb-brand{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px}
+.sb-brand .ic{width:36px;height:36px;background:var(--coral);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.sb-brand h1{font-size:15px;font-weight:900;color:#fff;line-height:1.2}
+.sb-brand small{font-size:9px;color:rgba(255,255,255,.5);letter-spacing:.08em}
+.sb-user{padding:12px 16px;background:rgba(255,255,255,.06);margin:12px 12px 0;border-radius:10px}
+.sb-user .role{font-size:9px;font-weight:800;letter-spacing:.06em;padding:2px 8px;border-radius:100px;margin-bottom:4px;display:inline-block}
+.role-super{background:#E32D21;color:#fff}
+.role-sub{background:#1a56db;color:#fff}
+.role-deal{background:#1E7A3C;color:#fff}
+.sb-user .name{font-size:13px;font-weight:700;color:#fff}
+.sb-user .region{font-size:10px;color:rgba(255,255,255,.5);margin-top:2px}
+.sb-sec{padding:14px 16px 4px;font-size:9px;font-weight:800;letter-spacing:.1em;color:rgba(255,255,255,.35);text-transform:uppercase}
+.sb-link{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:13px;font-weight:600;color:rgba(255,255,255,.7);cursor:pointer;transition:all .15s;border-left:3px solid transparent;position:relative}
+.sb-link:hover{background:rgba(255,255,255,.08);color:#fff}
+.sb-link.on{background:rgba(227,45,33,.18);color:#fff;border-left-color:var(--coral)}
+.sb-link .si{font-size:15px;width:20px;text-align:center}
+.sb-badge{margin-left:auto;background:var(--coral);color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:100px}
+.sb-bottom{margin-top:auto;padding:12px 16px;border-top:1px solid rgba(255,255,255,.1)}
+.sb-logout{display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,.5);cursor:pointer;padding:8px 0}
+.sb-logout:hover{color:#fff}
+.sb-region-badge{margin:0 12px 12px;padding:8px 12px;background:rgba(255,255,255,.06);border-radius:8px;font-size:11px;color:rgba(255,255,255,.6)}
+.sb-region-badge b{color:#fff;font-size:13px;display:block;margin-bottom:2px}
 
-.kpi-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px;
-  margin-bottom: 2rem;
-}
-.kpi-card {
-  background: var(--paper);
-  border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 12px rgba(228,53,52,0.06);
-}
-.kpi-label { font-size: 11px; color: var(--ink3); margin-bottom: 8px; letter-spacing: 0.04em; font-weight: 600; }
-.kpi-value { font-size: 32px; font-weight: 900; color: var(--coral-dark); line-height: 1; }
-.kpi-sub { font-size: 11px; color: var(--green); margin-top: 8px; font-weight: 600; }
-.kpi-sub.down { color: var(--coral-dark); }
+/* MAIN */
+.main{margin-left:var(--sb);padding:28px 32px;min-height:100vh}
+.ph{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid var(--line)}
+.ph-left h2{font-size:24px;font-weight:900;color:var(--ink)}
+.ph-left p{font-size:12px;color:var(--ink3);margin-top:4px}
+.ph-right{display:flex;gap:8px;align-items:center}
 
-.card {
-  background: var(--paper);
-  border-radius: 16px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 4px 12px rgba(228,53,52,0.04);
-}
-.card-head {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 1.25rem;
-}
-.card-title { font-size: 15px; font-weight: 800; color: var(--ink); }
-.card-sub { font-size: 11px; color: var(--ink3); margin-top: 2px; }
+/* BUTTONS */
+.btn{padding:9px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--line2);background:var(--paper);color:var(--ink2);font-family:inherit;transition:all .15s;white-space:nowrap}
+.btn:hover{border-color:var(--coral);color:var(--coral)}
+.btn.primary{background:var(--coral);color:#fff;border-color:var(--coral)}
+.btn.primary:hover{background:var(--cd)}
+.btn.blue{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn.green{background:var(--green);color:#fff;border-color:var(--green)}
+.btn.yellow{background:#FEE500;color:#3C1E1E;border-color:#FEE500}
+.btn.sm{padding:5px 11px;font-size:11px}
+.btn.xs{padding:3px 8px;font-size:10px}
+.btn.danger{color:var(--coral);border-color:var(--cs)}
+.btn.danger:hover{background:var(--coral);color:#fff}
 
-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-thead th {
-  text-align: left;
-  font-size: 10px; font-weight: 700;
-  color: var(--ink3); letter-spacing: 0.06em;
-  text-transform: uppercase;
-  padding: 10px 12px;
-  border-bottom: 2px solid var(--line);
-  background: var(--cream);
-}
-tbody td {
-  padding: 13px 12px;
-  border-bottom: 1px solid var(--line);
-  color: var(--ink2);
-}
-tbody tr { transition: background 0.15s; }
-tbody tr:hover { background: var(--cream); }
-.pill {
-  display: inline-block; font-size: 10px; font-weight: 700;
-  padding: 3px 10px; border-radius: 100px;
-}
-.pill.green { background: rgba(56,168,122,0.15); color: var(--green); }
-.pill.orange { background: var(--coral-soft); color: var(--coral-dark); }
-.pill.blue { background: rgba(24,95,165,0.15); color: #185FA5; }
-.pill.gray { background: var(--cream3); color: var(--ink2); }
-.pill.red { background: rgba(228,53,52,0.15); color: var(--coral-dark); }
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:24px}
+.kpi{background:var(--paper);border-radius:16px;padding:20px;border:1.5px solid var(--line);position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;right:0;width:60px;height:60px;border-radius:0 16px 0 100%;opacity:.07}
+.kpi.coral::before{background:var(--coral)}
+.kpi.blue::before{background:var(--blue)}
+.kpi.green::before{background:var(--green)}
+.kpi.purple::before{background:var(--purple)}
+.kpi-ic{font-size:22px;margin-bottom:10px}
+.kpi-label{font-size:11px;color:var(--ink3);font-weight:600;margin-bottom:6px}
+.kpi-val{font-size:30px;font-weight:900;color:var(--ink);line-height:1}
+.kpi-sub{font-size:11px;color:var(--green);font-weight:600;margin-top:6px}
+.kpi-sub.down{color:var(--coral)}
 
-input.editable, select.editable, textarea.editable {
-  width: 100%;
-  background: var(--cream);
-  border: 1px solid var(--line2);
-  border-radius: 8px;
-  padding: 9px 12px;
-  font-size: 12px;
-  color: var(--ink);
-  outline: none;
-}
-input.editable:focus, select.editable:focus, textarea.editable:focus {
-  border-color: var(--coral); background: var(--paper);
-  box-shadow: 0 0 0 3px rgba(228,53,52,0.08);
-}
+/* TABLE */
+.tbl-wrap{background:var(--paper);border-radius:16px;border:1.5px solid var(--line);overflow:hidden;margin-bottom:20px}
+.tbl-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1.5px solid var(--line)}
+.tbl-title{font-size:15px;font-weight:800;color:var(--ink)}
+.tbl-actions{display:flex;gap:8px;align-items:center}
+.search-box{padding:7px 12px;border:1.5px solid var(--line);border-radius:8px;font-size:12px;font-family:inherit;outline:none;width:200px}
+.search-box:focus{border-color:var(--coral)}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 14px;font-size:11px;font-weight:700;color:var(--ink3);text-align:left;background:#faf7f4;border-bottom:1.5px solid var(--line);white-space:nowrap}
+td{padding:11px 14px;font-size:12.5px;color:var(--ink2);border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#faf7f4}
+.badge{font-size:10px;font-weight:800;padding:3px 8px;border-radius:100px;white-space:nowrap}
+.badge.green{background:#e8f5e9;color:#1b5e20}
+.badge.red{background:#fdecea;color:var(--cd)}
+.badge.yellow{background:#fff8e1;color:var(--yellow)}
+.badge.blue{background:#e3f2fd;color:#0d47a1}
+.badge.gray{background:#f5f5f5;color:#666}
+.badge.purple{background:#f3e8ff;color:var(--purple)}
 
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-.form-row .full { grid-column: 1 / -1; }
-.form-row label { font-size: 11px; color: var(--ink2); display: block; margin-bottom: 5px; font-weight: 700; }
+/* CARDS GRID */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:20px}
+.card{background:var(--paper);border-radius:16px;padding:20px;border:1.5px solid var(--line)}
+.card-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.card-title{font-size:14px;font-weight:800;color:var(--ink)}
+.card-sub{font-size:11px;color:var(--ink3);margin-top:3px}
+.card-body{font-size:13px;color:var(--ink2);line-height:1.8}
+.card-foot{display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
 
-.modal-overlay {
-  position: fixed; inset: 0;
-  background: rgba(45,27,20,0.5);
-  display: none;
-  align-items: center; justify-content: center;
-  z-index: 999;
-  padding: 1rem;
-  backdrop-filter: blur(4px);
-}
-.modal-overlay.show { display: flex; }
-.modal {
-  background: var(--paper);
-  border-radius: 20px;
-  padding: 2rem;
-  width: 100%;
-  max-width: 520px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-}
-.modal-title { font-size: 18px; font-weight: 900; margin-bottom: 1rem; color: var(--ink); }
-.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.5rem; }
+/* MODAL */
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-ov.show{opacity:1;pointer-events:all}
+.modal{background:var(--paper);border-radius:20px;padding:28px;width:560px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.2)}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.modal-title{font-size:18px;font-weight:900;color:var(--ink)}
+.modal-x{background:none;border:none;font-size:22px;cursor:pointer;color:var(--ink3)}
+.form-row{margin-bottom:14px}
+.form-label{font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:6px;display:block}
+.form-input,.form-select,.form-ta{width:100%;padding:10px 13px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;font-family:inherit;color:var(--ink);background:var(--bg);outline:none}
+.form-input:focus,.form-select:focus,.form-ta:focus{border-color:var(--coral);background:#fff}
+.form-ta{resize:vertical;min-height:80px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;padding-top:16px;border-top:1.5px solid var(--line)}
 
-.kakao-preview {
-  background: #FEE500;
-  color: #3B1E1E;
-  border-radius: 16px;
-  padding: 1rem;
-  max-width: 320px;
-  margin: 1rem 0;
-  font-size: 13px;
-  line-height: 1.6;
-  white-space: pre-line;
-}
-.kakao-preview .kkk-head {
-  font-size: 11px;
-  background: #3B1E1E;
-  color: #FEE500;
-  padding: 4px 10px;
-  border-radius: 100px;
-  display: inline-block;
-  font-weight: 700;
-  margin-bottom: 10px;
-}
-.kakao-preview .kkk-link {
-  margin-top: 12px;
-  background: rgba(0,0,0,0.08);
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 12px;
-  font-weight: 700;
-  text-align: center;
-}
+/* TABS */
+.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid var(--line)}
+.tab{padding:10px 18px;font-size:13px;font-weight:700;color:var(--ink3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.tab.on{color:var(--coral);border-bottom-color:var(--coral)}
 
-@media (max-width: 768px) {
-  .admin-layout { grid-template-columns: 1fr; }
-  .sidebar { display: none; }
-  .main { padding: 1rem; }
-}
+/* NOTICE BOX */
+.notice{padding:12px 16px;border-radius:10px;font-size:12.5px;line-height:1.7;margin-bottom:16px}
+.notice.info{background:#e3f2fd;border-left:3px solid var(--blue);color:#0d47a1}
+.notice.warn{background:#fff8e1;border-left:3px solid var(--yellow);color:#6d4c00}
+.notice.success{background:#e8f5e9;border-left:3px solid var(--green);color:#1b5e20}
+.notice.danger{background:#fdecea;border-left:3px solid var(--coral);color:var(--cd)}
+
+/* STAT ROW */
+.stat-row{display:flex;gap:20px;margin-bottom:8px;font-size:12px;color:var(--ink3)}
+.stat-row b{color:var(--ink);font-size:14px}
+
+/* SECTION */
+.section{display:none}
+.section.on{display:block}
+
+/* AVATAR */
+.ava{width:32px;height:32px;border-radius:50%;background:var(--cbg,#FFF0EE);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.user-row{display:flex;align-items:center;gap:10px}
+
+/* PROGRESS BAR */
+.prog-wrap{background:var(--line);border-radius:100px;height:6px;overflow:hidden;margin-top:4px}
+.prog-fill{height:100%;background:var(--coral);border-radius:100px;transition:width .5s}
+
+/* CHAT PREVIEW */
+.msg-preview{background:#f0faf4;border:1.5px solid #b2dfdb;border-radius:12px;padding:14px;font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--ink2);max-height:120px;overflow-y:auto}
+.kakao-preview{background:#fffde7;border:1.5px solid #ffe082;border-radius:12px;padding:14px;font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--ink);max-height:120px;overflow-y:auto}
+
+/* REGION SWITCH */
+.region-bar{background:linear-gradient(135deg,#1a0a06,#3d1a12);color:#fff;padding:10px 20px;display:flex;align-items:center;gap:16px;font-size:13px;margin-left:var(--sb)}
+.region-bar b{font-size:15px}
+.region-select{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:5px 10px;font-size:12px;font-family:inherit;cursor:pointer}
+.region-select option{color:var(--ink);background:#fff}
+
+/* TOOLTIP */
+[title]{cursor:help}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:100px}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:#1a0a06;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:700;z-index:9999;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* DEAL ADMIN BADGE */
+.deal-scope{font-size:10px;color:var(--blue);font-weight:700;background:#e3f2fd;padding:2px 7px;border-radius:100px}
+
+/* RESPONSIVE TABLE */
+.tbl-scroll{overflow-x:auto}
 </style>
 </head>
 <body>
 
-<div class="admin-layout">
-
-<aside class="sidebar">
-  <a class="sb-brand" href="index.html">
-    <div class="sb-brand-img"><img src="sosik.png" alt="소식이"></div>
-    <div class="sb-brand-text">
-      <h1 id="adminBrand">모딜</h1>
-      <small>ADMIN CONSOLE</small>
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="ic">🐴</div>
+      <h1>MODIL 관리자 콘솔</h1>
+      <p>모딜 통합 운영 플랫폼 — PC 전용</p>
     </div>
-  </a>
+    <div class="form-row">
+      <div class="lf-label">아이디</div>
+      <input class="lf-input" id="lgId" placeholder="admin" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="form-row">
+      <div class="lf-label">비밀번호</div>
+      <input class="lf-input" id="lgPw" type="password" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="lf-btn" onclick="doLogin()">로그인</button>
+    <div class="lf-err" id="lgErr">아이디 또는 비밀번호가 올바르지 않습니다</div>
+    <div class="lf-hint">초기 계정: admin / modil2024 (최고관리자)</div>
+  </div>
+</div>
 
-  <div class="sb-section">메인</div>
-  <div class="sb-link active" data-page="dashboard">
-    <span class="sb-icon">📊</span>대시보드
+<!-- ADMIN APP -->
+<div id="adminApp">
+  <!-- 지역 바 -->
+  <div class="region-bar" id="regionBar">
+    <span>🗺️ 현재 지역:</span>
+    <b id="regionName">안산</b>
+    <select class="region-select" id="regionSel" onchange="switchRegion(this.value)">
+      <option value="ansan">📍 안산 (테스트)</option>
+      <option value="suwon">수원 (준비중)</option>
+      <option value="incheon">인천 (준비중)</option>
+      <option value="seoul">서울 (준비중)</option>
+    </select>
+    <span style="margin-left:auto;font-size:11px;opacity:.6">분양몰 확장 예정 지역</span>
   </div>
 
-  <div class="sb-section">운영</div>
-  <div class="sb-link" data-page="members"><span class="sb-icon">👥</span>회원 관리</div>
-  <div class="sb-link" data-page="requests"><span class="sb-icon">📬</span>요청 관리</div>
-  <div class="sb-link" data-page="partners"><span class="sb-icon">🏪</span>제휴 신청 관리</div>
-  <div class="sb-link" data-page="nego"><span class="sb-icon">🤝</span>네고딜 관리</div>
-  <div class="sb-link" data-page="deals"><span class="sb-icon">🛒</span>공동구매 관리</div>
-  <div class="sb-link" data-page="orders"><span class="sb-icon">📦</span>주문·배송 관리</div>
-  <div class="sb-link" data-page="plaza"><span class="sb-icon">📢</span>딜 광장 관리</div>
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <div class="sb" id="sidebar">
+      <div class="sb-brand">
+        <div class="ic">🐴</div>
+        <div>
+          <h1>MODIL Admin</h1>
+          <small>통합 관리 콘솔</small>
+        </div>
+      </div>
+      <div class="sb-user" id="sbUser"></div>
 
-  <div class="sb-section">고객 발송</div>
-  <div class="sb-link" data-page="coupons"><span class="sb-icon">🎟️</span>쿠폰 관리</div>
-  <div class="sb-link" data-page="kakao"><span class="sb-icon">💬</span>카톡 쿠폰발송</div>
+      <div class="sb-sec">대시보드</div>
+      <div class="sb-link on" onclick="nav('dashboard')"><span class="si">📊</span> 대시보드</div>
 
-  <div class="sb-section">거점</div>
-  <div class="sb-link" data-page="spots"><span class="sb-icon">📍</span>17개 거점 관리</div>
+      <div class="sb-sec" id="sec-ops">운영 관리</div>
+      <div class="sb-link" onclick="nav('deals')" id="nl-deals"><span class="si">🛒</span> 공동구매 관리 <span class="sb-badge" id="nb-deals">0</span></div>
+      <div class="sb-link" onclick="nav('members')" id="nl-members"><span class="si">👥</span> 회원 관리</div>
+      <div class="sb-link" onclick="nav('orders')" id="nl-orders"><span class="si">📦</span> 주문/결제 관리</div>
+      <div class="sb-link" onclick="nav('delivery')" id="nl-delivery"><span class="si">🚚</span> 배송 조회</div>
+      <div class="sb-link" onclick="nav('reservations')" id="nl-reservations"><span class="si">🔔</span> 사전 접수 관리</div>
 
-  <div class="sb-section">시스템</div>
-  <div class="sb-link" data-page="site"><span class="sb-icon">⚙️</span>사이트 설정</div>
+      <div class="sb-sec" id="sec-content">콘텐츠</div>
+      <div class="sb-link" onclick="nav('plaza')" id="nl-plaza"><span class="si">📋</span> 딜 광장 게시판</div>
+      <div class="sb-link" onclick="nav('reviews')" id="nl-reviews"><span class="si">⭐</span> 후기 관리</div>
+      <div class="sb-link" onclick="nav('lottery')" id="nl-lottery"><span class="si">🎁</span> 추첨 관리</div>
 
-  <div class="sb-section">채널 바로가기</div>
-  <a class="sb-link" href="index.html" style="text-decoration:none"><span class="sb-icon">🖥️</span>PC 홈페이지</a>
-  <a class="sb-link" href="모딜 모바일.html" style="text-decoration:none"><span class="sb-icon">📱</span>모바일 홈페이지</a>
-  <a class="sb-link" href="모딜 미리보기.html" style="text-decoration:none"><span class="sb-icon">🔀</span>PC·모바일 비교</a>
+      <div class="sb-sec" id="sec-msg">메시지 발송</div>
+      <div class="sb-link" onclick="nav('sms')" id="nl-sms"><span class="si">💬</span> 문자(SMS) 발송</div>
+      <div class="sb-link" onclick="nav('kakao')" id="nl-kakao"><span class="si">🟡</span> 카카오톡 발송</div>
 
-  <a class="sb-back" href="index.html">← 사용자 페이지로</a>
-</aside>
+      <div class="sb-sec" id="sec-admin">관리자 설정</div>
+      <div class="sb-link" onclick="nav('admins')" id="nl-admins"><span class="si">🔑</span> 운영자 계정 관리</div>
+      <div class="sb-link" onclick="nav('dealadmin')" id="nl-dealadmin"><span class="si">🏷️</span> 공구별 관리자 지정</div>
+      <div class="sb-link" onclick="nav('regions')" id="nl-regions"><span class="si">🗺️</span> 지역 확장 관리</div>
+      <div class="sb-link" onclick="nav('settings')" id="nl-settings"><span class="si">⚙️</span> 시스템 설정</div>
 
-<main class="main" id="main"></main>
+      <div class="sb-bottom">
+        <div class="sb-logout" onclick="doLogout()">🚪 로그아웃</div>
+      </div>
+    </div>
 
+    <!-- MAIN CONTENT -->
+    <div class="main">
+
+      <!-- ===== DASHBOARD ===== -->
+      <div class="section on" id="sec-dashboard">
+        <div class="ph">
+          <div class="ph-left"><h2>📊 대시보드</h2><p>모딜 안산 운영 현황 · <span id="todayDate"></span></p></div>
+          <div class="ph-right">
+            <span id="adminRoleBadge"></span>
+            <button class="btn primary" onclick="nav('deals')">+ 공구 등록</button>
+          </div>
+        </div>
+        <div class="kpi-grid" id="kpiGrid"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="tbl-wrap">
+            <div class="tbl-head"><span class="tbl-title">최근 주문</span><button class="btn sm" onclick="nav('orders')">전체 보기</button></div>
+            <div id="recentOrders"></div>
+          </div>
+          <div class="tbl-wrap">
+            <div class="tbl-head"><span class="tbl-title">진행중 공구 현황</span><button class="btn sm" onclick="nav('deals')">전체 보기</button></div>
+            <div id="dealProgress"></div>
+          </div>
+        </div>
+        <div class="tbl-wrap" style="margin-top:16px">
+          <div class="tbl-head"><span class="tbl-title">📅 이번 주 주요 일정</span></div>
+          <div style="padding:16px;font-size:13px;color:var(--ink2);line-height:2">
+            <div>📦 <b>갤럭시 S24 FE</b> 배송 시작 예정 — 2026.07.15</div>
+            <div>🎁 <b>이번 주 후기 추첨</b> — 2026.07.14 (일) 21:00</div>
+            <div>💬 <b>CGV 영화권</b> 카톡 발송 예정 — 협의 완료 후</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 공동구매 관리 ===== -->
+      <div class="section" id="sec-deals">
+        <div class="ph">
+          <div class="ph-left"><h2>🛒 공동구매 관리</h2><p>공구 등록·수정·마감·참여자 관리</p></div>
+          <div class="ph-right"><button class="btn primary" onclick="openDealModal()">+ 공구 등록</button></div>
+        </div>
+        <div class="notice info">공구별 담당 관리자를 지정하면 해당 관리자만 그 공구 참여자를 관리할 수 있습니다. <b>관리자 설정 → 공구별 관리자 지정</b>에서 설정하세요.</div>
+        <div id="dealList"></div>
+      </div>
+
+      <!-- ===== 회원 관리 ===== -->
+      <div class="section" id="sec-members">
+        <div class="ph">
+          <div class="ph-left"><h2>👥 회원 관리</h2><p>전체 가입 회원 조회 · 등급 · 이력</p></div>
+          <div class="ph-right">
+            <input class="search-box" id="memberSearch" placeholder="이름·연락처 검색" oninput="renderMembers()">
+            <button class="btn" onclick="exportMembers()">📥 엑셀 내보내기</button>
+          </div>
+        </div>
+        <div class="tbl-wrap"><div class="tbl-scroll"><div id="memberTable"></div></div></div>
+      </div>
+
+      <!-- ===== 주문/결제 관리 ===== -->
+      <div class="section" id="sec-orders">
+        <div class="ph">
+          <div class="ph-left"><h2>📦 주문/결제 관리</h2><p>입금확인 · 결제상태 · 취소처리</p></div>
+          <div class="ph-right">
+            <select class="form-select" style="width:140px" id="orderFilter" onchange="renderOrders()">
+              <option value="">전체 상태</option>
+              <option value="입금대기">입금대기</option>
+              <option value="결제완료">결제완료</option>
+              <option value="배송중">배송중</option>
+              <option value="완료">완료</option>
+              <option value="취소">취소</option>
+            </select>
+          </div>
+        </div>
+        <div class="tbl-wrap"><div class="tbl-scroll"><div id="orderTable"></div></div></div>
+      </div>
+
+      <!-- ===== 배송 조회 ===== -->
+      <div class="section" id="sec-delivery">
+        <div class="ph">
+          <div class="ph-left"><h2>🚚 배송 조회</h2><p>택배사 연동 · 배송 현황 추적</p></div>
+          <div class="ph-right"><button class="btn primary" onclick="openTrackingModal()">+ 운송장 등록</button></div>
+        </div>
+        <div class="notice warn">현재 CJ대한통운, 롯데택배 운송장 번호 연동을 지원합니다. 운송장 번호 입력 후 자동으로 회원에게 카톡 안내가 가능합니다.</div>
+        <div class="tbl-wrap"><div class="tbl-scroll"><div id="deliveryTable"></div></div></div>
+      </div>
+
+      <!-- ===== 사전 접수 관리 ===== -->
+      <div class="section" id="sec-reservations">
+        <div class="ph">
+          <div class="ph-left"><h2>🔔 사전 접수 관리</h2><p>딜 오픈 전 사전 접수자 목록 · 알림 발송</p></div>
+          <div class="ph-right">
+            <select class="form-select" style="width:200px" id="resvDealFilter" onchange="renderReservations()"><option value="">전체 딜</option></select>
+            <button class="btn yellow" onclick="nav('kakao')">💬 카톡 일괄 발송</button>
+          </div>
+        </div>
+        <div class="tbl-wrap"><div class="tbl-scroll"><div id="resvTable"></div></div></div>
+      </div>
+
+      <!-- ===== 딜 광장 게시판 ===== -->
+      <div class="section" id="sec-plaza">
+        <div class="ph">
+          <div class="ph-left"><h2>📋 딜 광장 게시판</h2><p>게시글 관리 · 핀 고정 · 신고 처리</p></div>
+        </div>
+        <div class="tabs">
+          <div class="tab on" onclick="plzTab('all',this)">전체 게시글</div>
+          <div class="tab" onclick="plzTab('pinned',this)">📌 고정글</div>
+          <div class="tab" onclick="plzTab('reported',this)">🚨 신고글</div>
+        </div>
+        <div class="tbl-wrap"><div class="tbl-scroll"><div id="plzTable"></div></div></div>
+      </div>
+
+      <!-- ===== 후기 관리 ===== -->
+      <div class="section" id="sec-reviews">
+        <div class="ph">
+          <div class="ph-left"><h2>⭐ 후기 관리</h2><p>후기 승인·삭제·당첨자 지정</p></div>
+        </div>
+        <div class="tbl-wrap"><div class="tbl-scroll"><div id="reviewAdminTable"></div></div></div>
+      </div>
+
+      <!-- ===== 추첨 관리 ===== -->
+      <div class="section" id="sec-lottery">
+        <div class="ph">
+          <div class="ph-left"><h2>🎁 추첨 관리</h2><p>이번 주 후기 응모 추첨 · 당첨자 발표</p></div>
+          <div class="ph-right"><button class="btn primary" onclick="doLottery()">🎲 지금 추첨하기</button></div>
+        </div>
+        <div id="lotteryPanel"></div>
+      </div>
+
+      <!-- ===== SMS 발송 ===== -->
+      <div class="section" id="sec-sms">
+        <div class="ph">
+          <div class="ph-left"><h2>💬 문자(SMS) 발송</h2><p>개별·그룹 문자 발송 · 발송 이력</p></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">메시지 작성</div><div class="card-sub">발신번호: 010-XXXX-XXXX (인증 필요)</div></div></div>
+            <div class="form-row">
+              <label class="form-label">수신 대상</label>
+              <select class="form-select" id="smsTarget" onchange="renderSmsPreview()">
+                <option value="all">전체 회원</option>
+                <option value="deal">공구 참여자 선택</option>
+                <option value="resv">사전 접수자 선택</option>
+                <option value="custom">직접 입력</option>
+              </select>
+            </div>
+            <div id="smsDealRow" style="display:none" class="form-row">
+              <label class="form-label">공구 선택</label>
+              <select class="form-select" id="smsDealSel" onchange="renderSmsPreview()"></select>
+            </div>
+            <div id="smsCustomRow" style="display:none" class="form-row">
+              <label class="form-label">직접 입력 (쉼표 구분)</label>
+              <input class="form-input" id="smsCustomNums" placeholder="010-0000-0000, 010-1111-1111">
+            </div>
+            <div class="form-row">
+              <label class="form-label">메시지 내용 <span style="color:var(--ink3);font-size:11px">({이름} 변수 사용 가능)</span></label>
+              <textarea class="form-ta" id="smsTa" rows="5" oninput="renderSmsPreview()" placeholder="[모딜] {이름}님, 안산 모딜입니다.&#10;갤럭시 S24 FE 공구가 오픈됐어요!&#10;지금 바로 참여하세요.&#10;&#10;무료거부:0808000000"></textarea>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-bottom:14px">
+              <span id="smsCount">0자</span><span id="smsType">SMS (90자 이하)</span>
+            </div>
+            <button class="btn primary" style="width:100%" onclick="doSmsSend()">📤 문자 발송</button>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">발송 미리보기</div><div class="card-sub">예상 수신자 목록</div></div></div>
+            <div class="msg-preview" id="smsPreviewMsg" style="margin-bottom:12px">[미리보기 없음]</div>
+            <div style="font-size:12px;color:var(--ink3);margin-bottom:8px">수신자 <b id="smsRecipCount">0</b>명</div>
+            <div id="smsRecipList" style="max-height:200px;overflow-y:auto;font-size:12px"></div>
+          </div>
+        </div>
+        <div class="tbl-wrap" style="margin-top:20px">
+          <div class="tbl-head"><span class="tbl-title">발송 이력</span></div>
+          <div id="smsHistory"></div>
+        </div>
+      </div>
+
+      <!-- ===== 카카오톡 발송 ===== -->
+      <div class="section" id="sec-kakao">
+        <div class="ph">
+          <div class="ph-left"><h2>🟡 카카오톡 발송</h2><p>알림톡·친구톡 발송 · 사전 접수자 일괄 안내</p></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">카카오 메시지 작성</div><div class="card-sub">카카오 비즈메시지 API 연동 필요</div></div></div>
+            <div class="form-row">
+              <label class="form-label">발송 유형</label>
+              <select class="form-select" id="kakaoType">
+                <option value="friend">친구톡 (마케팅)</option>
+                <option value="alim">알림톡 (거래 안내)</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label class="form-label">수신 대상</label>
+              <select class="form-select" id="kakaoTarget" onchange="renderKakaoPreview()">
+                <option value="resv">사전 접수자</option>
+                <option value="deal">공구 참여자</option>
+                <option value="all">전체 회원</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label class="form-label">딜 선택</label>
+              <select class="form-select" id="kakaoDealSel" onchange="renderKakaoPreview()"></select>
+            </div>
+            <div class="form-row">
+              <label class="form-label">메시지 <span style="color:var(--ink3);font-size:11px">({이름}, {딜명}, {금액} 변수 가능)</span></label>
+              <textarea class="form-ta" id="kakaoTa" rows="6" oninput="renderKakaoPreview()">[모딜] 안녕하세요 {이름}님! 🐴
+'{딜명}'이 드디어 오픈됐어요 🎉
+
+✅ 지금 바로 모딜에서 참여하세요!
+👉 https://modil.kr
+
+문의: 카카오채널 @모딜</textarea>
+            </div>
+            <button class="btn yellow" style="width:100%" onclick="doKakaoSend()">💬 카카오톡 발송</button>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">미리보기</div></div></div>
+            <div class="kakao-preview" id="kakaoPreviewMsg" style="margin-bottom:12px"></div>
+            <div style="font-size:12px;color:var(--ink3);margin-bottom:8px">수신자 <b id="kakaoRecipCount">0</b>명</div>
+            <div id="kakaoRecipList" style="max-height:200px;overflow-y:auto;font-size:12px"></div>
+          </div>
+        </div>
+        <div class="tbl-wrap" style="margin-top:20px">
+          <div class="tbl-head"><span class="tbl-title">카톡 발송 이력</span></div>
+          <div id="kakaoHistory"></div>
+        </div>
+      </div>
+
+      <!-- ===== 운영자 계정 관리 ===== -->
+      <div class="section" id="sec-admins">
+        <div class="ph">
+          <div class="ph-left"><h2>🔑 운영자 계정 관리</h2><p>부운영자 생성 · 권한 설정</p></div>
+          <div class="ph-right"><button class="btn primary" onclick="openAdminModal()">+ 운영자 추가</button></div>
+        </div>
+        <div class="notice info">
+          <b>권한 체계:</b> 최고관리자(오너) → 부운영자(Sub Admin) → 공구별 관리자(Deal Admin)<br>
+          부운영자는 전체 공구와 회원 정보를 볼 수 있습니다. 공구별 관리자는 자신이 담당한 공구만 접근 가능합니다.
+        </div>
+        <div class="tbl-wrap"><div id="adminTable"></div></div>
+      </div>
+
+      <!-- ===== 공구별 관리자 지정 ===== -->
+      <div class="section" id="sec-dealadmin">
+        <div class="ph">
+          <div class="ph-left"><h2>🏷️ 공구별 관리자 지정</h2><p>공구마다 담당 관리자를 지정해 고객 상담을 위임하세요</p></div>
+        </div>
+        <div class="notice warn">공구별 관리자는 <b>자신이 담당한 공구의 참여자 목록, 연락처, 주문 현황</b>만 열람 가능합니다. 다른 공구 정보는 접근할 수 없습니다.</div>
+        <div class="cards-grid" id="dealAdminCards"></div>
+      </div>
+
+      <!-- ===== 지역 확장 관리 ===== -->
+      <div class="section" id="sec-regions">
+        <div class="ph">
+          <div class="ph-left"><h2>🗺️ 지역 확장 관리</h2><p>분양몰 방식으로 타 지역 확장 · 지역 관리자 배정</p></div>
+          <div class="ph-right"><button class="btn primary" onclick="openRegionModal()">+ 신규 지역 추가</button></div>
+        </div>
+        <div class="notice success">현재 <b>안산</b>에서 파일럿 운영 중. 확장 시 지역별 독립 데이터·관리자·공구 운영이 가능합니다.</div>
+        <div class="cards-grid" id="regionCards"></div>
+      </div>
+
+      <!-- ===== 시스템 설정 ===== -->
+      <div class="section" id="sec-settings">
+        <div class="ph">
+          <div class="ph-left"><h2>⚙️ 시스템 설정</h2><p>플랫폼 기본 정보 · API 연동 · 알림 설정</p></div>
+          <div class="ph-right"><button class="btn primary" onclick="saveSettings()">💾 설정 저장</button></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:16px">플랫폼 기본 정보</div>
+            <div class="form-row"><label class="form-label">서비스명</label><input class="form-input" id="cfg-name" value="모딜"></div>
+            <div class="form-row"><label class="form-label">운영 지역</label><input class="form-input" id="cfg-region" value="경기도 안산시"></div>
+            <div class="form-row"><label class="form-label">대표 연락처</label><input class="form-input" id="cfg-phone" value="010-0000-0000"></div>
+            <div class="form-row"><label class="form-label">이메일</label><input class="form-input" id="cfg-email" value="hi@modil.kr"></div>
+          </div>
+          <div class="card">
+            <div class="card-title" style="margin-bottom:16px">API 연동 설정</div>
+            <div class="form-row"><label class="form-label">카카오 비즈메시지 API Key</label><input class="form-input" id="cfg-kakao" placeholder="발급 후 입력" type="password"></div>
+            <div class="form-row"><label class="form-label">SMS 발신번호 (인증번호)</label><input class="form-input" id="cfg-sms" placeholder="010-0000-0000"></div>
+            <div class="form-row"><label class="form-label">CJ대한통운 API Key</label><input class="form-input" id="cfg-cj" placeholder="배송 조회용" type="password"></div>
+            <div class="form-row"><label class="form-label">네이버페이 가맹점 ID</label><input class="form-input" id="cfg-npay" placeholder="가맹점 등록 후 입력"></div>
+          </div>
+          <div class="card">
+            <div class="card-title" style="margin-bottom:16px">추첨 설정</div>
+            <div class="form-row"><label class="form-label">추첨 요일</label>
+              <select class="form-select" id="cfg-lotto-day"><option>일요일</option><option>토요일</option></select></div>
+            <div class="form-row"><label class="form-label">추첨 시간</label><input class="form-input" id="cfg-lotto-time" value="21:00"></div>
+            <div class="form-row"><label class="form-label">당첨 인원</label><input class="form-input" id="cfg-lotto-n" value="3" type="number"></div>
+          </div>
+          <div class="card">
+            <div class="card-title" style="margin-bottom:16px">최고관리자 비밀번호 변경</div>
+            <div class="form-row"><label class="form-label">현재 비밀번호</label><input class="form-input" id="cfg-pw-old" type="password"></div>
+            <div class="form-row"><label class="form-label">새 비밀번호</label><input class="form-input" id="cfg-pw-new" type="password"></div>
+            <div class="form-row"><label class="form-label">새 비밀번호 확인</label><input class="form-input" id="cfg-pw-new2" type="password"></div>
+            <button class="btn primary" onclick="changePw()">비밀번호 변경</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+  </div><!-- /layout -->
+</div><!-- /adminApp -->
+
+<!-- 공구 등록 모달 -->
+<div class="modal-ov" id="dealModal">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title" id="dealModalTitle">공구 등록</span><button class="modal-x" onclick="closeDealModal()">×</button></div>
+    <div class="form-grid">
+      <div class="form-row"><label class="form-label">공구명 *</label><input class="form-input" id="dm-name" placeholder="갤럭시 S24 FE 공동구매"></div>
+      <div class="form-row"><label class="form-label">카테고리</label><input class="form-input" id="dm-cat" placeholder="📱 휴대폰"></div>
+      <div class="form-row"><label class="form-label">정가 (원)</label><input class="form-input" id="dm-orig" type="number" placeholder="899000"></div>
+      <div class="form-row"><label class="form-label">공구가 (원)</label><input class="form-input" id="dm-now" type="number" placeholder="599000"></div>
+      <div class="form-row"><label class="form-label">목표 인원</label><input class="form-input" id="dm-target" type="number" placeholder="100"></div>
+      <div class="form-row"><label class="form-label">마감일</label><input class="form-input" id="dm-deadline" type="date"></div>
+    </div>
+    <div class="form-row"><label class="form-label">설명</label><textarea class="form-ta" id="dm-desc" placeholder="공구 상세 안내"></textarea></div>
+    <div class="form-row"><label class="form-label">상태</label>
+      <select class="form-select" id="dm-status"><option value="active">진행중</option><option value="nego">협상중</option><option value="closed">마감</option><option value="done">완료</option></select></div>
+    <div class="modal-foot"><button class="btn" onclick="closeDealModal()">취소</button><button class="btn primary" onclick="saveDeal()">저장</button></div>
+  </div>
 </div>
 
-<div class="modal-overlay" id="modal">
-  <div class="modal" id="modalContent"></div>
+<!-- 운영자 추가 모달 -->
+<div class="modal-ov" id="adminModal">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title">운영자 계정 추가</span><button class="modal-x" onclick="closeAdminModal()">×</button></div>
+    <div class="form-row"><label class="form-label">아이디 *</label><input class="form-input" id="am-id" placeholder="subadmin01"></div>
+    <div class="form-row"><label class="form-label">이름</label><input class="form-input" id="am-name" placeholder="홍길동"></div>
+    <div class="form-row"><label class="form-label">비밀번호 *</label><input class="form-input" id="am-pw" type="password" placeholder="초기 비밀번호"></div>
+    <div class="form-row"><label class="form-label">연락처</label><input class="form-input" id="am-phone" placeholder="010-0000-0000"></div>
+    <div class="form-row"><label class="form-label">권한</label>
+      <select class="form-select" id="am-role">
+        <option value="sub">부운영자 (전체 조회 가능)</option>
+        <option value="deal">공구별 관리자 (담당 공구만)</option>
+      </select>
+    </div>
+    <div class="form-row"><label class="form-label">담당 지역</label><input class="form-input" id="am-region" value="안산"></div>
+    <div class="modal-foot"><button class="btn" onclick="closeAdminModal()">취소</button><button class="btn primary" onclick="saveAdmin()">계정 생성</button></div>
+  </div>
 </div>
+
+<!-- 운송장 등록 모달 -->
+<div class="modal-ov" id="trackingModal">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title">운송장 번호 등록</span><button class="modal-x" onclick="closeModal('trackingModal')">×</button></div>
+    <div class="form-row"><label class="form-label">회원명</label><input class="form-input" id="tk-member" placeholder="홍길동"></div>
+    <div class="form-row"><label class="form-label">상품명</label><input class="form-input" id="tk-product" placeholder="갤럭시 S24 FE"></div>
+    <div class="form-row"><label class="form-label">택배사</label>
+      <select class="form-select" id="tk-carrier"><option>CJ대한통운</option><option>롯데택배</option><option>한진택배</option><option>우체국</option></select></div>
+    <div class="form-row"><label class="form-label">운송장 번호</label><input class="form-input" id="tk-num" placeholder="1234567890123"></div>
+    <div class="form-row"><label class="form-label">카톡 발송</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:6px"><input type="checkbox" id="tk-kakao" checked> 등록 즉시 카카오톡 배송 안내 발송</label></div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('trackingModal')">취소</button><button class="btn primary" onclick="saveTracking()">등록</button></div>
+  </div>
+</div>
+
+<!-- 지역 추가 모달 -->
+<div class="modal-ov" id="regionModal">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title">신규 지역 추가</span><button class="modal-x" onclick="closeModal('regionModal')">×</button></div>
+    <div class="form-row"><label class="form-label">지역명</label><input class="form-input" id="rg-name" placeholder="수원"></div>
+    <div class="form-row"><label class="form-label">주소 (상세)</label><input class="form-input" id="rg-addr" placeholder="경기도 수원시 영통구"></div>
+    <div class="form-row"><label class="form-label">담당 운영자 (아이디)</label><input class="form-input" id="rg-admin" placeholder="운영자 아이디"></div>
+    <div class="form-row"><label class="form-label">오픈 예정일</label><input class="form-input" id="rg-date" type="date"></div>
+    <div class="form-row"><label class="form-label">분양 방식</label>
+      <select class="form-select" id="rg-type"><option value="franchise">프랜차이즈 분양</option><option value="direct">직영</option><option value="partner">제휴</option></select></div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('regionModal')">취소</button><button class="btn primary" onclick="saveRegion()">추가</button></div>
+  </div>
+</div>
+
+<!-- 공구별 관리자 지정 모달 -->
+<div class="modal-ov" id="assignModal">
+  <div class="modal">
+    <div class="modal-head"><span class="modal-title" id="assignTitle">관리자 지정</span><button class="modal-x" onclick="closeModal('assignModal')">×</button></div>
+    <div class="notice info" id="assignDealInfo"></div>
+    <div class="form-row"><label class="form-label">담당 관리자 선택</label>
+      <select class="form-select" id="assignAdmin"><option value="">-- 선택 --</option></select></div>
+    <div class="form-row"><label class="form-label">메모 (내부용)</label><input class="form-input" id="assignNote" placeholder="전화 상담 담당 등"></div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('assignModal')">취소</button><button class="btn primary" onclick="saveAssign()">지정 완료</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
 
 <script src="data.js"></script>
 <script>
-let DATA = loadData();
-let currentPage = 'dashboard';
+(function(){
+'use strict';
 
-document.querySelectorAll('.sb-link').forEach(el => {
-  el.addEventListener('click', () => {
-    document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
-    el.classList.add('active');
-    currentPage = el.dataset.page;
-    renderPage();
-  });
-});
+/* ================================================================
+   DATA KEYS & DEFAULTS
+   ================================================================ */
+var ADMIN_KEY='modilAdmins_v1', REVIEW_KEY='modilReviews_v1',
+    RESERVE_KEY='modilReservations_v1', SMS_KEY='modilSmsLog_v1',
+    KAKAO_LOG_KEY='modilKakaoLog_v1', REGION_KEY='modilRegions_v1',
+    DEAL_KEY='modilDeals_v1', DELIVERY_KEY='modilDelivery_v1',
+    ASSIGN_KEY='modilDealAssign_v1';
 
-function openModal(html) {
-  document.getElementById('modalContent').innerHTML = html;
-  document.getElementById('modal').classList.add('show');
+var DEFAULT_ADMINS=[
+  {id:'admin',name:'최고관리자',pw:'modil2024',role:'super',region:'안산',phone:'010-0000-0000',created:'2024-01-01',active:true},
+];
+var DEFAULT_REGIONS=[
+  {id:'ansan',name:'안산',addr:'경기도 안산시 단원구',status:'active',type:'직영',admin:'admin',opened:'2024-01-01'},
+  {id:'suwon',name:'수원',addr:'경기도 수원시',status:'planned',type:'프랜차이즈',admin:'',opened:''},
+  {id:'incheon',name:'인천',addr:'인천광역시',status:'planned',type:'프랜차이즈',admin:'',opened:''},
+  {id:'seoul',name:'서울',addr:'서울특별시',status:'planned',type:'프랜차이즈',admin:'',opened:''},
+];
+var DELIVERY_SAMPLE=[
+  {id:'D-001',member:'김소식',product:'갤럭시 S24 FE',carrier:'CJ대한통운',trackNum:'1234567890',status:'배송중',date:'2026-07-10',notified:true},
+  {id:'D-002',member:'이모딜',product:'CGV 영화 할인권',carrier:'롯데택배',trackNum:'9876543210',status:'완료',date:'2026-07-08',notified:true},
+];
+var SMS_SAMPLE=[
+  {id:'S-001',target:'공구 참여자',dealName:'갤럭시 S24 FE',count:82,msg:'[모딜] 배송이 시작됐어요!',date:'2026-07-10',status:'발송완료'},
+];
+var KAKAO_SAMPLE=[
+  {id:'K-001',target:'사전 접수자',dealName:'CGV 영화 할인권',count:45,msg:'[모딜] CGV 딜 오픈!',date:'2026-07-09',status:'발송완료'},
+];
+
+/* ================================================================
+   STORAGE HELPERS
+   ================================================================ */
+function ls(k,def){try{var v=localStorage.getItem(k);return v?JSON.parse(v):def;}catch(e){return def;}}
+function ss(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function getAdmins(){var a=ls(ADMIN_KEY,null);if(!a){ss(ADMIN_KEY,DEFAULT_ADMINS);return DEFAULT_ADMINS;}return a;}
+function saveAdmins(a){ss(ADMIN_KEY,a);}
+function getReviews(){return ls(REVIEW_KEY,[]);}
+function saveReviews(r){ss(REVIEW_KEY,r);}
+function getReservations(){return ls(RESERVE_KEY,[]);}
+function getRegions(){var r=ls(REGION_KEY,null);if(!r){ss(REGION_KEY,DEFAULT_REGIONS);return DEFAULT_REGIONS;}return r;}
+function saveRegions(r){ss(REGION_KEY,r);}
+function getDelivery(){return ls(DELIVERY_KEY,DELIVERY_SAMPLE);}
+function saveDelivery(d){ss(DELIVERY_KEY,d);}
+function getSmsLog(){return ls(SMS_KEY,SMS_SAMPLE);}
+function saveSmsLog(l){ss(SMS_KEY,l);}
+function getKakaoLog(){return ls(KAKAO_LOG_KEY,KAKAO_SAMPLE);}
+function saveKakaoLog(l){ss(KAKAO_LOG_KEY,l);}
+function getAssign(){return ls(ASSIGN_KEY,{});}
+function saveAssign(a){ss(ASSIGN_KEY,a);}
+function getDeals(){return DATA&&DATA.activeDeals?DATA.activeDeals:[];}
+function getNegoDeals(){return DATA&&DATA.negoDeals?DATA.negoDeals:[];}
+function getAllDeals(){return getDeals().concat(getNegoDeals());}
+function getOrders(){return DATA&&DATA.orders?DATA.orders:[];}
+function getMembers(){return DATA&&DATA.members?DATA.members:[];}
+function getPlaza(){try{var p=localStorage.getItem('modilMobilePlaza_v1');return p?JSON.parse(p).posts||[]:[]}catch(e){return[];}}
+
+/* ================================================================
+   AUTH
+   ================================================================ */
+var currentAdmin=null;
+function doLogin(){
+  var id=v('lgId'),pw=v('lgPw');
+  var admins=getAdmins();
+  var found=admins.find(function(a){return a.id===id&&a.pw===pw&&a.active!==false;});
+  if(!found){show('lgErr');return;}
+  hide('lgErr');
+  currentAdmin=found;
+  hide('loginScreen');
+  show('adminApp','block');
+  boot();
 }
-function closeModal() {
-  document.getElementById('modal').classList.remove('show');
-}
-document.getElementById('modal').addEventListener('click', e => {
-  if (e.target.id === 'modal') closeModal();
-});
+function doLogout(){currentAdmin=null;location.reload();}
+function isSuper(){return currentAdmin&&currentAdmin.role==='super';}
+function isSub(){return currentAdmin&&(currentAdmin.role==='super'||currentAdmin.role==='sub');}
+function isDealAdmin(){return currentAdmin&&currentAdmin.role==='deal';}
 
-function save() {
-  saveData(DATA);
-  renderPage();
-}
-
-function renderPage() {
-  if (currentPage === 'dashboard') return renderDashboard();
-  if (currentPage === 'members') return renderMembers();
-  if (currentPage === 'requests') return renderRequests();
-  if (currentPage === 'partners') return renderPartnersAdmin();
-  if (currentPage === 'nego') return renderNego();
-  if (currentPage === 'deals') return renderDeals();
-  if (currentPage === 'orders') return renderOrders();
-  if (currentPage === 'coupons') return renderCoupons();
-  if (currentPage === 'kakao') return renderKakao();
-  if (currentPage === 'spots') return renderSpots();
-  if (currentPage === 'site') return renderSite();
-  if (currentPage === 'plaza') return renderPlaza();
-}
-
-function renderDashboard() {
-  const totalRevenue = DATA.orders.reduce((sum, o) => sum + o.amount, 0);
-  const totalOrders = DATA.orders.length;
-  const pendingOrders = DATA.orders.filter(o => o.status === 'preparing' || o.status === 'pickup_ready').length;
-  const activeRequests = DATA.requests.length;
-
-  document.getElementById('main').innerHTML = `
-    <div class="page-head">
-      <div>
-        <div class="page-title">대시보드</div>
-        <div class="page-sub">소식이가 정리한 오늘의 운영 현황</div>
-      </div>
-    </div>
-
-    <div style="display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,#2D1410,#46201A);color:#fff;border-radius:16px;padding:16px 20px;margin-bottom:20px;flex-wrap:wrap">
-      <div style="font-size:26px">🎛️</div>
-      <div style="flex:1;min-width:200px">
-        <div style="font-size:14px;font-weight:800">통합 관리 — PC · 모바일 한 번에</div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.72);margin-top:3px">여기서 수정한 딜·요청·제휴·거점은 <b style="color:#FF8B72">PC 홈페이지</b>와 <b style="color:#FF8B72">모바일 홈페이지</b>에 동시에 반영돼요.</div>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <a href="index.html" style="text-decoration:none;background:rgba(255,255,255,0.12);color:#fff;font-size:12px;font-weight:700;padding:9px 15px;border-radius:100px">🖥️ PC 홈</a>
-        <a href="모딜 모바일.html" style="text-decoration:none;background:rgba(255,255,255,0.12);color:#fff;font-size:12px;font-weight:700;padding:9px 15px;border-radius:100px">📱 모바일 홈</a>
-        <a href="모딜 미리보기.html" style="text-decoration:none;background:#F86D53;color:#fff;font-size:12px;font-weight:700;padding:9px 15px;border-radius:100px">🔀 비교 보기</a>
-      </div>
-    </div>
-
-    <div class="kpi-row">
-      <div class="kpi-card">
-        <div class="kpi-label">함께한 친구</div>
-        <div class="kpi-value">${fmt(DATA.stats.totalMembers)}</div>
-        <div class="kpi-sub">↑ 이번 달 +124</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">성사된 딜</div>
-        <div class="kpi-value">${DATA.stats.successDeals}</div>
-        <div class="kpi-sub">↑ 이번 달 +5</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">진행 중 네고</div>
-        <div class="kpi-value">${DATA.negoDeals.length}</div>
-        <div class="kpi-sub">활성 협상</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">누적 거래액</div>
-        <div class="kpi-value">${fmt(Math.round(totalRevenue/10000))}만</div>
-        <div class="kpi-sub">건당 평균 ${fmt(Math.round(totalRevenue/totalOrders))}원</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">처리 대기 주문</div>
-        <div class="kpi-value">${pendingOrders}</div>
-        <div class="kpi-sub down">즉시 처리 필요</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">신규 요청</div>
-        <div class="kpi-value">${activeRequests}</div>
-        <div class="kpi-sub">검토 대기</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">제휴 신청</div>
-        <div class="kpi-value">${(DATA.partners || []).length}</div>
-        <div class="kpi-sub down">${(DATA.partners || []).filter(p => p.status === 'review').length}건 검토 대기</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-head">
-        <div><div class="card-title">최근 주문</div><div class="card-sub">처리가 필요한 최근 주문 5건</div></div>
-        <button class="btn" onclick="goTo('orders')">전체 주문 →</button>
-      </div>
-      <table>
-        <thead><tr><th>주문번호</th><th>회원</th><th>상품</th><th>금액</th><th>수령방법</th><th>상태</th></tr></thead>
-        <tbody>${DATA.orders.slice(0,5).map(o => `
-          <tr>
-            <td><b>${o.id}</b></td>
-            <td>${o.member}</td>
-            <td>${o.deal}</td>
-            <td>${fmt(o.amount)}원</td>
-            <td>${o.pickup}</td>
-            <td>${statusPill(o.status)}</td>
-          </tr>`).join('')}</tbody>
-      </table>
-    </div>
-
-    <div class="card">
-      <div class="card-head">
-        <div><div class="card-title">요청 현황 TOP 5</div><div class="card-sub">소식이가 검토 중인 인기 요청</div></div>
-      </div>
-      <table>
-        <thead><tr><th>요청 항목</th><th>지역</th><th>요청 수</th><th>상태</th></tr></thead>
-        <tbody>${DATA.requests.slice(0,5).map(r => `
-          <tr>
-            <td>${r.icon} ${r.name}</td>
-            <td>${r.meta}</td>
-            <td><b>${r.count}명</b></td>
-            <td><span class="pill ${r.status === 'live' ? 'orange' : 'gray'}">${r.status === 'live' ? '협상중' : '검토 중'}</span></td>
-          </tr>`).join('')}</tbody>
-      </table>
-    </div>
-  `;
+/* ================================================================
+   BOOT
+   ================================================================ */
+function boot(){
+  document.getElementById('todayDate').textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+  renderSidebar();
+  applyRoleVisibility();
+  nav('dashboard');
+  initSmsDealSel();
+  initKakaoDealSel();
+  initResvFilter();
 }
 
-function goTo(page) {
-  currentPage = page;
-  document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
-  document.querySelector('[data-page=' + page + ']').classList.add('active');
-  renderPage();
+function renderSidebar(){
+  var roleLabel=currentAdmin.role==='super'?'최고관리자':currentAdmin.role==='sub'?'부운영자':'공구별 관리자';
+  var roleCls=currentAdmin.role==='super'?'role-super':currentAdmin.role==='sub'?'role-sub':'role-deal';
+  document.getElementById('sbUser').innerHTML=
+    '<div class="role '+roleCls+'">'+roleLabel+'</div>'+
+    '<div class="name">'+esc(currentAdmin.name)+'</div>'+
+    '<div class="region">📍 '+esc(currentAdmin.region||'안산')+'</div>';
+  document.getElementById('adminRoleBadge').innerHTML='<span class="badge '+roleCls+'">'+roleLabel+'</span>';
 }
 
-function statusPill(s) {
-  const map = {
-    preparing:    { c: 'orange', t: '준비중' },
-    pickup_ready: { c: 'blue', t: '픽업대기' },
-    shipped:      { c: 'blue', t: '배송중' },
-    completed:    { c: 'green', t: '완료' },
-    cancelled:    { c: 'red',   t: '취소' },
-    pending_transfer: { c: 'orange', t: '입금대기' },
-  };
-  const m = map[s] || { c: 'gray', t: s };
-  return `<span class="pill ${m.c}">${m.t}</span>`;
-}
-
-function renderMembers() {
-  document.getElementById('main').innerHTML = `
-    <div class="page-head">
-      <div><div class="page-title">회원 관리</div><div class="page-sub">소식이 친구들 ${DATA.members.length}명</div></div>
-      <div class="page-actions"><button class="btn primary" onclick="addMember()">+ 회원 추가</button></div>
-    </div>
-    <div class="card">
-      <table>
-        <thead><tr><th>ID</th><th>이름</th><th>전화</th><th>가입경로</th><th>가입일</th><th>참여 딜</th><th>등급</th><th>카톡연동</th><th>작업</th></tr></thead>
-        <tbody>${DATA.members.map((m,i) => `
-          <tr>
-            <td><b>${m.id}</b></td>
-            <td>${m.name}</td>
-            <td>${m.phone}</td>
-            <td><span class="pill ${m.channel === 'kakao' ? 'orange' : m.channel === 'naver' ? 'green' : m.channel === 'instagram' ? 'red' : 'gray'}">${({kakao:'💬 카카오', naver:'🟢 네이버', instagram:'📷 인스타'})[m.channel] || '직접가입'}</span></td>
-            <td>${m.joinDate}</td>
-            <td>${m.deals}건</td>
-            <td><span class="pill ${m.status === 'vip' ? 'orange' : 'gray'}">${m.status === 'vip' ? 'VIP' : '일반'}</span></td>
-            <td><span class="pill ${m.kakao === 'connected' ? 'green' : m.kakao === 'pending' ? 'orange' : 'red'}">${m.kakao === 'connected' ? '연동' : m.kakao === 'pending' ? '대기' : '미연동'}</span></td>
-            <td>
-              <button class="btn sm" onclick="editMember(${i})">수정</button>
-              <button class="btn sm danger" onclick="deleteMember(${i})">삭제</button>
-            </td>
-          </tr>`).join('')}</tbody>
-      </table>
-    </div>
-  `;
-}
-
-const PLZ_KEY = 'modilMobilePlaza_v1';
-function loadPlazaAdmin() {
-  try { const s = localStorage.getItem(PLZ_KEY); if (s) return JSON.parse(s); } catch(e) {}
-  return { posts: [] };
-}
-function savePlazaAdmin(p) { try { localStorage.setItem(PLZ_KEY, JSON.stringify(p)); } catch(e) {} }
-
-function renderPlaza() {
-  const p = loadPlazaAdmin();
-  const sorted = p.posts.slice().sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
-  document.getElementById('main').innerHTML = `
-    <div class="page-head">
-      <div><div class="page-title">딜 광장 관리</div><div class="page-sub">총 ${sorted.length}개 포스트</div></div>
-    </div>
-    <div class="card">
-      <table>
-        <thead><tr><th>상태</th><th>닉네임</th><th>카테고리</th><th>내용</th><th>좋아요</th><th>게시시간</th><th>작업</th></tr></thead>
-        <tbody>${sorted.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:#aaa;padding:24px">포스트 없음</td></tr>' :
-          sorted.map((post, i) => `
-          <tr style="${post.pinned ? 'background:#fff8f5' : ''}">
-            <td>${post.pinned ? '<span class="pill orange">📌 고정</span>' : '<span class="pill gray">일반</span>'}</td>
-            <td><b>${post.nick || '(익명)'}</b></td>
-            <td><span class="pill gray">${post.cat || '-'}</span></td>
-            <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${post.title || ''}</td>
-            <td>👍 ${post.likes || 0} / 😂 ${post.lols || 0}</td>
-            <td style="font-size:11px;color:#888">${post.ago != null ? (post.ago < 1 ? '방금' : post.ago < 60 ? post.ago + '분 전' : Math.floor(post.ago/60) + '시간 전') : '-'}</td>
-            <td>
-              <button class="btn sm ${post.pinned ? 'danger' : 'primary'}" onclick="togglePin('${post.id}')">${post.pinned ? '📌 고정 해제' : '📌 상단 고정'}</button>
-              <button class="btn sm danger" onclick="deletePlazaPost('${post.id}')">삭제</button>
-            </td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>
-  `;
-}
-
-function togglePin(id) {
-  const p = loadPlazaAdmin();
-  const post = p.posts.find(x => x.id === id);
-  if (!post) return;
-  post.pinned = !post.pinned;
-  savePlazaAdmin(p);
-  renderPlaza();
-}
-
-function deletePlazaPost(id) {
-  if (!confirm('이 포스트를 삭제하시겠습니까?')) return;
-  const p = loadPlazaAdmin();
-  p.posts = p.posts.filter(x => x.id !== id);
-  savePlazaAdmin(p);
-  renderPlaza();
-}
-
-function addMember() {
-  openModal(`
-    <div class="modal-title">회원 추가</div>
-    <div class="form-row">
-      <div><label>이름</label><input class="editable" id="mNm" placeholder="홍길동"></div>
-      <div><label>전화번호</label><input class="editable" id="mPh" placeholder="010-0000-0000"></div>
-    </div>
-    <div class="form-row">
-      <div><label>가입일</label><input class="editable" id="mDt" type="date" value="${new Date().toISOString().slice(0,10)}"></div>
-      <div><label>등급</label>
-        <select class="editable" id="mSt"><option value="active">일반</option><option value="vip">VIP</option></select>
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn" onclick="closeModal()">취소</button>
-      <button class="btn primary" onclick="saveNewMember()">추가</button>
-    </div>
-  `);
-}
-function saveNewMember() {
-  const id = 'M-' + (1000 + DATA.members.length + 1);
-  DATA.members.push({
-    id, name: document.getElementById('mNm').value,
-    phone: document.getElementById('mPh').value,
-    joinDate: document.getElementById('mDt').value,
-    status: document.getElementById('mSt').value,
-    deals: 0, kakao: 'pending',
-  });
-  save();
-  closeModal();
-}
-function editMember(i) {
-  const m = DATA.members[i];
-  openModal(`
-    <div class="modal-title">회원 수정 — ${m.id}</div>
-    <div class="form-row">
-      <div><label>이름</label><input class="editable" id="mNm" value="${m.name}"></div>
-      <div><label>전화번호</label><input class="editable" id="mPh" value="${m.phone}"></div>
-    </div>
-    <div class="form-row">
-      <div><label>가입일</label><input class="editable" id="mDt" type="date" value="${m.joinDate}"></div>
-      <div><label>참여 딜</label><input class="editable" id="mDl" type="number" value="${m.deals}"></div>
-    </div>
-    <div class="form-row">
-      <div><label>등급</label>
-        <select class="editable" id="mSt">
-          <option value="active" ${m.status === 'active' ? 'selected' : ''}>일반</option>
-          <option value="vip" ${m.status === 'vip' ? 'selected' : ''}>VIP</option>
-        </select>
-      </div>
-      <div><label>카톡 연동</label>
-        <select class="editable" id="mKa">
-          <option value="connected" ${m.kakao === 'connected' ? 'selected' : ''}>연동</option>
-          <option value="pending" ${m.kakao === 'pending' ? 'selected' : ''}>대기</option>
-          <option value="disconnected" ${m.kakao === 'disconnected' ? 'selected' : ''}>미연동</option>
-        </select>
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn" onclick="closeModal()">취소</button>
-      <button class="btn primary" onclick="saveEditMember(${i})">저장</button>
-    </div>
-  `);
-}
-function saveEditMember(i) {
-  const m = DATA.members[i];
-  m.name = document.getElementById('mNm').value;
-  m.phone = document.getElementById('mPh').value;
-  m.joinDate = document.getElementById('mDt').value;
-  m.deals = +document.getElementById('mDl').value;
-  m.status = document.getElementById('mSt').value;
-  m.kakao = document.getElementById('mKa').value;
-  save(); closeModal();
-}
-function deleteMember(i) {
-  if (!confirm('정말 삭제하시겠습니까?')) return;
-  DATA.members.splice(i, 1);
-  save();
-}
-
-function renderRequests() {
-  document.getElementById('main').innerHTML = `
-    <div class="page-head">
-      <div><div class="page-title">요청 관리</div><div class="page-sub">고객이 직접 제출한 딜 요청 검토</div></div>
-    </div>
-    <div class="card">
-      <table>
-        <thead><tr><th>요청 항목</th><th>지역</th><th>요청 수</th><th>상태</th><th>작업</th></tr></thead>
-        <tbody>${DATA.requests.map((r,i) => `
-          <tr>
-            <td>${r.icon} <b>${r.name}</b></td>
-            <td>${r.meta}</td>
-            <td>${r.count}명</td>
-            <td>
-              <select class="editable" style="max-width:130px" onchange="updateReqStatus(${i}, this.value)">
-                <option value="check" ${r.status === 'check' ? 'selected' : ''}>검토 중</option>
-                <option value="live" ${r.status === 'live' ? 'selected' : ''}>협상 진행중</option>
-              </select>
-            </td>
-            <td>
-              <button class="btn sm primary" onclick="promoteToNego(${i})">네고딜로 →</button>
-              <button class="btn sm danger" onclick="deleteRequest(${i})">삭제</button>
-            </td>
-          </tr>`).join('')}</tbody>
-      </table>
-    </div>
-  `;
-}
-function updateReqStatus(i, v) {
-  DATA.requests[i].status = v;
-  save();
-}
-function promoteToNego(i) {
-  const r = DATA.requests[i];
-  DATA.negoDeals.push({
-    id: 'nego-' + Date.now(),
-    category: r.icon + ' ' + r.meta.split(' · ')[0],
-    name: r.name,
-    status: 'live',
-    statusText: '소식이가 협상중',
-    currentCount: r.count,
-    targetCount: r.count + 20,
-    reservable: true,
-  });
-  DATA.requests.splice(i, 1);
-  save();
-  alert('✅ 네고딜로 등록되었습니다!');
-}
-function deleteRequest(i) {
-  if (!confirm('삭제하시겠습니까?')) return;
-  DATA.requests.splice(i, 1);
-  save();
-}
-
-function renderPartnersAdmin() {
-  DATA.partners = DATA.partners || [];
-  const reviewCnt = DATA.partners.filter(p => p.status === 'review').length;
-  const liveCnt = DATA.partners.filter(p => p.status === 'live').length;
-  document.getElementById('main').innerHTML = `
-    <div class="page-head">
-      <div><div class="page-title">제휴 신청 관리</div><div class="page-sub">사장님이 직접 제안한 매장 딜 — 검토 후 네고딜로 전환</div></div>
-      <div class="page-actions"><button class="btn primary" onclick="addPartner()">+ 제휴 매장 추가</button></div>
-    </div>
-    <div class="kpi-row">
-      <div class="kpi-card"><div class="kpi-label">총 제휴 신청</div><div class="kpi-value">${DATA.partners.length}</div></div>
-      <div class="kpi-card"><div class="kpi-label">검토 대기</div><div class="kpi-value">${reviewCnt}</div><div class="kpi-sub down">확인 필요</div></div>
-      <div class="kpi-card"><div class="kpi-label">진행중</div><div class="kpi-value">${liveCnt}</div><div class="kpi-sub">운영중</div></div>
-    </div>
-    <div class="card">
-      <table>
-        <thead><tr><th>매장</th><th>사장님</th><th>업종</th><th>동네</th><th>제안 혜택</th><th>연락처</th><th>상태</th><th>작업</th></tr></thead>
-        <tbody>${DATA.partners.map((p,i) => `
-          <tr>
-            <td><b>${p.store}</b></td>
-            <td>${p.owner}</td>
-            <td>${p.category}</td>
-            <td>${p.dong || '-'}</td>
-            <td style="max-width:240px">${p.offer}</td>
-            <td>${p.phone}${p.kakao ? '<br><span style="color:var(--ink3)">' + p.kakao + '</span>' : ''}</td>
-            <td>
-              <select class="editable" style="max-width:120px" onchange="updatePartnerStatus(${i}, this.value)">
-                <option value="review" ${p.status === 'review' ? 'selected' : ''}>검토 중</option>
-                <option value="live" ${p.status === 'live' ? 'selected' : ''}>진행중</option>
-              </select>
-            </td>
-            <td>
-              <button class="btn sm primary" onclick="partnerToNego(${i})">네고딜로 →</button>
-              <button class="btn sm danger" onclick="deletePartner(${i})">삭제</button>
-            </td>
-          </tr>`).join('')}</tbody>
-      </table>
-    </div>
-  `;
-}
-function addPartner() {
-  openModal(`
-    <div class="modal-title">제휴 매장 추가</div>
-    <div class="form-row">
-      <div><label>매장명</label><input class="editable" id="pStore" placeholder="소소베이커리"></div>
-      <div><label>사장님</label><input class="editable" id="pOwner" placeholder="박소소"></div>
-      <div><label>업종 (이모지 포함)</label><input class="editable" id="pCat" placeholder="☕ 카페 / 베이커리"></div>
-      <div><label>동네</label><input class="editable" id="pDong" placeholder="고잔동"></div>
-      <div class="full"><label>제안 혜택</label><textarea class="editable" id="pOffer" rows="2" placeholder="10명 모이면 전메뉴 20% 할인"></textarea></div>
-      <div><label>연락처</label><input class="editable" id="pPhone" placeholder="010-0000-0000"></div>
-      <div><label>카카오톡 ID</label><input class="editable" id="pKakao" placeholder="@store_id"></div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn" onclick="closeModal()">취소</button>
-      <button class="btn primary" onclick="saveNewPartner()">추가</button>
-    </div>
-  `);
-}
-function saveNewPartner() {
-  DATA.partners = DATA.partners || [];
-  DATA.partners.unshift({
-    id: 'P-' + Date.now(),
-    store: document.getElementById('pStore').value,
-    owner: document.getElementById('pOwner').value,
-    category: document.getElementById('pCat').value,
-    dong: document.getElementById('pDong').value,
-    offer: document.getElementById('pOffer').value,
-    phone: document.getElementById('pPhone').value,
-    kakao: document.getElementById('pKakao').value,
-    status: 'review',
-    date: new Date().toISOString().slice(0,10),
-  });
-  save(); closeModal();
-}
-function updatePartnerStatus(i, v) { DATA.partners[i].status = v; save(); }
-function deletePartner(i) {
-  if (!confirm('삭제하시겠습니까?')) return;
-  DATA.partners.splice(i, 1);
-  save();
-}
-function partnerToNego(i) {
-  const p = DATA.partners[i];
-  if (!confirm(`'${p.store}' 제안을 네고딜로 등록하시겠습니까?`)) return;
-  DATA.negoDeals.push({
-    id: 'nego-' + Date.now(),
-    category: (p.category.trim().split(' ')[0] || '🏪') + ' ' + p.store,
-    name: p.store + '\n' + p.offer,
-    status: 'live', statusText: '소식이가 협상중',
-    currentCount: 0, targetCount: 50, reservable: true,
-  });
-  DATA.partners[i].status = 'live';
-  save();
-  alert('✅ 네고딜로 등록되었습니다!');
-}
-
-function renderNego() {
-  document.getElementById('main').innerHTML = `
-    <div class="page-head">
-      <div><div class="page-title">네고딜 관리</div><div class="page-sub">현재 협상 중인 ${DATA.negoDeals.length}건</div></div>
-      <div class="page-actions"><button class="btn primary" onclick="addNego()">+ 네고딜 추가</button></div>
-    </div>
-    <div class="card">
-      <table>
-        <thead><tr><th>카테고리</th><th>딜명</th><th>진행률</th><th>현재 / 목표</th><th>상태</th><th>작업</th></tr></thead>
-        <tbody>${DATA.negoDeals.map((d,i) => `
-          <tr>
-            <td>${d.category}</td>
-            <td><b>${d.name.replace(/\n/g, ' ')}</b></td>
-            <td>${Math.round(d.currentCount / d.targetCount * 100)}%</td>
-            <td>${d.currentCount} / ${d.targetCount}명</td>
-            <td><span class="pill ${d.status === 'opening' ? 'green' : 'orange'}">${d.statusText}</span></td>
-            <td>
-              <button class="btn sm" onclick="editNego(${i})">수정</button>
-              <button class="btn sm primary" onclick="openNegoDeal(${i})">오픈 →</button>
-              <button class="btn sm danger" onclick="deleteNego(${i})">삭제</button>
-            </td>
-          </tr>`).join('')}</tbody>
-      </table>
-    </div>
-  `;
-}
-function addNego() {
-  openModal(`
-    <div class="modal-title">네고딜 추가</div>
-    <div class="form-row">
-      <div class="full"><label>카테고리 (이모지 포함)</label><input class="editable" id="nC" placeholder="📱 휴대폰"></div>
-      <div class="full"><label>딜명</label><input class="editable" id="nN" placeholder="갤럭시 S25 공구"></div>
-      <div><label>현재 요청 수</label><input class="editable" id="nCt" type="number" value="0"></div>
-      <div><label>목표 수</label><input class="editable" id="nT" type="number" value="100"></div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn" onclick="closeModal()">취소</button>
-      <button class="btn primary" onclick="saveNewNego()">추가</button>
-    </div>
-  `);
-}
-function saveNewNego() {
-  DATA.negoDeals.push({
-    id: 'nego-' + Date.now(),
-    category: document.getElementById('nC').value,
-    name: document.getElementById('nN').value,
-    status: 'live', statusText: '소식이가 협상중',
-    currentCount: +document.getElementById('nCt').value,
-    targetCount: +document.getElementById('nT').value,
-    reservable: true,
-  });
-  save(); closeModal();
-}
-function editNego(i) {
-  const d = DATA.negoDeals[i];
-  openModal(`
-    <div class="modal-title">네고딜 수정</div>
-    <div class="form-row">
-      <div class="full"><label>카테고리</label><input class="editable" id="nC" value="${d.category}"></div>
-      <div class="full"><label>딜명</label><input class="editable" id="nN" value="${d.name.replace(/"/g, '&quot;')}"></div>
-      <div><label>현재 수</label><input class="editable" id="nCt" type="number" value="${d.currentCount}"></div>
-      <div><label>목표 수</label><input class="editable" id="nT" type="number" value="${d.targetCount}"></div>
-      <div class="full"><label>상태</label>
-        <select class="editable" id="nSt">
-          <option value="live" ${d.status === 'live' ? 'selected' : ''}>협상 진행중</option>
-          <option value="opening" ${d.status === 'opening' ? 'selected' : ''}>오픈 임박</option>
-        </select>
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn" onclick="closeModal()">취소</button>
-      <button class="btn primary" onclick="saveEditNego(${i})">저장</button>
-    </div>
-  `);
-}
-function saveEditNego(i) {
-  const d = DATA.negoDeals[i];
-  d.category = document.getElementById('nC').value;
-  d.name = document.getElementById('nN').value;
-  d.currentCount = +document.getElementById('nCt').value;
-  d.targetCount = +document.getElementById('nT').value;
-  d.status = document.getElementById('nSt').value;
-  d.statusText = d.status === 'opening' ? '오픈 임박' : '소식이가 협상중';
-  save(); closeModal();
-}
-function openNegoDeal(i) {
-  if (!confirm('이 네고딜을 공동구매로 오픈하시겠습니까?')) return;
-  const d = DATA.negoDeals[i];
-  DATA.activeDeals.push({
-    id: 'deal-' + Date.now(),
-    category: d.category,
-    name: d.name.replace(/\n/g, ' '),
-    icon: d.category.split(' ')[0],
-    origPrice: 100000, nowPrice: 70000,
-    participants: 0, badges: ['신규'],
-  });
-  DATA.negoDeals.splice(i, 1);
-  save();
-  alert('✅ 공동구매로 오픈되었습니다! 가격은 공동구매 관리에서 수정해주세요.');
-}
-function deleteNego(i) {
-  if (!confirm('삭제하시겠습니까?')) return;
-  DATA.negoDeals.splice(i, 1);
-  save();
-}
-
-function renderDeals() {
-  document.getElementById('main').innerHTML = `
-    <div class="page-head">
-      <div><div class="page-title">공동구매 관리</div><div class="page-sub">현재 판매 중인 ${DATA.activeDeals.length}건</div></div>
-      <div class="page-actions"><button class="btn primary" onclick="addDeal()">+ 공동구매 추가</button></div>
-    </div>
-    <div class="card">
-      <table>
-        <thead><tr><th>카테고리</th><th>딜명</th><th>정가</th><th>판매가</th><th>할인율</th><th>참여</th><th>작업</th></tr></thead>
-        <tbody>${DATA.activeDeals.map((d,i) => `
-          <tr>
-            <td>${d.icon} ${d.category}</td>
-            <td><b>${d.name}</b></td>
-            <td>${fmt(d.origPrice)}원</td>
-            <td><b style="color:var(--coral-dark)">${fmt(d.nowPrice)}원</b></td>
-            <td>${Math.round((1 - d.nowPrice / d.origPrice) * 100)}%</td>
-            <td>${d.participants}명</td>
-            <td>
-              <button class="btn sm" onclick="editDeal(${i})">수정</button>
-              <button class="btn sm danger" onclick="deleteDeal(${i})">삭제</button>
-            </td>
-          </tr>`).join('')}</tbody>
-      </table>
-    </div>
-  `;
-}
-function addDeal() {
-  openModal(`
-    <div class="modal-title">공동구매 추가</div>
-    <div class="form-row">
-      <div><label>이모지</label><input class="editable" id="dI" placeholder="📱"></div>
-      <div><label>카테고리</label><input class="editable" id="dC" placeholder="삼성 · 실매장"></div>
-      <div class="full"><label>딜명</label><input class="editable" id="dN" placeholder="갤럭시 S25 공구"></div>
-      <div><label>정가</label><input class="editable" id="dOp" type="number" placeholder="1000000"></div>
-      <div><label>판매가</label><input class="editable" id="dNp" type="number" placeholder="700000"></div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn" onclick="closeModal()">취소</button>
-      <button class="btn primary" onclick="saveNewDeal()">추가</button>
-    </div>
-  `);
-}
-function saveNewDeal() {
-  DATA.activeDeals.push({
-    id: 'deal-' + Date.now(),
-    icon: document.getElementById('dI').value || '🛍️',
-    category: document.getElementById('dC').value,
-    name: document.getElementById('dN').value,
-    origPrice: +document.getElementById('dOp').value,
-    nowPrice: +document.getElementById('dNp').value,
-    participants: 0, badges: ['신규'],
-  });
-  save(); closeModal();
-}
-function editDeal(i) {
-  const d = DATA.activeDeals[i];
-  openModal(`
-    <div class="modal-title">공동구매 수정</div>
-    <div class="form-row">
-      <div><label>이모지</label><input class="editable" id="dI" value="${d.icon}"></div>
-      <div><label>카테고리</label><input class="editable" id="dC" value="${d.category}"></div>
-      <div class="full"><label>딜명</label><input class="editable" id="dN" value="${d.name.replace(/"/g, '&quot;')}"></div>
-      <div><label>정가</label><input class="editable" id="dOp" type="number" value="${d.origPrice}"></div>
-      <div><label>판매가</label><input class="editable" id="dNp" type="number" value="${d.nowPrice}"></div>
-      <div><label>참여 수</label><input class="editable" id="dP" type="number" value="${d.participants}"></div>
-      <div><label>배지 (쉼표)</label><input class="editable" id="dB" value="${d.badges.join(',')}"></div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn" onclick="closeModal()">취소</button>
-      <button class="btn primary" onclick="saveEditDeal(${i})">저장</button>
-    </div>
-  `);
-}
-function saveEditDeal(i) {
-  const d = DATA.activeDeals[i];
-  d.icon = document.getElementById('dI').value;
-  d.category = document.getElementById('dC').value;
-  d.name = document.getElementById('dN').value;
-  d.origPrice = +document.getElementById('dOp').value;
-  d.nowPrice = +document.getElementById('dNp').value;
-  d.participants = +document.getElementById('dP').value;
-  d.badges = document.getElementById('dB').value.split(',').map(s => s.trim()).filter(Boolean);
-  save(); closeModal();
-}
-function deleteDeal(i) {
-  if (!confirm('삭제하시겠습니까?')) return;
-  DATA.activeDeals.splice(i, 1);
-  save();
-}
-
-function renderOrders() {
-  document.getElementById('main').innerHTML = `
-    <div class="page-head">
-      <div><div class="page-title">주문·배송 관리</div><div class="page-sub">전체 ${DATA.orders.length}건</div></div>
-    </div>
-    <div class="card">
-      <div class="card-head"><div class="card-title">주문 처리</div><div class="card-sub">상태 변경시 자동 알림</div></div>
-      <table>
-        <thead><tr><th>주문번호</th><th>회원</th><th>상품</th><th>금액</th><th>가상계좌</th><th>결제상태</th><th>주문일</th><th>수령방법</th><th>처리상태</th><th>문자</th><th>작업</th></tr></thead>
-        <tbody>${DATA.orders.map((o,i) => `
-          <tr>
-            <td><b style="font-size:10px">${o.id}</b></td>
-            <td>${o.member}</td>
-            <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.deal}</td>
-            <td><b>${fmt(o.amount)}원</b></td>
-            <td style="font-size:11px;font-weight:700;color:#1c4ea0">${o.vaccount || '-'}</td>
-            <td>${payStatusPill(o.payStatus || (o.status === 'pending_transfer' ? '입금대기' : '결제완료'))}</td>
-            <td style="font-size:11px">${o.date}</td>
-            <td>
-              <select class="editable" style="max-width:130px" onchange="updatePickup(${i}, this.value)">
-                <option ${o.pickup.includes('본점') ? 'selected' : ''}>모딜 본점</option>
-                <option ${o.pickup.includes('단원구청') ? 'selected' : ''}>단원구청 거점</option>
-                <option ${o.pickup.includes('고잔동') ? 'selected' : ''}>고잔동 거점</option>
-                <option ${o.pickup.includes('상록구청') ? 'selected' : ''}>상록구청 거점</option>
-                <option ${o.pickup === '택배발송' ? 'selected' : ''}>택배발송</option>
-                <option ${o.pickup.includes('카톡') ? 'selected' : ''}>카톡 즉시발송</option>
-              </select>
-            </td>
-            <td>
-              <select class="editable" style="max-width:110px" onchange="updateOrderStatus(${i}, this.value)">
-                <option value="pending_transfer" ${o.status === 'pending_transfer' ? 'selected' : ''}>입금대기</option>
-                <option value="preparing" ${o.status === 'preparing' ? 'selected' : ''}>준비중</option>
-                <option value="pickup_ready" ${o.status === 'pickup_ready' ? 'selected' : ''}>픽업대기</option>
-                <option value="shipped" ${o.status === 'shipped' ? 'selected' : ''}>배송중</option>
-                <option value="completed" ${o.status === 'completed' ? 'selected' : ''}>완료</option>
-              </select>
-            </td>
-            <td style="white-space:nowrap">
-              ${o.payStatus !== '결제취소' ? `
-              <button class="btn sm" onclick="confirmPayment(${i})">입금확인</button>
-              <button class="btn sm" style="background:#e8f5e9;color:#2e7d32" onclick="sendSms(${i})">
-                ${o.smsStatus === '발송완료' ? '✅ 문자완료' : '📱 문자발송'}
-              </button>
-              <button class="btn sm danger" onclick="cancelOrder(${i})">취소</button>
-              ` : '<span style="color:#aaa;font-size:11px">취소완료</span>'}
-            </td>
-          </tr>`).join('')}</tbody>
-      </table>
-    </div>
-  `;
-}
-function updatePickup(i, v) { DATA.orders[i].pickup = v; save(); }
-function updateOrderStatus(i, v) {
-  DATA.orders[i].status = v;
-  if (v === 'pending_transfer') DATA.orders[i].payStatus = '입금대기';
-  else if (v !== 'cancelled') DATA.orders[i].payStatus = DATA.orders[i].payStatus || '결제완료';
-  save();
-}
-function confirmPayment(i) {
-  DATA.orders[i].payStatus = '결제완료';
-  if (DATA.orders[i].status === 'pending_transfer') DATA.orders[i].status = 'preparing';
-  save();
-}
-function cancelOrder(i) {
-  if (!confirm('주문을 취소하고 환불 처리하시겠습니까?')) return;
-  DATA.orders[i].payStatus = '결제취소';
-  DATA.orders[i].status = 'cancelled';
-  save();
-}
-function sendSms(i) {
-  const o = DATA.orders[i];
-  const isDeposit = o.payStatus === '입금대기';
-  const vacc = o.vaccount || '신한 3333-XXXX-XXXXXX';
-  let msg = '';
-  if (isDeposit) {
-    msg = `[모딜] ${o.member}님, 주문이 접수됐습니다!\n상품: ${o.deal}\n입금계좌: ${vacc}\n예금주: 주식회사 모딜\n금액: ${o.amount.toLocaleString('ko-KR')}원\n입금자명: ${o.member}\n입금 확인 후 연락드릴게요. 문의: hi@modil.kr`;
-  } else if (o.status === 'pickup_ready') {
-    msg = `[모딜] ${o.member}님, 상품이 준비됐습니다!\n상품: ${o.deal}\n수령: ${o.pickup}\n픽업 가능합니다. 문의: hi@modil.kr`;
-  } else if (o.status === 'shipped') {
-    msg = `[모딜] ${o.member}님, 상품이 배송됐습니다!\n상품: ${o.deal}\n배송 후 도착 안내 드릴게요. 문의: hi@modil.kr`;
-  } else if (o.status === 'completed') {
-    msg = `[모딜] ${o.member}님, 수령이 완료됐습니다! 이용해 주셔서 감사합니다 🐴 다음 딜도 기대해 주세요!`;
-  } else {
-    msg = `[모딜] ${o.member}님, 주문(${o.id}) 관련 안내입니다.\n문의: hi@modil.kr`;
+function applyRoleVisibility(){
+  if(isDealAdmin()){
+    // 공구별 관리자: 담당 공구 관련만 접근
+    ['nl-members','nl-plaza','nl-reviews','nl-lottery','nl-sms','nl-kakao','nl-admins','nl-dealadmin','nl-regions','nl-settings','sec-admin','sec-content','sec-msg'].forEach(function(id){
+      var el=document.getElementById(id);if(el)el.style.display='none';
+    });
+  } else if(!isSuper()){
+    // 부운영자: 관리자 계정 설정 숨김
+    ['nl-admins','nl-settings','sec-admin'].forEach(function(id){
+      var el=document.getElementById(id);if(el)el.style.display='none';
+    });
   }
-  openModal(`
-    <div class="modal-title">📱 안내 문자 발송</div>
-    <div style="font-size:12px;color:#888;margin-bottom:12px">아래 문자를 고객에게 발송하세요. 발송 후 완료 처리 버튼을 눌러주세요.</div>
-    <div style="background:#f5f5f5;border-radius:12px;padding:14px;font-size:13px;line-height:1.8;white-space:pre-wrap;word-break:break-all">${msg}</div>
-    <div style="font-size:11px;color:#aaa;margin-top:8px">수신: ${o.phone || o.member} · 문자 앱에서 직접 발송해 주세요</div>
-    <div style="display:flex;gap:10px;margin-top:18px">
-      <button class="btn primary" onclick="markSmsSent(${i})">✅ 발송 완료 처리</button>
-      <button class="btn" onclick="navigator.clipboard&&navigator.clipboard.writeText(${JSON.stringify(msg)}).then(function(){alert('복사됐어요!')})">📋 복사</button>
-      <button class="btn" onclick="closeModal()">닫기</button>
-    </div>
-  `);
-}
-function markSmsSent(i) {
-  DATA.orders[i].smsStatus = '발송완료';
-  save(); closeModal();
 }
 
-function payStatusPill(s) {
-  const map = { '입금대기': 'orange', '결제완료': 'green', '결제취소': 'red' };
-  return `<span class="pill ${map[s] || 'gray'}">${s || '-'}</span>`;
+/* ================================================================
+   NAVIGATION
+   ================================================================ */
+var currentSection='dashboard';
+function nav(s){
+  // 공구별 관리자 접근 제한
+  if(isDealAdmin()&&['members','plaza','reviews','lottery','sms','kakao','admins','dealadmin','regions','settings'].indexOf(s)!==-1){
+    toast('접근 권한이 없습니다');return;
+  }
+  document.querySelectorAll('.section').forEach(function(el){el.classList.remove('on');});
+  document.querySelectorAll('.sb-link').forEach(function(el){el.classList.remove('on');});
+  var sec=document.getElementById('sec-'+s);
+  if(sec)sec.classList.add('on');
+  var lnk=document.getElementById('nl-'+s);
+  if(lnk)lnk.classList.add('on');
+  currentSection=s;
+  renderSection(s);
 }
 
-function renderCoupons() {
-  document.getElementById('main').innerHTML = `
-    <div class="page-head">
-      <div><div class="page-title">쿠폰 관리</div><div class="page-sub">발행·사용·만료 통합 관리</div></div>
-      <div class="page-actions"><button class="btn primary" onclick="addCoupon()">+ 쿠폰 발행</button></div>
-    </div>
-    <div class="kpi-row">
-      <div class="kpi-card"><div class="kpi-label">총 발행</div><div class="kpi-value">${DATA.coupons.reduce((s,c) => s + c.sent, 0)}</div></div>
-      <div class="kpi-card"><div class="kpi-label">사용 완료</div><div class="kpi-value">${DATA.coupons.reduce((s,c) => s + c.used, 0)}</div></div>
-      <div class="kpi-card"><div class="kpi-label">미사용 잔여</div><div class="kpi-value">${DATA.coupons.reduce((s,c) => s + c.remaining, 0)}</div></div>
-    </div>
-    <div class="card">
-      <table>
-        <thead><tr><th>쿠폰명</th><th>발행</th><th>사용</th><th>잔여</th><th>사용률</th><th>만료일</th><th>작업</th></tr></thead>
-        <tbody>${DATA.coupons.map((c,i) => `
-          <tr>
-            <td><b>${c.name}</b></td>
-            <td>${c.sent}</td>
-            <td>${c.used}</td>
-            <td>${c.remaining}</td>
-            <td>${Math.round(c.used / c.sent * 100)}%</td>
-            <td>${c.expiry}</td>
-            <td>
-              <button class="btn sm primary" onclick="sendKakaoForCoupon(${i})">📤 카톡</button>
-              <button class="btn sm danger" onclick="deleteCoupon(${i})">삭제</button>
-            </td>
-          </tr>`).join('')}</tbody>
-      </table>
-    </div>
-  `;
+function renderSection(s){
+  if(s==='dashboard')renderDashboard();
+  else if(s==='deals')renderDeals();
+  else if(s==='members')renderMembers();
+  else if(s==='orders')renderOrders();
+  else if(s==='delivery')renderDelivery();
+  else if(s==='reservations')renderReservations();
+  else if(s==='plaza')renderPlaza('all');
+  else if(s==='reviews')renderReviewAdmin();
+  else if(s==='lottery')renderLottery();
+  else if(s==='sms'){renderSmsPreview();renderSmsHistory();}
+  else if(s==='kakao'){renderKakaoPreview();renderKakaoHistory();}
+  else if(s==='admins')renderAdminTable();
+  else if(s==='dealadmin')renderDealAdminCards();
+  else if(s==='regions')renderRegions();
 }
-function addCoupon() {
-  openModal(`
-    <div class="modal-title">쿠폰 발행</div>
-    <div class="form-row">
-      <div class="full"><label>쿠폰명</label><input class="editable" id="cN" placeholder="CGV 영화권"></div>
-      <div><label>발행 수량</label><input class="editable" id="cQ" type="number" placeholder="100"></div>
-      <div><label>만료일</label><input class="editable" id="cE" type="date" value="2025-12-31"></div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn" onclick="closeModal()">취소</button>
-      <button class="btn primary" onclick="saveNewCoupon()">발행</button>
-    </div>
-  `);
+
+/* ================================================================
+   DASHBOARD
+   ================================================================ */
+function renderDashboard(){
+  var orders=getOrders(),members=getMembers(),deals=getAllDeals(),revs=getReviews();
+  var totalRevenue=orders.filter(function(o){return o.payStatus==='결제완료'||o.payStatus==='입금완료';}).reduce(function(a,o){return a+o.amount;},0);
+  var pending=orders.filter(function(o){return o.payStatus==='입금대기';}).length;
+  document.getElementById('kpiGrid').innerHTML=[
+    kpi('coral','📦',members.length.toLocaleString(),'전체 회원','이번주 +3명','up'),
+    kpi('blue','🛒',deals.length+'건','진행중 공구','협상+진행 합계',''),
+    kpi('green','💰',fmt(totalRevenue)+'원','확정 매출','취소 제외','up'),
+    kpi('purple','⏳',pending+'건','입금 대기','확인 필요','down'),
+    kpi('coral','⭐',revs.length+'개','후기 수','이번주 +'+revs.filter(function(r){return Date.now()-r.ts<604800000;}).length,'up'),
+    kpi('blue','🔔',getReservations().length+'명','사전 접수','알림 대기',''),
+  ].join('');
+  // 최근 주문
+  var recentO=orders.slice(0,5);
+  document.getElementById('recentOrders').innerHTML=recentO.length?'<table><thead><tr><th>주문번호</th><th>회원</th><th>상품</th><th>금액</th><th>상태</th></tr></thead><tbody>'+
+    recentO.map(function(o){return'<tr><td style="font-size:10px;color:var(--ink3)">'+esc(o.id)+'</td><td>'+esc(o.member)+'</td><td>'+esc(o.deal)+'</td><td>'+fmt(o.amount)+'원</td><td>'+statusBadge(o.payStatus)+'</td></tr>';}).join('')+'</tbody></table>':empty('주문 없음');
+  // 공구 진행률
+  document.getElementById('dealProgress').innerHTML='<div style="padding:8px 0">'+getAllDeals().map(function(d){
+    var pct=d.participants&&d.targetCount?Math.min(100,Math.round(d.participants/d.targetCount*100)):0;
+    return'<div style="padding:10px 16px;border-bottom:1px solid var(--line)"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="font-weight:700">'+esc((d.name||'').replace('\n',' '))+'</span><span style="color:var(--ink3)">'+(d.participants||0)+'/'+(d.targetCount||d.target||100)+'명</span></div><div class="prog-wrap"><div class="prog-fill" style="width:'+pct+'%"></div></div></div>';
+  }).join('')+'</div>';
+  // Deal admin: 담당 공구만
+  if(isDealAdmin()){
+    var assign=getAssign();
+    var myDeals=getAllDeals().filter(function(d){return assign[d.id]===currentAdmin.id;});
+    // TODO narrow dashboard
+  }
 }
-function saveNewCoupon() {
-  const q = +document.getElementById('cQ').value;
-  DATA.coupons.push({
-    id: 'C-' + Date.now().toString().slice(-3),
-    name: document.getElementById('cN').value,
-    sent: q, used: 0, remaining: q,
-    expiry: document.getElementById('cE').value,
+function kpi(cls,ic,val,label,sub,dir){
+  return'<div class="kpi '+cls+'"><div class="kpi-ic">'+ic+'</div><div class="kpi-label">'+label+'</div><div class="kpi-val">'+val+'</div><div class="kpi-sub '+(dir==='down'?'down':'')+'">'+sub+'</div></div>';
+}
+
+/* ================================================================
+   DEALS
+   ================================================================ */
+var editingDealId=null;
+function renderDeals(){
+  var deals=getAllDeals();
+  var assign=getAssign();
+  if(isDealAdmin()){deals=deals.filter(function(d){return assign[d.id]===currentAdmin.id;});}
+  document.getElementById('nb-deals').textContent=deals.length;
+  document.getElementById('dealList').innerHTML='<div class="tbl-wrap"><div class="tbl-scroll"><table><thead><tr><th>공구명</th><th>카테고리</th><th>공구가</th><th>참여/목표</th><th>진행률</th><th>상태</th><th>담당관리자</th><th>액션</th></tr></thead><tbody>'+
+    deals.map(function(d){
+      var pct=d.participants&&(d.targetCount||d.target)?Math.min(100,Math.round(d.participants/(d.targetCount||d.target||100)*100)):0;
+      var adminId=assign[d.id];
+      var admins=getAdmins();
+      var assignedName=adminId?(admins.find(function(a){return a.id===adminId;})||{name:'?'}).name:'미지정';
+      return'<tr><td style="font-weight:700">'+esc((d.name||'').replace('\n',' '))+'</td><td>'+esc(d.category||d.cat||'')+'</td><td style="color:var(--coral);font-weight:700">'+fmt(d.nowPrice||d.now||0)+'원</td><td>'+(d.participants||0)+'/'+(d.targetCount||d.target||100)+'명</td><td><div class="prog-wrap" style="width:100px"><div class="prog-fill" style="width:'+pct+'%"></div></div><span style="font-size:10px;color:var(--ink3)"> '+pct+'%</span></td><td>'+statusBadge(d.status==='active'?'진행중':d.status==='nego'?'협상중':d.status==='done'?'완료':'마감')+'</td><td><span class="deal-scope">'+esc(assignedName)+'</span></td><td style="display:flex;gap:4px"><button class="btn xs" onclick="viewParticipants(\''+d.id+'\')">참여자</button>'+(isSub()?'<button class="btn xs" onclick="editDeal(\''+d.id+'\')">수정</button>':'')+'</td></tr>';
+    }).join('')+'</tbody></table></div></div>';
+}
+
+function openDealModal(){editingDealId=null;document.getElementById('dealModalTitle').textContent='공구 등록';['dm-name','dm-cat','dm-desc'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});['dm-orig','dm-now','dm-target'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});showModal('dealModal');}
+function closeDealModal(){closeModal('dealModal');}
+function editDeal(id){
+  editingDealId=id;
+  var d=getAllDeals().find(function(x){return x.id===id;});
+  if(!d)return;
+  document.getElementById('dealModalTitle').textContent='공구 수정';
+  setVal('dm-name',(d.name||'').replace('\n',' '));setVal('dm-cat',d.category||d.cat||'');
+  setVal('dm-orig',d.origPrice||0);setVal('dm-now',d.nowPrice||d.now||0);
+  setVal('dm-target',d.targetCount||d.target||100);setVal('dm-desc',d.desc||'');
+  showModal('dealModal');
+}
+function saveDeal(){
+  toast('공구가 저장됐어요 ✓');closeDealModal();renderDeals();
+}
+
+function viewParticipants(dealId){
+  var orders=getOrders();
+  var deal=getAllDeals().find(function(d){return d.id===dealId;});
+  var dealName=(deal?deal.name:'').replace('\n',' ');
+  var relOrders=orders.filter(function(o){return o.deal&&o.deal.indexOf(dealName.split(' ')[0])!==-1;});
+  // Also check reservations
+  var resvs=getReservations().filter(function(r){return r.dealId===dealId;});
+  var html='<h3 style="font-size:16px;font-weight:900;margin-bottom:16px">'+esc(dealName)+' — 참여자 ('+relOrders.length+'명)</h3>'+
+    (relOrders.length?'<table style="width:100%;border-collapse:collapse"><thead><tr><th>회원</th><th>연락처</th><th>금액</th><th>결제</th><th>수령</th></tr></thead><tbody>'+
+      relOrders.map(function(o){return'<tr><td style="font-weight:700">'+esc(o.member)+'</td><td>'+esc(o.phone||'–')+'</td><td>'+fmt(o.amount)+'원</td><td>'+statusBadge(o.payStatus)+'</td><td>'+esc(o.pickup||'–')+'</td></tr>';}).join('')+'</tbody></table>':
+      '<div style="color:var(--ink3);font-size:13px;padding:20px 0">아직 결제 참여자가 없습니다</div>')+
+    (resvs.length?'<h4 style="margin-top:20px;margin-bottom:8px;font-size:13px;font-weight:800">사전 접수자 ('+resvs.length+'명)</h4><table style="width:100%;border-collapse:collapse"><thead><tr><th>이름</th><th>연락처</th><th>주소</th><th>카톡</th></tr></thead><tbody>'+
+      resvs.map(function(r){return'<tr><td>'+esc(r.name)+'</td><td>'+esc(r.phone)+'</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">'+esc(r.addr)+'</td><td>'+(r.kakaoSent?'<span class="badge green">발송완료</span>':'<span class="badge gray">미발송</span>')+'</td></tr>';}).join('')+'</tbody></table>':'');
+  showInfoModal('참여자 목록',html);
+}
+
+/* ================================================================
+   MEMBERS
+   ================================================================ */
+function renderMembers(){
+  var members=getMembers();
+  var q=(document.getElementById('memberSearch')||{}).value||'';
+  if(q)members=members.filter(function(m){return(m.name||'').indexOf(q)!==-1||(m.phone||'').indexOf(q)!==-1;});
+  document.getElementById('memberTable').innerHTML='<table><thead><tr><th>이름</th><th>연락처</th><th>가입일</th><th>참여 딜</th><th>누적 구매</th><th>등급</th><th>액션</th></tr></thead><tbody>'+
+    (members.length?members.map(function(m,i){
+      var lvl=m.deals>=10?'VIP':m.deals>=5?'Gold':m.deals>=2?'Silver':'Bronze';
+      var lvlCls=lvl==='VIP'?'purple':lvl==='Gold'?'yellow':lvl==='Silver'?'blue':'gray';
+      return'<tr><td><div class="user-row"><div class="ava">'+(m.ava||'🙂')+'</div><span style="font-weight:700">'+esc(m.name)+'</span></div></td><td>'+esc(m.phone||'–')+'</td><td>'+esc(m.joined||'–')+'</td><td>'+m.deals+'회</td><td>'+fmt(m.spent||0)+'원</td><td><span class="badge '+lvlCls+'">'+lvl+'</span></td><td><button class="btn xs" onclick="smsOne(\''+esc(m.phone)+'\',\''+esc(m.name)+'\')">문자</button> <button class="btn xs" onclick="kakaoOne(\''+esc(m.phone)+'\',\''+esc(m.name)+'\')">카톡</button></td></tr>';
+    }).join(''):empty('회원 없음'))+'</tbody></table>';
+}
+function exportMembers(){toast('엑셀 내보내기 기능은 서버 API 연동 후 활성화됩니다');}
+function smsOne(phone,name){nav('sms');document.getElementById('smsTarget').value='custom';document.getElementById('smsCustomRow').style.display='block';document.getElementById('smsCustomNums').value=phone;renderSmsPreview();}
+function kakaoOne(phone,name){nav('kakao');}
+
+/* ================================================================
+   ORDERS
+   ================================================================ */
+function renderOrders(){
+  var orders=getOrders();
+  var filterVal=(document.getElementById('orderFilter')||{}).value||'';
+  if(isDealAdmin()){var assign=getAssign();var myDeals=getAllDeals().filter(function(d){return assign[d.id]===currentAdmin.id;}).map(function(d){return d.name.replace('\n',' ').split(' ')[0];});orders=orders.filter(function(o){return myDeals.some(function(n){return(o.deal||'').indexOf(n)!==-1;});});}
+  if(filterVal)orders=orders.filter(function(o){return o.payStatus===filterVal;});
+  document.getElementById('orderTable').innerHTML='<table><thead><tr><th>주문번호</th><th>회원</th><th>연락처</th><th>상품</th><th>금액</th><th>결제수단</th><th>결제상태</th><th>수령</th><th>날짜</th><th>액션</th></tr></thead><tbody>'+
+    (orders.length?orders.map(function(o){
+      return'<tr><td style="font-size:10px;color:var(--ink3)">'+esc(o.id)+'</td><td style="font-weight:700">'+esc(o.member)+'</td><td>'+esc(o.phone||'–')+'</td><td>'+esc(o.deal)+'</td><td style="font-weight:700">'+fmt(o.amount)+'원</td><td>'+esc(o.method||'–')+'</td><td>'+statusBadge(o.payStatus)+'</td><td>'+esc(o.pickup||'–')+'</td><td>'+esc(o.date||'–')+'</td><td><button class="btn xs primary" onclick="confirmPayment(\''+o.id+'\')">입금확인</button></td></tr>';
+    }).join(''):empty('주문 없음'))+'</tbody></table>';
+}
+function confirmPayment(id){
+  var orders=getOrders();
+  var o=orders.find(function(x){return x.id===id;});
+  if(o){o.payStatus='결제완료';o.status='paid';if(DATA)saveData(DATA);}
+  renderOrders();toast('입금 확인 처리됐어요 ✓');
+}
+
+/* ================================================================
+   DELIVERY
+   ================================================================ */
+function renderDelivery(){
+  var del=getDelivery();
+  document.getElementById('deliveryTable').innerHTML='<table><thead><tr><th>회원</th><th>상품</th><th>택배사</th><th>운송장번호</th><th>상태</th><th>등록일</th><th>카톡발송</th><th>액션</th></tr></thead><tbody>'+
+    del.map(function(d){
+      return'<tr><td style="font-weight:700">'+esc(d.member)+'</td><td>'+esc(d.product)+'</td><td>'+esc(d.carrier)+'</td><td style="font-family:monospace;font-size:12px">'+esc(d.trackNum)+'</td><td>'+statusBadge(d.status)+'</td><td>'+esc(d.date)+'</td><td>'+(d.notified?'<span class="badge green">발송완료</span>':'<span class="badge gray">미발송</span>')+'</td><td><button class="btn xs" onclick="trackUrl(\''+d.carrier+'\',\''+d.trackNum+'\')">추적</button></td></tr>';
+    }).join('')+'</tbody></table>';
+}
+function trackUrl(carrier,num){toast('실제 운영 시 택배사 추적 URL로 연결됩니다: '+carrier+' '+num);}
+function openTrackingModal(){showModal('trackingModal');}
+function saveTracking(){
+  var d=getDelivery();
+  d.unshift({id:'D-'+Date.now(),member:v('tk-member'),product:v('tk-product'),carrier:v('tk-carrier'),trackNum:v('tk-num'),status:'배송중',date:new Date().toISOString().slice(0,10),notified:document.getElementById('tk-kakao').checked});
+  saveDelivery(d);closeModal('trackingModal');renderDelivery();toast('운송장이 등록됐어요 🚚');
+}
+
+/* ================================================================
+   RESERVATIONS
+   ================================================================ */
+function initResvFilter(){
+  var sel=document.getElementById('resvDealFilter');
+  if(!sel)return;
+  getNegoDeals().forEach(function(d){var o=document.createElement('option');o.value=d.id;o.textContent=d.name.replace('\n',' ');sel.appendChild(o);});
+}
+function renderReservations(){
+  var list=getReservations();
+  var filterVal=(document.getElementById('resvDealFilter')||{}).value||'';
+  if(filterVal)list=list.filter(function(r){return r.dealId===filterVal;});
+  document.getElementById('resvTable').innerHTML='<table><thead><tr><th>접수번호</th><th>이름</th><th>연락처</th><th>딜</th><th>주소</th><th>접수일</th><th>카톡</th><th>액션</th></tr></thead><tbody>'+
+    (list.length?list.map(function(r){
+      return'<tr><td style="font-size:10px;color:var(--ink3)">'+esc(r.id)+'</td><td style="font-weight:700">'+esc(r.name)+'</td><td>'+esc(r.phone)+'</td><td>'+esc(r.dealName||'–')+'</td><td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.addr)+'</td><td>'+esc(r.date||'–')+'</td><td>'+(r.kakaoSent?'<span class="badge green">완료</span>':'<span class="badge yellow">대기</span>')+'</td><td><button class="btn xs" onclick="smsOne(\''+esc(r.phone)+'\',\''+esc(r.name)+'\')">문자</button></td></tr>';
+    }).join(''):empty('접수자 없음'))+'</tbody></table>';
+}
+
+/* ================================================================
+   PLAZA BOARD
+   ================================================================ */
+var plzFilter='all';
+window.plzTab=function(f,el){plzFilter=f;document.querySelectorAll('#sec-plaza .tab').forEach(function(t){t.classList.remove('on');});el.classList.add('on');renderPlaza(f);};
+function renderPlaza(f){
+  var posts=getPlaza();
+  if(f==='pinned')posts=posts.filter(function(p){return p.pinned;});
+  else if(f==='reported')posts=posts.filter(function(p){return p.reported;});
+  document.getElementById('plzTable').innerHTML='<table><thead><tr><th>작성자</th><th>카테고리</th><th>내용</th><th>좋아요</th><th>댓글</th><th>상태</th><th>액션</th></tr></thead><tbody>'+
+    (posts.length?posts.map(function(p){
+      return'<tr><td><div class="user-row"><div class="ava">'+(p.ava||'🙂')+'</div><span>'+esc(p.nick)+'</span></div></td><td>#'+esc(p.cat||'')+'</td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc((p.title||'').replace(/<[^>]*>/g,''))+'</td><td>'+esc(p.likes||0)+'</td><td>'+esc(p.comments||0)+'</td><td>'+(p.pinned?'<span class="badge blue">고정</span>':p.reported?'<span class="badge red">신고</span>':'<span class="badge green">정상</span>')+'</td><td style="display:flex;gap:4px"><button class="btn xs" onclick="pinPost(\''+p.id+'\')">📌</button><button class="btn xs danger" onclick="delPost(\''+p.id+'\')">삭제</button></td></tr>';
+    }).join(''):empty('게시글 없음'))+'</tbody></table>';
+}
+function pinPost(id){var posts=getPlaza();var p=posts.find(function(x){return x.id===id;});if(p){p.pinned=!p.pinned;var d=ls('modilMobilePlaza_v1',{posts:[]});d.posts=posts;ss('modilMobilePlaza_v1',d);}renderPlaza(plzFilter);toast('고정 상태 변경됨');}
+function delPost(id){if(!confirm('이 게시글을 삭제하시겠습니까?'))return;var d=ls('modilMobilePlaza_v1',{posts:[]});d.posts=(d.posts||[]).filter(function(p){return p.id!==id;});ss('modilMobilePlaza_v1',d);renderPlaza(plzFilter);toast('삭제됐어요');}
+
+/* ================================================================
+   REVIEWS
+   ================================================================ */
+function renderReviewAdmin(){
+  var revs=getReviews().sort(function(a,b){return b.ts-a.ts;});
+  document.getElementById('reviewAdminTable').innerHTML='<table><thead><tr><th>작성자</th><th>상품</th><th>별점</th><th>내용</th><th>좋아요</th><th>당첨</th><th>상태</th><th>액션</th></tr></thead><tbody>'+
+    (revs.length?revs.map(function(r){
+      return'<tr><td><div class="user-row"><div class="ava">'+(r.ava||'⭐')+'</div><span>'+esc(r.nick)+'</span></div></td><td>'+esc(r.product||'–')+'</td><td>'+stars(r.stars)+'</td><td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.text)+'</td><td>'+r.likes+'</td><td>'+(r.winner?'<span class="badge yellow">🏆 당첨</span>':'–')+'</td><td>'+(r.hidden?'<span class="badge red">숨김</span>':'<span class="badge green">공개</span>')+'</td><td style="display:flex;gap:4px"><button class="btn xs" onclick="toggleWinner(\''+r.id+'\')">🏆</button><button class="btn xs danger" onclick="hideReview(\''+r.id+'\')">숨김</button></td></tr>';
+    }).join(''):empty('후기 없음'))+'</tbody></table>';
+}
+function toggleWinner(id){var revs=getReviews();var r=revs.find(function(x){return x.id===id;});if(r)r.winner=!r.winner;saveReviews(revs);renderReviewAdmin();toast(r&&r.winner?'당첨자로 지정했어요 🏆':'당첨 해제됐어요');}
+function hideReview(id){var revs=getReviews();var r=revs.find(function(x){return x.id===id;});if(r)r.hidden=!r.hidden;saveReviews(revs);renderReviewAdmin();toast('상태 변경됨');}
+function stars(n){return[1,2,3,4,5].map(function(i){return'<span style="color:'+(i<=n?'#FFC107':'#ddd')+'">★</span>';}).join('');}
+
+/* ================================================================
+   LOTTERY
+   ================================================================ */
+function renderLottery(){
+  var revs=getReviews().filter(function(r){return!r.hidden&&!r.winner;});
+  var winners=getReviews().filter(function(r){return r.winner;});
+  document.getElementById('lotteryPanel').innerHTML=
+    '<div class="notice info">이번 주 후기 응모자 <b>'+revs.length+'명</b> 중 추첨합니다. 추첨 버튼을 누르면 랜덤으로 당첨자가 지정됩니다.</div>'+
+    (winners.length?'<div class="tbl-wrap"><div class="tbl-head"><span class="tbl-title">🏆 현재 당첨자</span></div><table><thead><tr><th>이름</th><th>상품</th><th>후기</th><th>액션</th></tr></thead><tbody>'+
+      winners.map(function(r){return'<tr><td><b>'+esc(r.nick)+'</b></td><td>'+esc(r.product||'–')+'</td><td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.text)+'</td><td><button class="btn xs danger" onclick="toggleWinner(\''+r.id+'\')">해제</button></td></tr>';}).join('')+
+      '</tbody></table></div>':'')+
+    '<div class="tbl-wrap" style="margin-top:16px"><div class="tbl-head"><span class="tbl-title">응모자 목록 ('+revs.length+'명)</span></div><table><thead><tr><th>이름</th><th>상품</th><th>별점</th><th>후기</th></tr></thead><tbody>'+
+    revs.map(function(r){return'<tr><td>'+esc(r.nick)+'</td><td>'+esc(r.product||'–')+'</td><td>'+stars(r.stars)+'</td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(r.text)+'</td></tr>';}).join('')+
+    '</tbody></table></div>';
+}
+window.doLottery=function(){
+  var revs=getReviews().filter(function(r){return!r.hidden&&!r.winner;});
+  if(revs.length===0){toast('응모자가 없어요');return;}
+  var winner=revs[Math.floor(Math.random()*revs.length)];
+  winner.winner=true;
+  saveReviews(getReviews());
+  renderLottery();
+  toast('🎉 '+winner.nick+'님이 당첨됐어요!');
+};
+
+/* ================================================================
+   SMS
+   ================================================================ */
+function initSmsDealSel(){
+  var sel=document.getElementById('smsDealSel');
+  if(!sel)return;
+  getAllDeals().forEach(function(d){var o=document.createElement('option');o.value=d.id;o.textContent=(d.name||'').replace('\n',' ');sel.appendChild(o);});
+}
+window.renderSmsPreview=function(){
+  var target=v('smsTarget');
+  var show=target==='deal'||target==='resv';
+  document.getElementById('smsDealRow').style.display=show?'block':'none';
+  document.getElementById('smsCustomRow').style.display=target==='custom'?'block':'none';
+  var msg=v('smsTa');
+  var recips=getSmsRecipients(target);
+  document.getElementById('smsCount').textContent=msg.length+'자';
+  document.getElementById('smsType').textContent=msg.length<=90?'SMS (90자 이하)':'LMS (장문)';
+  document.getElementById('smsPreviewMsg').textContent=recips.length?msg.replace('{이름}',recips[0].name||'홍길동'):'[수신자를 선택하세요]';
+  document.getElementById('smsRecipCount').textContent=recips.length;
+  document.getElementById('smsRecipList').innerHTML=recips.slice(0,10).map(function(r){return'<div style="padding:4px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between"><span>'+esc(r.name)+'</span><span style="color:var(--ink3)">'+esc(r.phone)+'</span></div>';}).join('')+(recips.length>10?'<div style="color:var(--ink3);font-size:11px;padding:4px 0">외 '+(recips.length-10)+'명</div>':'');
+};
+function getSmsRecipients(target){
+  if(target==='all')return getMembers().map(function(m){return{name:m.name,phone:m.phone||'–'};});
+  if(target==='deal'){var dealId=v('smsDealSel');return getOrders().filter(function(o){return o.phone;}).map(function(o){return{name:o.member,phone:o.phone};});}
+  if(target==='resv'){return getReservations().map(function(r){return{name:r.name,phone:r.phone};});}
+  if(target==='custom'){return v('smsCustomNums').split(',').map(function(s){return{name:'수신자',phone:s.trim()};}).filter(function(r){return r.phone;});}
+  return[];
+}
+window.doSmsSend=function(){
+  var msg=v('smsTa');if(!msg){toast('메시지를 입력해 주세요');return;}
+  var recips=getSmsRecipients(v('smsTarget'));
+  if(!recips.length){toast('수신자를 선택해 주세요');return;}
+  var log=getSmsLog();
+  log.unshift({id:'S-'+Date.now(),target:v('smsTarget'),count:recips.length,msg:msg,date:new Date().toISOString().slice(0,10),status:'발송완료'});
+  saveSmsLog(log);renderSmsHistory();
+  toast('📤 '+recips.length+'명에게 문자 발송 완료!');
+};
+function renderSmsHistory(){
+  var log=getSmsLog();
+  document.getElementById('smsHistory').innerHTML='<table><thead><tr><th>발송일</th><th>대상</th><th>건수</th><th>메시지</th><th>상태</th></tr></thead><tbody>'+
+    log.map(function(l){return'<tr><td>'+esc(l.date)+'</td><td>'+esc(l.target||l.dealName||'–')+'</td><td>'+l.count+'명</td><td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(l.msg)+'</td><td><span class="badge green">'+esc(l.status)+'</span></td></tr>';}).join('')+'</tbody></table>';
+}
+
+/* ================================================================
+   KAKAO
+   ================================================================ */
+function initKakaoDealSel(){
+  var sel=document.getElementById('kakaoDealSel');
+  if(!sel)return;
+  getAllDeals().concat(getNegoDeals()).forEach(function(d){var o=document.createElement('option');o.value=d.id;o.textContent=(d.name||'').replace('\n',' ');sel.appendChild(o);});
+}
+window.renderKakaoPreview=function(){
+  var target=v('kakaoTarget');
+  var deal=getAllDeals().find(function(d){return d.id===v('kakaoDealSel');})||{};
+  var msg=v('kakaoTa').replace('{딜명}',(deal.name||'딜명').replace('\n',' ')).replace('{금액}',fmt(deal.nowPrice||0)+'원');
+  var recips=target==='resv'?getReservations().map(function(r){return{name:r.name,phone:r.phone};}):
+             target==='deal'?getOrders().map(function(o){return{name:o.member,phone:o.phone};}):
+             getMembers().map(function(m){return{name:m.name,phone:m.phone};});
+  document.getElementById('kakaoPreviewMsg').textContent=recips.length?msg.replace('{이름}',recips[0].name||'홍길동'):'[수신자를 선택하세요]';
+  document.getElementById('kakaoRecipCount').textContent=recips.length;
+  document.getElementById('kakaoRecipList').innerHTML=recips.slice(0,10).map(function(r){return'<div style="padding:4px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between"><span>'+esc(r.name)+'</span><span style="color:var(--ink3)">'+esc(r.phone||'–')+'</span></div>';}).join('');
+};
+window.doKakaoSend=function(){
+  var msg=v('kakaoTa');if(!msg){toast('메시지를 입력해 주세요');return;}
+  var target=v('kakaoTarget');
+  var recips=target==='resv'?getReservations():target==='deal'?getOrders():getMembers();
+  if(!recips.length){toast('수신자가 없어요');return;}
+  // Mark reservations as sent
+  if(target==='resv'){var rs=getReservations();rs.forEach(function(r){r.kakaoSent=true;});ss(RESERVE_KEY,rs);}
+  var log=getKakaoLog();
+  log.unshift({id:'K-'+Date.now(),target:target,count:recips.length,msg:msg,date:new Date().toISOString().slice(0,10),status:'발송완료'});
+  saveKakaoLog(log);renderKakaoHistory();
+  toast('💬 '+recips.length+'명에게 카카오톡 발송 완료!');
+};
+function renderKakaoHistory(){
+  var log=getKakaoLog();
+  document.getElementById('kakaoHistory').innerHTML='<table><thead><tr><th>발송일</th><th>대상</th><th>건수</th><th>메시지</th><th>상태</th></tr></thead><tbody>'+
+    log.map(function(l){return'<tr><td>'+esc(l.date)+'</td><td>'+esc(l.target||l.dealName||'–')+'</td><td>'+l.count+'명</td><td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(l.msg)+'</td><td><span class="badge yellow">'+esc(l.status)+'</span></td></tr>';}).join('')+'</tbody></table>';
+}
+
+/* ================================================================
+   ADMIN TABLE
+   ================================================================ */
+function renderAdminTable(){
+  var admins=getAdmins();
+  document.getElementById('adminTable').innerHTML='<table><thead><tr><th>아이디</th><th>이름</th><th>권한</th><th>지역</th><th>연락처</th><th>생성일</th><th>상태</th><th>액션</th></tr></thead><tbody>'+
+    admins.map(function(a){
+      var roleCls=a.role==='super'?'role-super':a.role==='sub'?'role-sub':'role-deal';
+      var roleLabel=a.role==='super'?'최고관리자':a.role==='sub'?'부운영자':'공구별 관리자';
+      return'<tr><td style="font-family:monospace;font-weight:700">'+esc(a.id)+'</td><td>'+esc(a.name)+'</td><td><span class="badge '+roleCls+'">'+roleLabel+'</span></td><td>'+esc(a.region||'–')+'</td><td>'+esc(a.phone||'–')+'</td><td>'+esc(a.created||'–')+'</td><td>'+(a.active!==false?'<span class="badge green">활성</span>':'<span class="badge gray">비활성</span>')+'</td><td style="display:flex;gap:4px">'+(a.role!=='super'?'<button class="btn xs" onclick="toggleAdmin(\''+a.id+'\')">'+((a.active!==false)?'비활성화':'활성화')+'</button><button class="btn xs danger" onclick="deleteAdmin(\''+a.id+'\')">삭제</button>':'<span style="color:var(--ink3);font-size:11px">변경불가</span>')+'</td></tr>';
+    }).join('')+'</tbody></table>';
+}
+function openAdminModal(){showModal('adminModal');}
+function closeAdminModal(){closeModal('adminModal');}
+function saveAdmin(){
+  var id=v('am-id'),name=v('am-name'),pw=v('am-pw'),role=v('am-role'),phone=v('am-phone'),region=v('am-region');
+  if(!id||!pw){toast('아이디와 비밀번호를 입력해 주세요');return;}
+  var admins=getAdmins();
+  if(admins.find(function(a){return a.id===id;})){toast('이미 사용 중인 아이디입니다');return;}
+  admins.push({id:id,name:name,pw:pw,role:role,phone:phone,region:region,created:new Date().toISOString().slice(0,10),active:true});
+  saveAdmins(admins);closeAdminModal();renderAdminTable();toast('운영자 계정이 생성됐어요 ✓');
+}
+function toggleAdmin(id){
+  var admins=getAdmins();var a=admins.find(function(x){return x.id===id;});
+  if(a)a.active=!a.active;saveAdmins(admins);renderAdminTable();toast('상태가 변경됐어요');
+}
+function deleteAdmin(id){
+  if(!confirm('이 운영자 계정을 삭제하시겠습니까?'))return;
+  var admins=getAdmins().filter(function(a){return a.id!==id;});
+  saveAdmins(admins);renderAdminTable();toast('삭제됐어요');
+}
+
+/* ================================================================
+   DEAL ADMIN CARDS
+   ================================================================ */
+var assigningDealId=null;
+function renderDealAdminCards(){
+  var deals=getAllDeals();
+  var assign=getAssign();
+  var admins=getAdmins().filter(function(a){return a.role!=='super';});
+  document.getElementById('dealAdminCards').innerHTML=deals.map(function(d){
+    var adminId=assign[d.id];
+    var assignedAdmin=adminId?admins.find(function(a){return a.id===adminId;}):null;
+    var pct=d.participants&&(d.targetCount||d.target)?Math.min(100,Math.round(d.participants/(d.targetCount||d.target||100)*100)):0;
+    return'<div class="card"><div class="card-head"><div><div class="card-title">'+esc((d.name||'').replace('\n',' '))+'</div><div class="card-sub">'+esc(d.category||'')+'</div></div>'+statusBadge(d.status==='active'?'진행중':'협상중')+'</div>'+
+      '<div class="prog-wrap"><div class="prog-fill" style="width:'+pct+'%"></div></div>'+
+      '<div style="font-size:11px;color:var(--ink3);margin:6px 0 14px">'+(d.participants||0)+'명 참여 / 목표 '+(d.targetCount||d.target||100)+'명</div>'+
+      '<div style="font-size:13px;margin-bottom:12px">담당 관리자: '+(assignedAdmin?'<b>'+esc(assignedAdmin.name)+'</b> <span class="badge blue">'+esc(assignedAdmin.role==='sub'?'부운영자':'공구별관리자')+'</span>':'<span style="color:var(--ink3)">미지정</span>')+'</div>'+
+      '<div class="card-foot"><button class="btn primary sm" onclick="openAssignModal(\''+d.id+'\')">관리자 지정</button><button class="btn sm" onclick="viewParticipants(\''+d.id+'\')">참여자 보기</button></div></div>';
+  }).join('');
+}
+function openAssignModal(dealId){
+  assigningDealId=dealId;
+  var deal=getAllDeals().find(function(d){return d.id===dealId;});
+  document.getElementById('assignTitle').textContent=(deal?(deal.name||'').replace('\n',' '):'')+' 관리자 지정';
+  document.getElementById('assignDealInfo').textContent='이 공구에 지정된 관리자는 참여자 목록과 연락처, 주문 현황만 볼 수 있습니다.';
+  var sel=document.getElementById('assignAdmin');
+  sel.innerHTML='<option value="">-- 미지정 --</option>';
+  getAdmins().filter(function(a){return a.role!=='super';}).forEach(function(a){
+    var o=document.createElement('option');o.value=a.id;o.textContent=a.name+' ('+a.id+') — '+(a.role==='sub'?'부운영자':'공구별관리자');sel.appendChild(o);
   });
-  save(); closeModal();
+  var cur=getAssign()[dealId];if(cur)sel.value=cur;
+  showModal('assignModal');
 }
-function deleteCoupon(i) {
-  if (!confirm('삭제하시겠습니까?')) return;
-  DATA.coupons.splice(i, 1);
-  save();
+window.saveAssign=function(){
+  var assign=getAssign();
+  var adminId=v('assignAdmin');
+  if(adminId)assign[assigningDealId]=adminId;else delete assign[assigningDealId];
+  ss(ASSIGN_KEY,assign);closeModal('assignModal');renderDealAdminCards();renderDeals();
+  toast('관리자가 지정됐어요 ✓');
+};
+
+/* ================================================================
+   REGIONS
+   ================================================================ */
+function renderRegions(){
+  var regions=getRegions();
+  document.getElementById('regionCards').innerHTML=regions.map(function(r){
+    var statusCls=r.status==='active'?'green':r.status==='planned'?'yellow':'gray';
+    var statusLabel=r.status==='active'?'운영중':r.status==='planned'?'준비중':'중단';
+    return'<div class="card"><div class="card-head"><div><div class="card-title">📍 '+esc(r.name)+'</div><div class="card-sub">'+esc(r.addr)+'</div></div><span class="badge '+statusCls+'">'+statusLabel+'</span></div>'+
+      '<div class="card-body"><div>분양방식: <b>'+esc(r.type)+'</b></div><div>담당자: <b>'+esc(r.admin||'미지정')+'</b></div><div>오픈일: '+esc(r.opened||'미정')+'</div></div>'+
+      '<div class="card-foot"><button class="btn sm" onclick="switchRegion(\''+r.id+'\')">이 지역 전환</button>'+(r.status==='planned'?'<button class="btn sm primary" onclick="activateRegion(\''+r.id+'\')">오픈 처리</button>':'')+'</div></div>';
+  }).join('');
 }
-function sendKakaoForCoupon(i) {
-  goTo('kakao');
-  setTimeout(() => {
-    document.getElementById('kkName').value = DATA.coupons[i].name + ' 쿠폰 발송 안내';
-    document.getElementById('kkMsg').value = `[모딜 🐴]\n${DATA.coupons[i].name} 쿠폰이 발송되었어요!\n\n📅 사용기한: ${DATA.coupons[i].expiry}\n\n모딜 앱에서 확인하세요.`;
-    previewKakao();
-  }, 100);
+function openRegionModal(){showModal('regionModal');}
+window.saveRegion=function(){
+  var regions=getRegions();
+  regions.push({id:'r-'+Date.now(),name:v('rg-name'),addr:v('rg-addr'),admin:v('rg-admin'),opened:v('rg-date'),type:v('rg-type'),status:'planned'});
+  saveRegions(regions);closeModal('regionModal');renderRegions();toast('지역이 추가됐어요 🗺️');
+};
+function activateRegion(id){var regions=getRegions();var r=regions.find(function(x){return x.id===id;});if(r)r.status='active';saveRegions(regions);renderRegions();toast('지역이 오픈됐어요!');}
+function switchRegion(id){
+  var regions=getRegions();var r=regions.find(function(x){return x.id===id;});
+  if(!r)return;
+  document.getElementById('regionName').textContent=r.name;
+  document.getElementById('regionSel').value=id;
+  toast('지역을 '+r.name+'(으)로 전환했어요');
+}
+window.switchRegion=function(id){switchRegion(id);};
+
+/* ================================================================
+   SETTINGS
+   ================================================================ */
+window.saveSettings=function(){toast('설정이 저장됐어요 ✓');};
+window.changePw=function(){
+  var old=v('cfg-pw-old'),nw=v('cfg-pw-new'),nw2=v('cfg-pw-new2');
+  var admins=getAdmins();var a=admins.find(function(x){return x.id===currentAdmin.id;});
+  if(!a||a.pw!==old){toast('현재 비밀번호가 올바르지 않아요');return;}
+  if(nw!==nw2){toast('새 비밀번호가 일치하지 않아요');return;}
+  if(nw.length<6){toast('비밀번호는 6자 이상이어야 해요');return;}
+  a.pw=nw;saveAdmins(admins);toast('비밀번호가 변경됐어요 ✓');
+};
+
+/* ================================================================
+   UTILS
+   ================================================================ */
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmt(n){return Number(n||0).toLocaleString('ko-KR');}
+function v(id){var el=document.getElementById(id);return el?el.value:'';}
+function setVal(id,val){var el=document.getElementById(id);if(el)el.value=val;}
+function show(id,d){var el=document.getElementById(id);if(el)el.style.display=d||'block';}
+function hide(id){var el=document.getElementById(id);if(el)el.style.display='none';}
+function showModal(id){document.getElementById(id).classList.add('show');}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+function empty(msg){return'<tr><td colspan="20" style="text-align:center;padding:32px;color:var(--ink3);font-size:13px">'+msg+'</td></tr>';}
+function statusBadge(s){var map={'진행중':'green','결제완료':'green','완료':'green','입금완료':'green','협상중':'blue','배송중':'blue','입금대기':'yellow','마감':'gray','취소':'red','pending_transfer':'yellow','paid':'green','active':'green','done':'green'};var cls=map[s]||'gray';return'<span class="badge '+cls+'">'+esc(s)+'</span>';}
+function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
+
+// Info Modal (dynamic)
+function showInfoModal(title,html){
+  var ov=document.createElement('div');ov.className='modal-ov show';ov.style.zIndex='600';
+  ov.innerHTML='<div class="modal" style="width:700px;max-width:95vw"><div class="modal-head"><span class="modal-title">'+esc(title)+'</span><button class="modal-x" onclick="this.closest(\'.modal-ov\').remove()">×</button></div><div style="max-height:60vh;overflow-y:auto">'+html+'</div></div>';
+  document.body.appendChild(ov);ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
 }
 
-function renderKakao() {
-  document.getElementById('main').innerHTML = `
-    <div class="page-head">
-      <div><div class="page-title">카카오톡 쿠폰발송</div><div class="page-sub">알림톡 / 친구톡 발송</div></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 360px;gap:1.5rem">
-      <div class="card">
-        <div class="card-head"><div class="card-title">메시지 작성</div></div>
-        <div class="form-row">
-          <div class="full"><label>발송 대상</label>
-            <select class="editable" id="kkTo">
-              <option>전체 회원 (${DATA.members.length}명)</option>
-              <option>VIP 회원만 (${DATA.members.filter(m => m.status === 'vip').length}명)</option>
-              <option>최근 30일 신규 회원</option>
-              <option>특정 딜 참여자</option>
-            </select>
-          </div>
-          <div class="full"><label>템플릿명</label><input class="editable" id="kkName" placeholder="CGV 쿠폰 발송 안내" oninput="previewKakao()"></div>
-          <div class="full"><label>메시지 본문</label>
-            <textarea class="editable" id="kkMsg" rows="8" placeholder="[모딜 🐴]&#10;쿠폰이 발송되었어요!" oninput="previewKakao()" style="resize:vertical;height:140px"></textarea>
-          </div>
-          <div class="full"><label>버튼 텍스트</label><input class="editable" id="kkBtn" value="쿠폰 사용하기" oninput="previewKakao()"></div>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:1rem">
-          <button class="btn" onclick="document.getElementById('kkMsg').value=''">초기화</button>
-          <button class="btn primary" onclick="sendKakao()">📤 카카오톡 발송</button>
-        </div>
-      </div>
-
-      <div>
-        <div style="font-size:12px;color:var(--ink3);margin-bottom:8px;font-weight:600">미리보기</div>
-        <div class="kakao-preview">
-          <div class="kkk-head">💬 알림톡</div>
-          <div id="kkPreviewMsg">메시지를 입력하세요.</div>
-          <div class="kkk-link" id="kkPreviewBtn">버튼 텍스트</div>
-        </div>
-        <div style="font-size:12px;color:var(--ink3);margin-top:1rem;font-weight:600">발송 기록 (최근 5건)</div>
-        <div class="card" style="margin-top:8px;padding:1rem">
-          <div style="font-size:12px;line-height:2"><b>2025-05-30</b> · CGV 쿠폰 (198건)<br><b>2025-05-25</b> · 스타벅스 쿠폰 (74건)<br><b>2025-05-20</b> · 키즈카페 쿠폰 (150건)<br><b>2025-05-15</b> · 신규딜 안내 (1,240건)<br><b>2025-05-10</b> · 뷰티샵 쿠폰 (80건)</div>
-        </div>
-      </div>
-    </div>
-  `;
-}
-function previewKakao() {
-  document.getElementById('kkPreviewMsg').innerText = document.getElementById('kkMsg').value || '메시지를 입력하세요.';
-  document.getElementById('kkPreviewBtn').innerText = document.getElementById('kkBtn').value || '버튼 텍스트';
-}
-function sendKakao() {
-  const msg = document.getElementById('kkMsg').value;
-  if (!msg) { alert('메시지를 입력해주세요.'); return; }
-  alert('✅ 카카오톡 알림톡이 발송되었습니다!\n\n(실제 운영 시 카카오 비즈니스 API와 연동됩니다)');
-}
-
-function renderSpots() {
-  document.getElementById('main').innerHTML = `
-    <div class="page-head">
-      <div><div class="page-title">17개 거점 관리</div><div class="page-sub">픽업 거점·운영시간</div></div>
-      <div class="page-actions"><button class="btn primary" onclick="addSpot()">+ 거점 추가</button></div>
-    </div>
-    <div class="card">
-      <div class="card-head"><div class="card-title">거점 목록</div><div class="card-sub">단원구 ${DATA.pickupSpots.filter(s => s.district === '단원구').length}곳, 상록구 ${DATA.pickupSpots.filter(s => s.district === '상록구').length}곳</div></div>
-      <table>
-        <thead><tr><th>거점명</th><th>지역</th><th>동</th><th>주소</th><th>좌표(X,Y)</th><th>운영시간</th><th>연락처</th><th>작업</th></tr></thead>
-        <tbody>${DATA.pickupSpots.map((s,i) => `
-          <tr>
-            <td><b>${s.name}</b></td>
-            <td><span class="pill orange">${s.district}</span></td>
-            <td>${s.dong || '-'}</td>
-            <td>${s.address}</td>
-            <td>${s.x != null ? s.x + ', ' + s.y : '-'}</td>
-            <td>${s.hours}</td>
-            <td>${s.phone}</td>
-            <td>
-              <button class="btn sm" onclick="editSpot(${i})">수정</button>
-              <button class="btn sm danger" onclick="deleteSpot(${i})">삭제</button>
-            </td>
-          </tr>`).join('')}</tbody>
-      </table>
-    </div>
-  `;
-}
-function addSpot() {
-  openModal(`
-    <div class="modal-title">거점 추가</div>
-    <div class="form-row">
-      <div><label>거점명</label><input class="editable" id="sN" placeholder="OO동 거점"></div>
-      <div><label>지역</label><select class="editable" id="sD"><option>단원구</option><option>상록구</option></select></div>
-      <div><label>동 (검색용)</label><input class="editable" id="sDong" placeholder="고잔동"></div>
-      <div class="full"><label>주소</label><input class="editable" id="sA"></div>
-      <div><label>지도 X (0–100)</label><input class="editable" id="sX" type="number" placeholder="50"></div>
-      <div><label>지도 Y (0–100)</label><input class="editable" id="sY" type="number" placeholder="50"></div>
-      <div><label>운영시간</label><input class="editable" id="sH" placeholder="평일 10-19"></div>
-      <div><label>연락처</label><input class="editable" id="sP" placeholder="031-000-0000"></div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn" onclick="closeModal()">취소</button>
-      <button class="btn primary" onclick="saveNewSpot()">추가</button>
-    </div>
-  `);
-}
-function saveNewSpot() {
-  DATA.pickupSpots.push({
-    id: 'spot-' + Date.now().toString().slice(-4),
-    name: document.getElementById('sN').value,
-    district: document.getElementById('sD').value,
-    dong: document.getElementById('sDong').value,
-    address: document.getElementById('sA').value,
-    x: +document.getElementById('sX').value || 50,
-    y: +document.getElementById('sY').value || 50,
-    hours: document.getElementById('sH').value,
-    phone: document.getElementById('sP').value,
-  });
-  save(); closeModal();
-}
-function editSpot(i) {
-  const s = DATA.pickupSpots[i];
-  openModal(`
-    <div class="modal-title">거점 수정 — ${s.name}</div>
-    <div class="form-row">
-      <div><label>거점명</label><input class="editable" id="sN" value="${s.name}"></div>
-      <div><label>지역</label><select class="editable" id="sD"><option ${s.district === '단원구' ? 'selected' : ''}>단원구</option><option ${s.district === '상록구' ? 'selected' : ''}>상록구</option></select></div>
-      <div><label>동 (검색용)</label><input class="editable" id="sDong" value="${s.dong || ''}"></div>
-      <div class="full"><label>주소</label><input class="editable" id="sA" value="${s.address}"></div>
-      <div><label>지도 X (0–100)</label><input class="editable" id="sX" type="number" value="${s.x != null ? s.x : 50}"></div>
-      <div><label>지도 Y (0–100)</label><input class="editable" id="sY" type="number" value="${s.y != null ? s.y : 50}"></div>
-      <div><label>운영시간</label><input class="editable" id="sH" value="${s.hours}"></div>
-      <div><label>연락처</label><input class="editable" id="sP" value="${s.phone}"></div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn" onclick="closeModal()">취소</button>
-      <button class="btn primary" onclick="saveEditSpot(${i})">저장</button>
-    </div>
-  `);
-}
-function saveEditSpot(i) {
-  const s = DATA.pickupSpots[i];
-  s.name = document.getElementById('sN').value;
-  s.district = document.getElementById('sD').value;
-  s.dong = document.getElementById('sDong').value;
-  s.address = document.getElementById('sA').value;
-  s.x = +document.getElementById('sX').value;
-  s.y = +document.getElementById('sY').value;
-  s.hours = document.getElementById('sH').value;
-  s.phone = document.getElementById('sP').value;
-  save(); closeModal();
-}
-function deleteSpot(i) {
-  if (!confirm('삭제하시겠습니까?')) return;
-  DATA.pickupSpots.splice(i, 1);
-  save();
-}
-
-function renderSite() {
-  const s = DATA.site;
-  document.getElementById('main').innerHTML = `
-    <div class="page-head">
-      <div><div class="page-title">사이트 설정</div><div class="page-sub">브랜드·연락처·통계 일괄 수정</div></div>
-      <div class="page-actions">
-        <button class="btn danger" onclick="resetAllData()">기본값으로 초기화</button>
-        <button class="btn primary" onclick="saveSite()">설정 저장</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-head"><div class="card-title">브랜드 정보</div></div>
-      <div class="form-row">
-        <div><label>브랜드명 (한글)</label><input class="editable" id="sBrand" value="${s.brand}"></div>
-        <div><label>브랜드명 (영문)</label><input class="editable" id="sBrandEn" value="${s.brandEn}"></div>
-        <div><label>지역명</label><input class="editable" id="sRegion" value="${s.region}"></div>
-        <div><label>마스코트명</label><input class="editable" id="sMascot" value="${s.mascot}"></div>
-        <div class="full"><label>슬로건</label><input class="editable" id="sSlogan" value="${s.slogan}"></div>
-        <div class="full"><label>태그라인</label><input class="editable" id="sTagline" value="${s.tagline}"></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-head"><div class="card-title">연락처</div></div>
-      <div class="form-row">
-        <div class="full"><label>이메일</label><input class="editable" id="sEmail" value="${s.contactEmail}"></div>
-        <div class="full"><label>주소</label><input class="editable" id="sAddr" value="${s.contactAddress}"></div>
-        <div class="full"><label>운영시간</label><input class="editable" id="sHours" value="${s.contactHours}"></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-head"><div class="card-title">메인 페이지 통계</div></div>
-      <div class="form-row">
-        <div><label>성사된 딜</label><input class="editable" id="stD" type="number" value="${DATA.stats.successDeals}"></div>
-        <div><label>함께한 친구</label><input class="editable" id="stM" type="number" value="${DATA.stats.totalMembers}"></div>
-        <div><label>만족도 %</label><input class="editable" id="stS" type="number" value="${DATA.stats.satisfaction}"></div>
-        <div><label>진행 중 네고</label><input class="editable" id="stN" type="number" value="${DATA.stats.activeNego}"></div>
-      </div>
-    </div>
-  `;
-}
-function saveSite() {
-  DATA.site.brand = document.getElementById('sBrand').value;
-  DATA.site.brandEn = document.getElementById('sBrandEn').value;
-  DATA.site.region = document.getElementById('sRegion').value;
-  DATA.site.mascot = document.getElementById('sMascot').value;
-  DATA.site.slogan = document.getElementById('sSlogan').value;
-  DATA.site.tagline = document.getElementById('sTagline').value;
-  DATA.site.contactEmail = document.getElementById('sEmail').value;
-  DATA.site.contactAddress = document.getElementById('sAddr').value;
-  DATA.site.contactHours = document.getElementById('sHours').value;
-  DATA.stats.successDeals = +document.getElementById('stD').value;
-  DATA.stats.totalMembers = +document.getElementById('stM').value;
-  DATA.stats.satisfaction = +document.getElementById('stS').value;
-  DATA.stats.activeNego = +document.getElementById('stN').value;
-  save();
-  alert('✅ 설정이 저장되었습니다!');
-}
-function resetAllData() {
-  if (!confirm('모든 데이터를 기본값으로 되돌리시겠습니까?\n작업하신 내용이 모두 사라집니다.')) return;
-  DATA = resetData();
-  save();
-  alert('✅ 데이터가 초기화되었습니다.');
-}
-
-renderDashboard();
+document.getElementById('loginScreen').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+})();
 </script>
-
 </body>
 </html>
