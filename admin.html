@@ -591,20 +591,76 @@ tr:hover td{background:#faf7f4}
 
 <!-- 공구 등록 모달 -->
 <div class="modal-ov" id="dealModal">
-  <div class="modal">
+  <div class="modal" style="width:680px">
     <div class="modal-head"><span class="modal-title" id="dealModalTitle">공구 등록</span><button class="modal-x" onclick="closeDealModal()">×</button></div>
-    <div class="form-grid">
-      <div class="form-row"><label class="form-label">공구명 *</label><input class="form-input" id="dm-name" placeholder="갤럭시 S24 FE 공동구매"></div>
-      <div class="form-row"><label class="form-label">카테고리</label><input class="form-input" id="dm-cat" placeholder="📱 휴대폰"></div>
-      <div class="form-row"><label class="form-label">정가 (원)</label><input class="form-input" id="dm-orig" type="number" placeholder="899000"></div>
-      <div class="form-row"><label class="form-label">공구가 (원)</label><input class="form-input" id="dm-now" type="number" placeholder="599000"></div>
-      <div class="form-row"><label class="form-label">목표 인원</label><input class="form-input" id="dm-target" type="number" placeholder="100"></div>
-      <div class="form-row"><label class="form-label">마감일</label><input class="form-input" id="dm-deadline" type="date"></div>
+
+    <div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:1.5px solid var(--line);padding-bottom:12px">
+      <button class="btn sm" id="dmTab1" onclick="dmTab(1)" style="background:var(--coral);color:#fff;border-color:var(--coral)">① 기본 정보</button>
+      <button class="btn sm" id="dmTab2" onclick="dmTab(2)">② 이미지 · 영상</button>
+      <button class="btn sm" id="dmTab3" onclick="dmTab(3)">③ 상세 설명 · 스펙</button>
     </div>
-    <div class="form-row"><label class="form-label">설명</label><textarea class="form-ta" id="dm-desc" placeholder="공구 상세 안내"></textarea></div>
-    <div class="form-row"><label class="form-label">상태</label>
-      <select class="form-select" id="dm-status"><option value="active">진행중</option><option value="nego">협상중</option><option value="closed">마감</option><option value="done">완료</option></select></div>
-    <div class="modal-foot"><button class="btn" onclick="closeDealModal()">취소</button><button class="btn primary" onclick="saveDeal()">저장</button></div>
+
+    <!-- 탭1: 기본정보 -->
+    <div id="dm-panel1">
+      <div class="form-grid">
+        <div class="form-row"><label class="form-label">공구명 *</label><input class="form-input" id="dm-name" placeholder="갤럭시 S24 FE 공동구매"></div>
+        <div class="form-row"><label class="form-label">카테고리</label><input class="form-input" id="dm-cat" placeholder="📱 휴대폰"></div>
+        <div class="form-row"><label class="form-label">아이콘 (이모지)</label><input class="form-input" id="dm-icon" placeholder="📱" maxlength="4"></div>
+        <div class="form-row"><label class="form-label">딜 유형</label>
+          <select class="form-select" id="dm-type">
+            <option value="active">진행중 공구 (activeDeals)</option>
+            <option value="nego">협상중 딜 (negoDeals)</option>
+          </select></div>
+        <div class="form-row"><label class="form-label">정가 (원)</label><input class="form-input" id="dm-orig" type="number" placeholder="899000"></div>
+        <div class="form-row"><label class="form-label">공구가 (원) <span style="color:var(--ink3);font-size:10px">협상중이면 비워두세요</span></label><input class="form-input" id="dm-now" type="number" placeholder="599000"></div>
+        <div class="form-row"><label class="form-label">목표 인원</label><input class="form-input" id="dm-target" type="number" placeholder="100"></div>
+        <div class="form-row"><label class="form-label">마감일</label><input class="form-input" id="dm-deadline" type="date"></div>
+      </div>
+      <div class="form-row"><label class="form-label">배지 (쉼표 구분)</label><input class="form-input" id="dm-badges" placeholder="타임세일, 베스트, 인기"></div>
+      <div class="form-row"><label class="form-label">사전예약 가능</label>
+        <select class="form-select" id="dm-reservable">
+          <option value="true">예 (사전예약 알림받기 버튼 표시)</option>
+          <option value="false">아니오 (모집 준비중 표시)</option>
+        </select></div>
+    </div>
+
+    <!-- 탭2: 이미지·영상 -->
+    <div id="dm-panel2" style="display:none">
+      <div class="notice info">이미지는 URL을 입력하세요. 여러 장은 줄바꿈으로 구분합니다.<br>직접 업로드 기능은 서버 연동 후 사용 가능합니다.</div>
+      <div class="form-row"><label class="form-label">상품 이미지 URL (첫 번째가 대표 이미지)</label>
+        <textarea class="form-ta" id="dm-images" rows="4" placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"></textarea>
+      </div>
+      <div class="form-row"><label class="form-label">유튜브 영상 URL (선택)</label>
+        <input class="form-input" id="dm-video" placeholder="https://www.youtube.com/watch?v=XXXXXXXXXXX"></div>
+      <div style="margin-top:12px" id="dm-img-preview"></div>
+    </div>
+
+    <!-- 탭3: 상세설명·스펙 -->
+    <div id="dm-panel3" style="display:none">
+      <div class="form-row"><label class="form-label">딜 안내 (상세 설명)</label>
+        <textarea class="form-ta" id="dm-desc" rows="5" placeholder="공구에 대한 자세한 안내를 입력하세요.&#10;줄바꿈, 이모지 모두 사용 가능합니다."></textarea>
+      </div>
+      <div class="form-row">
+        <label class="form-label">상품 스펙 <span style="font-size:10px;color:var(--ink3)">항목:내용 형식으로 한 줄씩 입력</span></label>
+        <textarea class="form-ta" id="dm-specs" rows="6" placeholder="색상:그래파이트 / 화이트 / 민트&#10;용량:128GB&#10;수령방법:거점 픽업 or 택배&#10;보증:삼성 공식 1년 AS"></textarea>
+      </div>
+    </div>
+
+    <div style="margin-top:16px;padding-top:14px;border-top:1.5px solid var(--line)">
+      <div id="dm-approval-row" style="margin-bottom:12px">
+        <label class="form-label">승인 상태</label>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+          <span id="dm-approval-badge" class="badge yellow">임시저장 (미승인)</span>
+          <span style="font-size:11px;color:var(--ink3)">최고관리자 승인 후 회원에게 공개됩니다</span>
+        </div>
+      </div>
+      <div class="modal-foot" style="margin:0;padding:0;border:none">
+        <button class="btn" onclick="closeDealModal()">취소</button>
+        <button class="btn" onclick="saveDeal(false)">임시저장</button>
+        <button class="btn primary" id="dm-approve-btn" onclick="saveDeal(true)" style="display:none">✅ 저장 + 즉시 승인</button>
+        <button class="btn primary" onclick="saveDeal(false)">저장 (승인 대기)</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -919,35 +975,145 @@ function kpi(cls,ic,val,label,sub,dir){
    ================================================================ */
 var editingDealId=null;
 function renderDeals(){
-  var deals=getAllDeals();
+  var deals=getAllDealsFull();
   var assign=getAssign();
   if(isDealAdmin()){deals=deals.filter(function(d){return assign[d.id]===currentAdmin.id;});}
   document.getElementById('nb-deals').textContent=deals.length;
-  document.getElementById('dealList').innerHTML='<div class="tbl-wrap"><div class="tbl-scroll"><table><thead><tr><th>공구명</th><th>카테고리</th><th>공구가</th><th>참여/목표</th><th>진행률</th><th>상태</th><th>담당관리자</th><th>액션</th></tr></thead><tbody>'+
+  document.getElementById('dealList').innerHTML='<div class="tbl-wrap"><div class="tbl-scroll"><table><thead><tr><th>공구명</th><th>카테고리</th><th>공구가</th><th>참여/목표</th><th>진행률</th><th>상태</th><th>공개여부</th><th>담당관리자</th><th>액션</th></tr></thead><tbody>'+
     deals.map(function(d){
       var pct=d.participants&&(d.targetCount||d.target)?Math.min(100,Math.round(d.participants/(d.targetCount||d.target||100)*100)):0;
       var adminId=assign[d.id];
       var admins=getAdmins();
       var assignedName=adminId?(admins.find(function(a){return a.id===adminId;})||{name:'?'}).name:'미지정';
-      return'<tr><td style="font-weight:700">'+esc((d.name||'').replace('\n',' '))+'</td><td>'+esc(d.category||d.cat||'')+'</td><td style="color:var(--coral);font-weight:700">'+fmt(d.nowPrice||d.now||0)+'원</td><td>'+(d.participants||0)+'/'+(d.targetCount||d.target||100)+'명</td><td><div class="prog-wrap" style="width:100px"><div class="prog-fill" style="width:'+pct+'%"></div></div><span style="font-size:10px;color:var(--ink3)"> '+pct+'%</span></td><td>'+statusBadge(d.status==='active'?'진행중':d.status==='nego'?'협상중':d.status==='done'?'완료':'마감')+'</td><td><span class="deal-scope">'+esc(assignedName)+'</span></td><td style="display:flex;gap:4px"><button class="btn xs" onclick="viewParticipants(\''+d.id+'\')">참여자</button>'+(isSub()?'<button class="btn xs" onclick="editDeal(\''+d.id+'\')">수정</button>':'')+'</td></tr>';
+      var isStored=getStoredDeals().find(function(x){return x.id===d.id;});
+      var approvedBadge=!isStored?'<span class="badge green" style="font-size:9px">기본</span>'
+        :d.approved?'<span class="badge green" style="font-size:9px">공개중</span>'
+        :'<span class="badge yellow" style="font-size:9px">승인대기</span>';
+      var approveBtn=(isStored&&!d.approved&&isSuper())?'<button class="btn xs primary" onclick="approveDeal(\''+d.id+'\')">승인</button>':'';
+      return'<tr><td style="font-weight:700">'+esc((d.name||'').replace('\n',' '))+'</td><td>'+esc(d.category||d.cat||'')+'</td><td style="color:var(--coral);font-weight:700">'+fmt(d.nowPrice||d.now||0)+'원</td><td>'+(d.participants||d.currentCount||0)+'/'+(d.targetCount||d.target||100)+'명</td><td><div class="prog-wrap" style="width:100px"><div class="prog-fill" style="width:'+pct+'%"></div></div><span style="font-size:10px;color:var(--ink3)"> '+pct+'%</span></td><td>'+statusBadge(d.status==='active'?'진행중':d.status==='nego'?'협상중':d.status==='done'?'완료':'마감')+'</td><td>'+approvedBadge+'</td><td><span class="deal-scope">'+esc(assignedName)+'</span></td><td style="display:flex;gap:4px;flex-wrap:wrap">'+approveBtn+'<button class="btn xs" onclick="viewParticipants(\''+d.id+'\')">참여자</button>'+(isSub()?'<button class="btn xs" onclick="editDeal(\''+d.id+'\')">수정</button>':'')+'</td></tr>';
     }).join('')+'</tbody></table></div></div>';
 }
 
-function openDealModal(){editingDealId=null;document.getElementById('dealModalTitle').textContent='공구 등록';['dm-name','dm-cat','dm-desc'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});['dm-orig','dm-now','dm-target'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});showModal('dealModal');}
+var DEAL_STORE_KEY='modilDeals_v1';
+function getStoredDeals(){return ls(DEAL_STORE_KEY,[]);}
+function saveStoredDeals(d){ss(DEAL_STORE_KEY,d);}
+function getAllDeals(){
+  var stored=getStoredDeals();
+  return (DATA&&DATA.activeDeals?DATA.activeDeals:[]).concat(stored.filter(function(d){return d.dealType!=='nego';}));
+}
+function getNegoDeals(){
+  var stored=getStoredDeals();
+  return (DATA&&DATA.negoDeals?DATA.negoDeals:[]).concat(stored.filter(function(d){return d.dealType==='nego';}));
+}
+function getAllDealsFull(){
+  // admin용: 모든 딜 (승인 여부 무관)
+  return (DATA&&DATA.activeDeals?DATA.activeDeals:[])
+    .concat(DATA&&DATA.negoDeals?DATA.negoDeals:[])
+    .concat(getStoredDeals());
+}
+
+window.dmTab=function(n){
+  [1,2,3].forEach(function(i){
+    var p=document.getElementById('dm-panel'+i);
+    var b=document.getElementById('dmTab'+i);
+    if(p) p.style.display=i===n?'block':'none';
+    if(b){b.style.background=i===n?'var(--coral)':'';b.style.color=i===n?'#fff':'';b.style.borderColor=i===n?'var(--coral)':'';}
+  });
+  if(n===2) previewImgs();
+};
+function previewImgs(){
+  var urls=(document.getElementById('dm-images')||{}).value||'';
+  var imgs=urls.split('\n').map(function(u){return u.trim();}).filter(Boolean);
+  var p=document.getElementById('dm-img-preview');
+  if(!p)return;
+  p.innerHTML=imgs.length?'<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+    imgs.map(function(u){return'<img src="'+u+'" style="width:120px;height:80px;object-fit:cover;border-radius:8px;border:1.5px solid var(--line)" onerror="this.style.opacity=.3">';}).join('')+
+  '</div>':'';
+}
+
+function openDealModal(){
+  editingDealId=null;
+  document.getElementById('dealModalTitle').textContent='+ 공구 등록';
+  ['dm-name','dm-cat','dm-icon','dm-desc','dm-badges','dm-images','dm-video','dm-specs'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  ['dm-orig','dm-now','dm-target'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  setVal('dm-type','active'); setVal('dm-reservable','true');
+  var ab=document.getElementById('dm-approve-btn');if(ab)ab.style.display=isSuper()?'inline-flex':'none';
+  document.getElementById('dm-approval-badge').textContent='임시저장 (미승인)';
+  document.getElementById('dm-approval-badge').className='badge yellow';
+  dmTab(1); showModal('dealModal');
+}
 function closeDealModal(){closeModal('dealModal');}
 function editDeal(id){
   editingDealId=id;
-  var d=getAllDeals().find(function(x){return x.id===id;});
+  var d=getAllDealsFull().find(function(x){return x.id===id;});
   if(!d)return;
   document.getElementById('dealModalTitle').textContent='공구 수정';
-  setVal('dm-name',(d.name||'').replace('\n',' '));setVal('dm-cat',d.category||d.cat||'');
-  setVal('dm-orig',d.origPrice||0);setVal('dm-now',d.nowPrice||d.now||0);
-  setVal('dm-target',d.targetCount||d.target||100);setVal('dm-desc',d.desc||'');
-  showModal('dealModal');
+  setVal('dm-name',(d.name||'').replace(/\n/g,' '));
+  setVal('dm-cat',d.category||d.cat||'');
+  setVal('dm-icon',d.icon||'');
+  setVal('dm-type',d.dealType||'active');
+  setVal('dm-orig',d.origPrice||0); setVal('dm-now',d.nowPrice||0);
+  setVal('dm-target',d.targetCount||d.target||100);
+  setVal('dm-deadline',d.deadline||'');
+  setVal('dm-badges',(d.badges||[]).join(', '));
+  setVal('dm-reservable',d.reservable===false?'false':'true');
+  setVal('dm-images',(d.images||[]).join('\n'));
+  setVal('dm-video',d.videoUrl||'');
+  setVal('dm-desc',d.desc||'');
+  setVal('dm-specs',(d.specs||[]).map(function(s){return s.k+':'+s.v;}).join('\n'));
+  var badge=document.getElementById('dm-approval-badge');
+  if(badge){badge.textContent=d.approved?'승인 완료 (공개중)':'승인 대기';badge.className='badge '+(d.approved?'green':'yellow');}
+  var ab=document.getElementById('dm-approve-btn');if(ab)ab.style.display=isSuper()?'inline-flex':'none';
+  dmTab(1); showModal('dealModal');
 }
-function saveDeal(){
-  toast('공구가 저장됐어요 ✓');closeDealModal();renderDeals();
-}
+window.saveDeal=function(approve){
+  var name=v('dm-name');
+  if(!name){toast('공구명을 입력해 주세요');return;}
+  var stored=getStoredDeals();
+  var specs=(v('dm-specs')||'').split('\n').map(function(line){
+    var parts=line.split(':'); return parts.length>=2?{k:parts[0].trim(),v:parts.slice(1).join(':').trim()}:null;
+  }).filter(Boolean);
+  var imgUrls=(v('dm-images')||'').split('\n').map(function(u){return u.trim();}).filter(Boolean);
+  var dealType=v('dm-type')||'active';
+  var isApproved=approve===true?true:(editingDealId?(stored.find(function(x){return x.id===editingDealId;})||{}).approved||false:false);
+  var deal={
+    id: editingDealId||('admin-'+Date.now()),
+    name: name, category: v('dm-cat'), icon: v('dm-icon')||'🛍️',
+    dealType: dealType,
+    origPrice: Number(v('dm-orig'))||0, nowPrice: Number(v('dm-now'))||0,
+    targetCount: Number(v('dm-target'))||100, currentCount: 0, participants: 0,
+    deadline: v('dm-deadline'),
+    badges: (v('dm-badges')||'').split(',').map(function(b){return b.trim();}).filter(Boolean),
+    reservable: v('dm-reservable')==='true',
+    images: imgUrls, videoUrl: v('dm-video'),
+    desc: v('dm-desc'),
+    specs: specs,
+    status: dealType==='nego'?'live':'active',
+    statusText: dealType==='nego'?'소식이가 협상중':'진행중',
+    approved: isApproved,
+    createdBy: currentAdmin.id,
+    createdAt: new Date().toISOString().slice(0,10),
+  };
+  if(editingDealId){
+    var idx=stored.findIndex(function(x){return x.id===editingDealId;});
+    if(idx!==-1){stored[idx]=deal;}else{stored.push(deal);}
+  } else {
+    stored.push(deal);
+  }
+  saveStoredDeals(stored);
+  closeDealModal(); renderDeals();
+  toast(approve?'✅ 공구가 등록되고 즉시 공개됐어요!':'💾 공구가 저장됐어요 (승인 후 공개)');
+};
+
+window.approveDeal=function(id){
+  var stored=getStoredDeals();
+  var idx=stored.findIndex(function(x){return x.id===id;});
+  if(idx===-1){toast('저장된 공구가 아닙니다');return;}
+  stored[idx].approved=true;
+  saveStoredDeals(stored);
+  renderDeals();
+  toast('✅ 공구가 승인되어 회원에게 공개됩니다!');
+};
 
 function viewParticipants(dealId){
   var orders=getOrders();
@@ -1347,7 +1513,7 @@ function showInfoModal(title,html){
 }
 
 /* HTML onclick에서 직접 호출되는 모든 함수를 전역 노출 */
-var _expose=['nav','openDealModal','closeDealModal','editDeal','saveDeal','viewParticipants',
+var _expose=['nav','openDealModal','closeDealModal','editDeal','saveDeal','dmTab','previewImgs','approveDeal','viewParticipants',
   'renderMembers','exportMembers','smsOne','kakaoOne','renderOrders','confirmPayment',
   'renderDelivery','trackUrl','openTrackingModal','saveTracking','renderReservations',
   'plzTab','renderPlaza','pinPost','delPost','toggleWinner','hideReview',

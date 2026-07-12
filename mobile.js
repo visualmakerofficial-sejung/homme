@@ -34,20 +34,29 @@
 
   /* ---------- 네고 진행중 (가로) ---------- */
   function renderNego() {
-    $('negoScroll').innerHTML = DATA.negoDeals.map(function (d) {
-      var pct = Math.min(100, Math.round(d.currentCount / d.targetCount * 100));
-      var btn = d.reservable
+    var deals = getAllNegoDealsForMobile();
+    $('negoScroll').innerHTML = deals.map(function (d) {
+      var cnt = d.currentCount || d.participants || 0;
+      var tgt = d.targetCount || 100;
+      var pct = Math.min(100, Math.round(cnt / tgt * 100));
+      var btn = d.reservable !== false
         ? '<button class="nc-cta" onclick="mReserve(\'' + d.id + '\')">사전예약 알림받기 🔔</button>'
         : '<button class="nc-cta soon">곧 오픈 예정</button>';
-      return '<div class="nego-c">' +
+      return '<div class="nego-c" onclick="mOpenDetail(\'' + d.id + '\',\'nego\')" style="cursor:pointer">' +
         '<span class="nc-cat">' + esc(d.category) + '</span>' +
         '<div class="nc-name">' + esc(d.name) + '</div>' +
-        '<div class="nc-live"><span class="live-dot"></span>' + esc(d.statusText) + '</div>' +
-        '<div class="nc-binfo"><span>모인 사람</span><span><b>' + num(d.currentCount) + '</b> / ' + num(d.targetCount) + '명</span></div>' +
+        '<div class="nc-live"><span class="live-dot"></span>' + esc(d.statusText || '협상중') + '</div>' +
+        '<div class="nc-binfo"><span>모인 사람</span><span><b>' + num(cnt) + '</b> / ' + num(tgt) + '명</span></div>' +
         '<div class="nc-bar"><div class="nc-fill" style="width:' + pct + '%"></div></div>' +
         btn + '</div>';
     }).join('');
   }
+  window.mOpenDetail = function(id, type) {
+    var deal = type === 'nego'
+      ? getAllNegoDealsForMobile().find(function(x){ return x.id === id; })
+      : getAllDealsForMobile().find(function(x){ return x.id === id; });
+    if (deal) openDetail(deal, type);
+  };
   /* ----- 사전 접수 시트 ----- */
   var RESERVE_KEY = 'modilReservations_v1';
   function loadReservations() {
@@ -268,21 +277,22 @@
 
   /* ---------- 공동구매 진행중 (가로) ---------- */
   function renderDeals() {
-    $('dealScroll').innerHTML = DATA.activeDeals.map(function (d) {
-      var disc = Math.round((1 - d.nowPrice / d.origPrice) * 100);
+    var deals = getAllDealsForMobile();
+    $('dealScroll').innerHTML = deals.map(function (d) {
+      var disc = d.origPrice && d.nowPrice ? Math.round((1 - d.nowPrice / d.origPrice) * 100) : 0;
       var badges = (d.badges || []).map(function (b) { return '<span class="dbadge ' + b + '">' + b + '</span>'; }).join('');
-      return '<div class="deal-c" onclick="mBuy(\'' + d.id + '\')">' +
+      return '<div class="deal-c" onclick="mOpenDetail(\'' + d.id + '\',\'active\')">' +
         '<div class="dc-thumb">' + (d.icon || '🛍️') + '<div class="dc-badges">' + badges + '</div></div>' +
         '<div class="dc-body">' +
           '<div class="dc-cat">' + esc(d.category) + '</div>' +
           '<div class="dc-name">' + esc(d.name) + '</div>' +
           '<div class="dc-price"><span class="p-orig">' + fmt(d.origPrice) + '</span><span class="p-now">' + fmt(d.nowPrice) + '원</span><span class="p-disc">' + disc + '%</span></div>' +
-          '<div class="dc-meta">🛒 ' + num(d.participants) + '명 참여 중</div>' +
+          '<div class="dc-meta">🛒 ' + num(d.participants || 0) + '명 참여 중</div>' +
         '</div></div>';
     }).join('');
   }
   window.mBuy = function (id) {
-    var d = DATA.activeDeals.find(function (x) { return x.id === id; });
+    var d = getAllDealsForMobile().find(function (x) { return x.id === id; });
     if (!d) return;
     if (!currentUser()) { pendingPay = id; toast('참여하려면 먼저 가입해 주세요 🙋'); mOpenAuth(); return; }
     openPay(d);
@@ -1355,6 +1365,119 @@
     el.innerHTML = '⏰ <b>' + dd + '일 ' + String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0') + ':' + String(ss).padStart(2, '0') + '</b> 후 추첨';
   }
 
+  /* ================================================================
+     딜 상세 페이지
+     ================================================================ */
+  var DEAL_STORE_KEY = 'modilDeals_v1';
+
+  function getAllDealsForMobile() {
+    // localStorage에 admin이 등록한 딜 병합 (approved만)
+    var stored = [];
+    try { stored = JSON.parse(localStorage.getItem(DEAL_STORE_KEY) || '[]'); } catch(e) {}
+    var approved = stored.filter(function(d){ return d.approved === true; });
+    return DATA.activeDeals.concat(approved);
+  }
+  function getAllNegoDealsForMobile() {
+    var stored = [];
+    try { stored = JSON.parse(localStorage.getItem(DEAL_STORE_KEY) || '[]'); } catch(e) {}
+    var approvedNego = stored.filter(function(d){ return d.approved === true && d.dealType === 'nego'; });
+    return DATA.negoDeals.concat(approvedNego);
+  }
+
+  function openDetail(d, type) {
+    // type: 'active' | 'nego'
+    var isNego = type === 'nego';
+    var img = (d.images && d.images[0]) ? d.images[0] : '';
+    var disc = (!isNego && d.origPrice && d.nowPrice) ? Math.round((1 - d.nowPrice / d.origPrice) * 100) : 0;
+    var pct = 0;
+    if (isNego) {
+      var cnt = d.currentCount || d.participants || 0;
+      var tgt = d.targetCount || 100;
+      pct = Math.min(100, Math.round(cnt / tgt * 100));
+    } else {
+      var cnt2 = d.participants || 0;
+      var tgt2 = d.targetCount || 150;
+      pct = Math.min(100, Math.round(cnt2 / tgt2 * 100));
+    }
+
+    var priceHtml = '';
+    if (isNego) {
+      priceHtml = '<div class="detail-price-block">' +
+        (d.origPrice ? '<div class="detail-price-orig">정가 ' + fmt(d.origPrice) + '원</div>' : '') +
+        '<div class="detail-price-main"><span class="detail-nego-price">' +
+          (d.nowPrice ? fmt(d.nowPrice) + '원 (예정)' : '협상 완료 후 공개') +
+        '</span></div>' +
+        '<div class="detail-prog-wrap">' +
+          '<div class="detail-prog-label"><span>모인 사람 <b>' + (d.currentCount || d.participants || 0) + '명</b></span><span>목표 <b>' + (d.targetCount || 100) + '명</b></span></div>' +
+          '<div class="detail-prog-bar"><div class="detail-prog-fill" style="width:' + pct + '%"></div></div>' +
+        '</div></div>';
+    } else {
+      priceHtml = '<div class="detail-price-block">' +
+        (d.origPrice ? '<div class="detail-price-orig">정가 ' + fmt(d.origPrice) + '원</div>' : '') +
+        '<div class="detail-price-main"><span class="detail-price-now">' + fmt(d.nowPrice) + '원</span>' +
+          (disc > 0 ? '<span class="detail-price-disc">' + disc + '%↓</span>' : '') +
+        '</div>' +
+        '<div class="detail-prog-wrap">' +
+          '<div class="detail-prog-label"><span><b>' + (d.participants || 0) + '명</b> 참여 중</span>' +
+            (d.targetCount ? '<span>목표 <b>' + d.targetCount + '명</b></span>' : '') +
+          '</div>' +
+          '<div class="detail-prog-bar"><div class="detail-prog-fill" style="width:' + pct + '%"></div></div>' +
+        '</div></div>';
+    }
+
+    var specsHtml = '';
+    if (d.specs && d.specs.length) {
+      specsHtml = '<div class="detail-section"><div class="detail-section-title">📋 상품 정보</div>' +
+        '<table class="detail-spec-table">' +
+        d.specs.map(function(s){ return '<tr><td>' + esc(s.k) + '</td><td>' + esc(s.v) + '</td></tr>'; }).join('') +
+        '</table></div>';
+    }
+
+    var videoHtml = '';
+    if (d.videoUrl) {
+      var ytId = d.videoUrl.match(/(?:youtu\.be\/|v=)([A-Za-z0-9_-]{11})/);
+      if (ytId) {
+        videoHtml = '<div class="detail-section"><div class="detail-section-title">🎬 소개 영상</div>' +
+          '<div class="detail-video-wrap"><iframe src="https://www.youtube.com/embed/' + ytId[1] + '" allowfullscreen></iframe></div></div>';
+      }
+    }
+
+    var ctaHtml = '';
+    if (isNego) {
+      if (d.reservable !== false) {
+        ctaHtml = '<button class="detail-cta nego-cta" onclick="mCloseDetail();mReserve(\'' + esc(d.id) + '\')">🔔 사전예약 알림받기</button>';
+      } else {
+        ctaHtml = '<button class="detail-cta disabled">모집 준비중</button>';
+      }
+    } else {
+      ctaHtml = '<button class="detail-cta secondary" onclick="mCloseDetail();mReserve&&mReserve(\'' + esc(d.id) + '\')">🔔 알림받기</button>' +
+                '<button class="detail-cta primary" onclick="mCloseDetail();mBuy(\'' + esc(d.id) + '\')">🛒 바로 참여하기</button>';
+    }
+
+    $('detailBody').innerHTML =
+      '<div class="detail-img-wrap">' +
+        (img ? '<img src="' + img + '" alt="" onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\'">' : '') +
+        '<div class="detail-img-placeholder" style="' + (img ? 'display:none' : '') + '">' + (d.icon || '🛍️') + '</div>' +
+        '<button class="detail-close-btn" onclick="mCloseDetail()">✕</button>' +
+        '<div class="detail-badge-row">' + (d.badges || []).map(function(b){ return '<span class="dbadge ' + b + '">' + b + '</span>'; }).join('') + '</div>' +
+      '</div>' +
+      '<div class="detail-scroll">' +
+        '<div class="detail-cat">' + esc(d.category || '') + '</div>' +
+        '<div class="detail-title">' + esc((d.name || '').replace('\n', ' ')) + '</div>' +
+        (isNego ? '<div class="detail-status-row"><div class="detail-live-dot"></div><span style="font-size:12px;color:var(--ink3)">' + esc(d.statusText || '협상중') + '</span></div>' : '') +
+        (d.deadline ? '<div style="margin-bottom:12px"><span class="detail-deadline">⏰ 마감 ' + esc(d.deadline) + '</span></div>' : '') +
+        priceHtml +
+        (d.desc ? '<div class="detail-section"><div class="detail-section-title">📝 딜 안내</div><div class="detail-desc">' + esc(d.desc) + '</div></div>' : '') +
+        specsHtml +
+        videoHtml +
+      '</div>' +
+      '<div class="detail-cta-bar">' + ctaHtml + '</div>';
+
+    $('detailSheet').classList.add('show');
+  }
+
+  window.mCloseDetail = function() { $('detailSheet').classList.remove('show'); };
+
   /* ---------- init ---------- */
   function init() {
     plaza = loadPlaza();
@@ -1362,7 +1485,7 @@
     renderFeed(); renderLotto(); renderDongChips(); updateMap();
     initCarousels(); renderAcct();
 
-    ['authSheet', 'paySheet', 'shopSheet', 'reviewSheet'].forEach(function (id) {
+    ['authSheet', 'paySheet', 'shopSheet', 'reviewSheet', 'detailSheet'].forEach(function (id) {
       var ov = $(id);
       if (ov) ov.addEventListener('click', function (e) { if (e.target === ov) ov.classList.remove('show'); });
     });
