@@ -33,7 +33,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--ink)
 
 /* LAYOUT */
 #adminApp{display:none;min-height:100vh}
-.layout{display:grid;grid-template-columns:var(--sb) 1fr;min-height:100vh}
+.layout{display:block;min-height:100vh}
 
 /* SIDEBAR */
 .sb{background:#1a0a06;color:#fff;display:flex;flex-direction:column;position:fixed;top:0;left:0;width:var(--sb);height:100vh;overflow-y:auto;z-index:100}
@@ -61,7 +61,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--ink)
 .sb-region-badge b{color:#fff;font-size:13px;display:block;margin-bottom:2px}
 
 /* MAIN */
-.main{margin-left:var(--sb);padding:28px 32px;min-height:100vh}
+.main{margin-left:var(--sb);padding:72px 32px 40px;min-height:100vh}
 .ph{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid var(--line)}
 .ph-left h2{font-size:24px;font-weight:900;color:var(--ink)}
 .ph-left p{font-size:12px;color:var(--ink3);margin-top:4px}
@@ -171,7 +171,7 @@ tr:hover td{background:#faf7f4}
 .kakao-preview{background:#fffde7;border:1.5px solid #ffe082;border-radius:12px;padding:14px;font-size:13px;line-height:1.8;white-space:pre-wrap;color:var(--ink);max-height:120px;overflow-y:auto}
 
 /* REGION SWITCH */
-.region-bar{background:linear-gradient(135deg,#1a0a06,#3d1a12);color:#fff;padding:10px 20px;display:flex;align-items:center;gap:16px;font-size:13px;margin-left:var(--sb)}
+.region-bar{background:linear-gradient(135deg,#1a0a06,#3d1a12);color:#fff;padding:10px 20px;display:flex;align-items:center;gap:16px;font-size:13px;position:fixed;top:0;left:var(--sb);right:0;z-index:90;height:44px}
 .region-bar b{font-size:15px}
 .region-select{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:5px 10px;font-size:12px;font-family:inherit;cursor:pointer}
 .region-select option{color:var(--ink);background:#fff}
@@ -753,9 +753,53 @@ function isSub(){return currentAdmin&&(currentAdmin.role==='super'||currentAdmin
 function isDealAdmin(){return currentAdmin&&currentAdmin.role==='deal';}
 
 /* ================================================================
+   SAMPLE DATA SEED
+   ================================================================ */
+function seedSampleData(){
+  // 샘플 공구 데이터 (data.js의 DATA 객체 보강)
+  if(!window.DATA) window.DATA={};
+  if(!DATA.activeDeals||!DATA.activeDeals.length){
+    DATA.activeDeals=[
+      {id:'d1',name:'갤럭시 S24 FE 공동구매',category:'📱 휴대폰',origPrice:899000,nowPrice:599000,targetCount:100,participants:82,status:'active',deadline:'2026-07-20',desc:'안산 모딜 단독 특가! 갤럭시 S24 FE 공동구매'},
+      {id:'d2',name:'CGV 영화 할인권 10매',category:'🎬 문화/여가',origPrice:150000,nowPrice:89000,targetCount:200,participants:156,status:'active',deadline:'2026-07-18',desc:'CGV 전국 사용 가능 영화 할인권'},
+      {id:'d3',name:'스타벅스 음료 쿠폰 5매',category:'☕ 식품/음료',origPrice:32500,nowPrice:19900,targetCount:300,participants:241,status:'active',deadline:'2026-07-22',desc:'스타벅스 아메리카노 ~ 그란데 사이즈 모두 가능'},
+    ];
+  }
+  if(!DATA.negoDeals||!DATA.negoDeals.length){
+    DATA.negoDeals=[
+      {id:'n1',name:'나이키 에어맥스 2024\n(협상 진행중)',category:'👟 스포츠/패션',origPrice:189000,nowPrice:119000,targetCount:80,participants:34,status:'nego',deadline:'2026-08-01',desc:'나이키 에어맥스 2024 신상 공구 협상중'},
+      {id:'n2',name:'닌텐도 스위치 번들',category:'🎮 게임/전자',origPrice:450000,nowPrice:320000,targetCount:50,participants:28,status:'nego',deadline:'2026-08-10',desc:'닌텐도 스위치 + 마리오카트 번들'},
+    ];
+  }
+  if(!DATA.members||!DATA.members.length){
+    DATA.members=[
+      {name:'김소식',phone:'010-1234-5678',joined:'2026-01-15',deals:7,spent:1250000,ava:'🐴'},
+      {name:'이모딜',phone:'010-2345-6789',joined:'2026-02-03',deals:12,spent:3400000,ava:'🌟'},
+      {name:'박안산',phone:'010-3456-7890',joined:'2026-03-20',deals:3,spent:450000,ava:'🍀'},
+      {name:'최공구',phone:'010-4567-8901',joined:'2026-04-01',deals:5,spent:890000,ava:'🎯'},
+      {name:'정할인',phone:'010-5678-9012',joined:'2026-05-12',deals:1,spent:89000,ava:'😊'},
+      {name:'강특가',phone:'010-6789-0123',joined:'2026-06-08',deals:9,spent:2100000,ava:'🔥'},
+      {name:'윤혜진',phone:'010-7890-1234',joined:'2026-06-25',deals:2,spent:310000,ava:'💎'},
+      {name:'한지민',phone:'010-8901-2345',joined:'2026-07-01',deals:4,spent:670000,ava:'🌈'},
+    ];
+  }
+  if(!DATA.orders||!DATA.orders.length){
+    DATA.orders=[
+      {id:'ORD-2026-001',member:'김소식',phone:'010-1234-5678',deal:'갤럭시 S24 FE',amount:599000,method:'카드결제',payStatus:'결제완료',pickup:'택배',date:'2026-07-10'},
+      {id:'ORD-2026-002',member:'이모딜',phone:'010-2345-6789',deal:'갤럭시 S24 FE',amount:599000,method:'계좌입금',payStatus:'입금대기',pickup:'직접수령',date:'2026-07-11'},
+      {id:'ORD-2026-003',member:'박안산',phone:'010-3456-7890',deal:'CGV 영화 할인권',amount:89000,method:'네이버페이',payStatus:'결제완료',pickup:'택배',date:'2026-07-09'},
+      {id:'ORD-2026-004',member:'최공구',phone:'010-4567-8901',deal:'스타벅스 음료 쿠폰',amount:19900,method:'카드결제',payStatus:'결제완료',pickup:'택배',date:'2026-07-08'},
+      {id:'ORD-2026-005',member:'강특가',phone:'010-6789-0123',deal:'갤럭시 S24 FE',amount:599000,method:'카드결제',payStatus:'배송중',pickup:'택배',date:'2026-07-07'},
+      {id:'ORD-2026-006',member:'윤혜진',phone:'010-7890-1234',deal:'CGV 영화 할인권',amount:89000,method:'계좌입금',payStatus:'취소',pickup:'택배',date:'2026-07-06'},
+    ];
+  }
+}
+
+/* ================================================================
    BOOT
    ================================================================ */
 function boot(){
+  seedSampleData();
   document.getElementById('todayDate').textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
   renderSidebar();
   applyRoleVisibility();
