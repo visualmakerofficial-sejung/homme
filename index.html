@@ -118,7 +118,7 @@
       </div>
     </div>
 
-    <!-- 인기 TOP 3 피드 -->
+    <!-- 인기 베스트 2 피드 -->
     <div class="feed" id="feed"></div>
     <a class="feed-more-link" href="plaza.html">전체 딜 광장 보기 →</a>
   </section>
@@ -192,33 +192,12 @@
     </div>
   </section>
 
-  <!-- 거점 지도 -->
-  <section class="m-sec tight" id="spots">
-    <div class="m-shead">
-      <div class="m-mini">📍 안산 17개 거점</div>
-      <div class="m-title">가까운 거점에서 픽업</div>
-      <div class="m-desc">우리 동네(○○동)를 검색하면 지도에서 가까운 거점을 콕! 찍어드려요</div>
-    </div>
-    <div class="map-search">
-      <span style="font-size:15px">🔎</span>
-      <input class="ms-input" id="dongSearch" placeholder="우리 동네 검색  예) 고잔동">
-      <button class="ms-go" onclick="mDongSearch()">검색</button>
-    </div>
-    <div class="dchips" id="dchips" style="display:none"></div>
-    <div class="map-box">
-      <iframe id="mapFrame" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="안산 거점 지도"></iframe>
-      <div class="map-fx">
-        <div class="radar"></div>
-        <div class="mp-ring"></div>
-      </div>
-      <div class="map-center-pin">📍</div>
-      <div class="map-badge"><span class="ld"></span>안산 17개 거점 LIVE</div>
-      <div class="map-where" id="mapWhere"></div>
-    </div>
-    <a class="map-spot-cta" href="#spots" onclick="mScroll('spots');return false">
-      📍 가까운 거래공간 확인하기 · 소식이가 기다리고 있어요 →
-    </a>
-  </section>
+  <!-- 거점 지도 (숨김 - JS용 DOM 유지) -->
+  <div style="display:none">
+    <div id="dchips"></div>
+    <input id="dongSearch"><iframe id="mapFrame"></iframe>
+    <div id="mapWhere"></div>
+  </div>
 
   <!-- 코랄 CTA -->
   <section class="m-cta">
