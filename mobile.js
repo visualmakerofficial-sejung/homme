@@ -223,6 +223,66 @@
   }
   window.mOpenSucc = function () { var s = $('succSheet'); if (s) s.classList.add('show'); };
 
+  /* ===== 딜 제안하기 시트 ===== */
+  window.mOpenPropose = function () {
+    var s = $('proposeSheet'); if (s) { s.classList.add('show'); switchProposeTab('consumer'); }
+  };
+  window.switchProposeTab = function (tab) {
+    $('propose-consumer').style.display = tab === 'consumer' ? '' : 'none';
+    $('propose-owner').style.display   = tab === 'owner'    ? '' : 'none';
+    $('ptab-consumer').classList.toggle('active', tab === 'consumer');
+    $('ptab-owner').classList.toggle('active', tab === 'owner');
+  };
+  // 카테고리 칩 클릭
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('pcat')) {
+      var group = e.target.closest('.propose-cats');
+      if (group) group.querySelectorAll('.pcat').forEach(function(b){ b.classList.remove('active'); });
+      e.target.classList.add('active');
+    }
+  });
+  window.mSubmitConsumer = function (e) {
+    e.preventDefault();
+    var cat = (document.querySelector('#consumerCats .pcat.active') || {}).dataset;
+    var catVal = cat ? cat.val : '기타';
+    var item = ($('consumerItem') || {}).value || '';
+    var desc = ($('consumerDesc') || {}).value || '';
+    var title = (item ? '[' + item + '] ' : '') + desc;
+    if (!desc.trim()) { toast('어떤 혜택을 원하는지 적어주세요 🐴'); return; }
+    var u = currentUser();
+    if (!u) { toast('딜을 올리려면 먼저 가입해 주세요 🙋'); mOpenAuth(); return; }
+    var np = { id: 'mine-' + Date.now(), ts: Date.now(), ava: u.av || '🐴', nick: u.name, lvl: 'LV.1',
+      ago: 0, cat: catVal, likes: 1, lols: 0, comments: 0, liked: true, mine: true, fresh: true, title: esc(title.trim()) };
+    plaza.posts.unshift(np);
+    savePlaza(); renderFeed();
+    if ($('consumerItem')) $('consumerItem').value = '';
+    if ($('consumerDesc')) $('consumerDesc').value = '';
+    $('proposeSheet').classList.remove('show');
+    confetti(40);
+    toast('🎉 딜 요청이 광장에 올라갔어요! 50명 모이면 제안자는 공짜!');
+    setTimeout(function(){ np.fresh = false; savePlaza(); renderFeed(); }, 4500);
+  };
+  window.mSubmitOwner = function (e) {
+    e.preventDefault();
+    var biz = ($('ownerBiz') || {}).value || '';
+    var addr = ($('ownerAddr') || {}).value || '';
+    var deal = ($('ownerDeal') || {}).value || '';
+    var contact = ($('ownerContact') || {}).value || '';
+    if (!biz.trim() || !deal.trim()) { toast('매장명과 딜 내용을 입력해 주세요'); return; }
+    toast('📨 사장님 딜 제안을 접수했어요! 모딜 팀이 검토 후 연락드릴게요 🐴');
+    ['ownerBiz','ownerAddr','ownerDeal','ownerContact'].forEach(function(id){ if ($(id)) $(id).value=''; });
+    $('proposeSheet').classList.remove('show');
+    // 광장에도 사장님 딜로 등록
+    var u = currentUser();
+    if (u) {
+      var np = { id: 'owner-' + Date.now(), ts: Date.now(), ava: '🏪', nick: biz, lvl: '사장님',
+        ago: 0, cat: '딜제안', likes: 0, lols: 0, comments: 0, fresh: true,
+        title: '🏪 <b>' + esc(biz) + '</b> — ' + esc(deal.trim()) };
+      plaza.posts.unshift(np);
+      savePlaza(); renderFeed();
+    }
+  };
+
   function findP(id) { return plaza.posts.find(function (p) { return p.id === id; }); }
   window.mLike = function (id, btn) {
     var p = findP(id); if (!p) return;

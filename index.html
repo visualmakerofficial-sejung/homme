@@ -65,8 +65,8 @@
       <div class="m-hero-sosik"><img src="sosik.png" alt="소식이"></div>
     </div>
     <div class="m-hero-cta">
-      <button class="m-btn primary" onclick="mScroll('form')">딜 요청하기 →</button>
-      <button class="m-btn ghost" onclick="mScroll('plaza')">실시간 딜 보기</button>
+      <button class="m-btn primary" onclick="mOpenPropose()">딜 제안하기 ✨</button>
+      <button class="m-btn ghost" onclick="location.href='plaza.html'">실시간 딜 보기</button>
     </div>
   </section>
 
@@ -249,6 +249,59 @@
       <button class="sheet-x" onclick="document.getElementById('succSheet').classList.remove('show')">×</button>
     </div>
     <div class="hscroll" id="succScroll" style="margin:0 -20px;padding:0 20px 4px"></div>
+  </div>
+</div>
+
+<!-- 딜 제안하기 시트 -->
+<div class="sheet-ov" id="proposeSheet">
+  <div class="sheet" style="max-height:90vh;overflow-y:auto">
+    <div class="sheet-grab"></div>
+    <div class="sheet-head">
+      <div class="sheet-ic" style="background:#fff3e0">✨</div>
+      <div>
+        <div class="sheet-t1">딜 제안하기</div>
+        <div class="sheet-t2">소비자도, 사장님도 모두 제안할 수 있어요</div>
+      </div>
+      <button class="sheet-x" onclick="document.getElementById('proposeSheet').classList.remove('show')">×</button>
+    </div>
+
+    <!-- 탭 선택 -->
+    <div class="propose-tabs">
+      <button class="propose-tab active" id="ptab-consumer" onclick="switchProposeTab('consumer')">🙋 소비자로 요청</button>
+      <button class="propose-tab" id="ptab-owner" onclick="switchProposeTab('owner')">🏪 사장님으로 제안</button>
+    </div>
+
+    <!-- 소비자 폼 -->
+    <div id="propose-consumer">
+      <div class="propose-desc">원하는 제품·매장을 알려주세요. 이웃들이 같이 원하면 모딜이 직접 협상해드려요! 🐴</div>
+      <form class="rf-grid" onsubmit="mSubmitConsumer(event)">
+        <div class="propose-cats" id="consumerCats">
+          <button type="button" class="pcat active" data-val="음식">🍕 음식</button>
+          <button type="button" class="pcat" data-val="카페">☕ 카페</button>
+          <button type="button" class="pcat" data-val="전자">📱 전자</button>
+          <button type="button" class="pcat" data-val="뷰티">💄 뷰티</button>
+          <button type="button" class="pcat" data-val="리빙">🏠 리빙</button>
+          <button type="button" class="pcat" data-val="운동">🏋️ 운동</button>
+          <button type="button" class="pcat" data-val="반려">🐾 반려</button>
+          <button type="button" class="pcat" data-val="기타">🎁 기타</button>
+        </div>
+        <input class="f-in" id="consumerItem" placeholder="예) 고잔동 돈까스집, 갤럭시 S25, 스타벅스 1+1…" style="margin-top:4px">
+        <textarea class="f-ta" id="consumerDesc" placeholder="어떤 혜택을 받고 싶으세요? 자유롭게 써주세요 🐴&#10;예) 10명 모으면 20% 할인, 세트메뉴 무료 추가 등" rows="3" required></textarea>
+        <button type="submit" class="f-sub">소식이에게 요청하기 🐴</button>
+      </form>
+    </div>
+
+    <!-- 사장님 폼 -->
+    <div id="propose-owner" style="display:none">
+      <div class="propose-desc">먼저 딜을 제안해보세요! 고객이 모이면 매출도 오르고, 홍보도 돼요 🏆</div>
+      <form class="rf-grid" onsubmit="mSubmitOwner(event)">
+        <input class="f-in" id="ownerBiz" placeholder="매장명 또는 브랜드명" required>
+        <input class="f-in" id="ownerAddr" placeholder="주소 (예: 안산시 단원구 고잔동)" required>
+        <textarea class="f-ta" id="ownerDeal" placeholder="어떤 딜을 제안하시겠어요?&#10;예) 30명 모이면 런치 세트 2천원 할인, 50명이면 음료 무료 추가" rows="3" required></textarea>
+        <input class="f-in" id="ownerContact" placeholder="연락처 (카카오 오픈채팅 링크 또는 전화번호)" required>
+        <button type="submit" class="f-sub" style="background:var(--coral-dark)">모딜에 딜 제안하기 🏪</button>
+      </form>
+    </div>
   </div>
 </div>
 
