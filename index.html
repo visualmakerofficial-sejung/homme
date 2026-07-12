@@ -217,6 +217,7 @@
       </div>
       <div class="mf-links">
         <a href="admin.html">관리자</a>
+        <a href="#" onclick="mOpenKakaoAdmin();return false" style="color:#c9a800;font-weight:800">💬 카톡 발송</a>
         <a href="franchise.html">분양 안내</a>
         <a href="#">이용약관</a>
         <a href="#">개인정보처리방침</a>
@@ -374,6 +375,16 @@
 <!-- 결제 시트 -->
 <div class="sheet-ov" id="paySheet">
   <div class="sheet" id="payBody"></div>
+</div>
+
+<!-- 사전 접수 시트 -->
+<div class="sheet-ov" id="reserveSheet">
+  <div class="sheet" id="reserveBody"></div>
+</div>
+
+<!-- 관리자: 카톡 발송 시트 -->
+<div class="sheet-ov" id="kakaoSheet">
+  <div class="sheet" id="kakaoBody"></div>
 </div>
 
 <div class="toast" id="toast"></div>

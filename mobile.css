@@ -747,3 +747,14 @@ body {
   background: var(--paper); font-size: 12px; font-weight: 700; color: var(--ink2); cursor: pointer; transition: all .15s;
 }
 .pcat.active { background: var(--coral); border-color: var(--coral); color: #fff; }
+
+/* 사전 접수 폼 */
+.res-notice { font-size: 12.5px; color: var(--ink2); background: #fffde7; border: 1.5px solid #ffe082; border-radius: 12px; padding: 11px 14px; margin-bottom: 14px; line-height: 1.6; }
+.res-form { display: flex; flex-direction: column; gap: 4px; }
+.res-label { font-size: 12px; font-weight: 800; color: var(--ink2); margin-top: 8px; margin-bottom: 2px; }
+.res-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 12px; font-size: 14px; font-weight: 600; background: var(--bg); color: var(--ink); outline: none; box-sizing: border-box; font-family: inherit; }
+.res-input:focus { border-color: #FEE500; box-shadow: 0 0 0 3px rgba(254,229,0,.2); }
+.res-ta { resize: none; min-height: 64px; }
+.res-agree { font-size: 12.5px; color: var(--ink2); margin: 10px 0 6px; display: flex; align-items: center; gap: 6px; }
+.res-agree label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.res-agree input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--coral); }

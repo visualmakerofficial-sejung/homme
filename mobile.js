@@ -48,10 +48,223 @@
         btn + '</div>';
     }).join('');
   }
+  /* ----- 사전 접수 시트 ----- */
+  var RESERVE_KEY = 'modilReservations_v1';
+  function loadReservations() {
+    try { return JSON.parse(localStorage.getItem(RESERVE_KEY)) || []; } catch(e) { return []; }
+  }
+  function saveReservations(list) {
+    try { localStorage.setItem(RESERVE_KEY, JSON.stringify(list)); } catch(e) {}
+  }
+
+  var reserveState = null;
   window.mReserve = function (id) {
     var d = DATA.negoDeals.find(function (x) { return x.id === id; });
-    if (d) { d.currentCount += 1; saveData(DATA); renderNego(); toast('🔔 ' + d.name.split('\n')[0] + ' 오픈 알림 신청 완료!'); }
+    if (!d) return;
+    reserveState = { dealId: id, dealName: d.name.replace('\n', ' ') };
+    renderReserveSheet();
+    $('reserveSheet').classList.add('show');
   };
+  window.mCloseReserve = function () { $('reserveSheet').classList.remove('show'); };
+
+  function renderReserveSheet() {
+    var d = reserveState;
+    $('reserveBody').innerHTML = sheetXTop('mCloseReserve') +
+      '<div class="sheet-head" style="margin-bottom:4px">' +
+        '<div class="sheet-ic" style="background:#fff8e1">🔔</div>' +
+        '<div><div class="sheet-t1">사전 접수 신청</div>' +
+        '<div class="sheet-t2" style="font-size:12px;color:#888">' + esc(d.dealName) + '</div></div>' +
+      '</div>' +
+      '<div class="res-notice">딜이 오픈되면 카카오톡으로 알림을 드려요! 아래 정보를 입력해 주세요.</div>' +
+      '<div class="res-form">' +
+        '<div class="res-label">이름 *</div>' +
+        '<input class="res-input" id="resName" placeholder="홍길동" maxlength="20">' +
+        '<div class="res-label">연락처 (카카오톡 연결 번호) *</div>' +
+        '<input class="res-input" id="resPhone" placeholder="010-0000-0000" inputmode="tel" maxlength="13" oninput="mFmtPhone(this)">' +
+        '<div class="res-label">배송 받을 주소 *</div>' +
+        '<input class="res-input" id="resAddr" placeholder="경기도 안산시 단원구 ..." maxlength="60">' +
+        '<div class="res-label">상세주소</div>' +
+        '<input class="res-input" id="resAddr2" placeholder="아파트 동·호수 등" maxlength="40">' +
+        '<div class="res-label">요청사항 (선택)</div>' +
+        '<textarea class="res-input res-ta" id="resNote" placeholder="특이사항이 있으면 입력해 주세요" rows="2"></textarea>' +
+      '</div>' +
+      '<div class="res-agree"><label><input type="checkbox" id="resAgree"> 개인정보 수집·이용에 동의합니다 <span style="color:#888;font-size:11px">(필수)</span></label></div>' +
+      '<button class="pay-go" onclick="mDoReserve()" style="margin-top:4px">사전 접수 신청하기 🔔</button>';
+  }
+
+  window.mFmtPhone = function (el) {
+    var v = el.value.replace(/\D/g, '').slice(0, 11);
+    if (v.length > 7) v = v.slice(0,3) + '-' + v.slice(3,7) + '-' + v.slice(7);
+    else if (v.length > 3) v = v.slice(0,3) + '-' + v.slice(3);
+    el.value = v;
+  };
+
+  window.mDoReserve = function () {
+    var name = ($('resName') ? $('resName').value.trim() : '');
+    var phone = ($('resPhone') ? $('resPhone').value.trim() : '');
+    var addr = ($('resAddr') ? $('resAddr').value.trim() : '');
+    var addr2 = ($('resAddr2') ? $('resAddr2').value.trim() : '');
+    var note = ($('resNote') ? $('resNote').value.trim() : '');
+    var agreed = $('resAgree') && $('resAgree').checked;
+    if (!name) { toast('이름을 입력해 주세요 ⚠️'); return; }
+    if (!phone || phone.length < 12) { toast('연락처를 정확히 입력해 주세요 ⚠️'); return; }
+    if (!addr) { toast('배송 주소를 입력해 주세요 ⚠️'); return; }
+    if (!agreed) { toast('개인정보 수집에 동의해 주세요 ⚠️'); return; }
+    var btn = $('reserveBody').querySelector('.pay-go');
+    if (btn) { btn.disabled = true; btn.textContent = '신청 중...'; }
+    setTimeout(function () {
+      var list = loadReservations();
+      var entry = {
+        id: 'R-' + Date.now(),
+        dealId: reserveState.dealId,
+        dealName: reserveState.dealName,
+        name: name, phone: phone,
+        addr: addr + (addr2 ? ' ' + addr2 : ''),
+        note: note,
+        kakaoSent: false,
+        date: today()
+      };
+      list.push(entry);
+      saveReservations(list);
+      var d = DATA.negoDeals.find(function (x) { return x.id === reserveState.dealId; });
+      if (d) { d.currentCount += 1; saveData(DATA); renderNego(); }
+      $('reserveSheet').classList.remove('show');
+      showReserveReceipt(entry);
+      confetti(60);
+    }, 800);
+  };
+
+  function showReserveReceipt(entry) {
+    var overlay = document.createElement('div');
+    overlay.id = 'reserveReceiptOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+    overlay.innerHTML =
+      '<div style="background:#fff;border-radius:24px 24px 0 0;padding:28px 24px 48px;width:100%;max-width:480px;animation:fcardIn .35s ease">' +
+        '<div style="text-align:center;font-size:44px;margin-bottom:4px">🔔</div>' +
+        '<div style="text-align:center;font-size:19px;font-weight:900;margin-bottom:2px">사전 접수 완료!</div>' +
+        '<div style="text-align:center;font-size:12px;color:#888;margin-bottom:20px">딜이 오픈되면 카카오톡으로 알림을 보내드려요</div>' +
+        '<div style="background:#fffde7;border:1.5px solid #ffe082;border-radius:14px;padding:16px;font-size:13px;line-height:2">' +
+          '<div style="display:flex;justify-content:space-between"><span style="color:#888">딜 이름</span><b>' + esc(entry.dealName) + '</b></div>' +
+          '<div style="display:flex;justify-content:space-between"><span style="color:#888">이름</span><span>' + esc(entry.name) + '</span></div>' +
+          '<div style="display:flex;justify-content:space-between"><span style="color:#888">연락처</span><span>' + esc(entry.phone) + '</span></div>' +
+          '<div style="display:flex;justify-content:space-between"><span style="color:#888">주소</span><span style="text-align:right;max-width:60%">' + esc(entry.addr) + '</span></div>' +
+        '</div>' +
+        '<div style="font-size:11.5px;color:#888;margin-top:12px;line-height:1.7;text-align:center">딜 오픈 시 등록하신 카카오톡 번호로<br>알림 메시지를 보내드립니다.</div>' +
+        '<button onclick="document.getElementById(\'reserveReceiptOverlay\').remove()" ' +
+          'style="margin-top:18px;width:100%;padding:16px;background:#FEE500;color:#3C1E1E;border:none;border-radius:14px;font-size:15px;font-weight:900;cursor:pointer">✓ 확인</button>' +
+      '</div>';
+    document.body.appendChild(overlay);
+  }
+
+  /* ----- 관리자: 카카오톡 일괄 발송 ----- */
+  window.mOpenKakaoAdmin = function () {
+    renderKakaoAdmin();
+    $('kakaoSheet').classList.add('show');
+  };
+  window.mCloseKakao = function () { $('kakaoSheet').classList.remove('show'); };
+
+  function renderKakaoAdmin() {
+    var list = loadReservations();
+    var deals = {};
+    list.forEach(function (r) {
+      if (!deals[r.dealId]) deals[r.dealId] = { name: r.dealName, items: [] };
+      deals[r.dealId].items.push(r);
+    });
+    var dealKeys = Object.keys(deals);
+    var dealSel = dealKeys.map(function (k) {
+      return '<option value="' + k + '">' + deals[k].name + ' (' + deals[k].items.length + '명)</option>';
+    }).join('');
+
+    $('kakaoBody').innerHTML = sheetXTop('mCloseKakao') +
+      '<div class="sheet-head" style="margin-bottom:4px">' +
+        '<div class="sheet-ic" style="background:#fffde7">💬</div>' +
+        '<div><div class="sheet-t1">카카오톡 알림 발송</div>' +
+        '<div class="sheet-t2">사전 접수자에게 일괄 발송</div></div>' +
+      '</div>' +
+      '<div class="res-form">' +
+        '<div class="res-label">딜 선택</div>' +
+        '<select class="res-input" id="kakaoDeaSel" onchange="mKakaoPreview()">' +
+          '<option value="">-- 딜을 선택하세요 --</option>' + dealSel +
+        '</select>' +
+        '<div class="res-label">메시지 내용</div>' +
+        '<textarea class="res-input res-ta" id="kakaoMsg" rows="5" placeholder="[모딜] 안녕하세요 {이름}님! \'딜명\'이 오픈되었습니다. 👉 지금 바로 참여하세요!">' +
+          '[모딜] 안녕하세요 {이름}님! \'{딜명}\'이 드디어 오픈됐어요 🎉\n지금 바로 모딜 앱에서 참여하세요!\n👉 https://modil.kr</textarea>' +
+        '<div id="kakaoPreviewBox"></div>' +
+      '</div>' +
+      '<div id="kakaoRecipList" style="margin-top:8px"></div>' +
+      '<button class="pay-go" id="kakaoBatchBtn" onclick="mDoBatchKakao()" style="margin-top:12px;background:#FEE500;color:#3C1E1E;box-shadow:0 8px 20px rgba(254,229,0,.4)">💬 카카오톡 일괄 발송</button>';
+
+    if (dealKeys.length > 0) {
+      $('kakaoDeaSel').value = dealKeys[0];
+      mKakaoPreview();
+    }
+  }
+
+  window.mKakaoPreview = function () {
+    var sel = $('kakaoDeaSel') ? $('kakaoDeaSel').value : '';
+    var list = loadReservations().filter(function (r) { return r.dealId === sel; });
+    var box = $('kakaoPreviewBox');
+    var rl = $('kakaoRecipList');
+    if (!sel || list.length === 0) {
+      if (box) box.innerHTML = '';
+      if (rl) rl.innerHTML = '<div style="font-size:12px;color:#aaa;text-align:center;padding:12px 0">접수자가 없습니다</div>';
+      return;
+    }
+    var msg = $('kakaoMsg') ? $('kakaoMsg').value : '';
+    var sample = msg.replace('{이름}', list[0].name).replace('{딜명}', list[0].dealName);
+    if (box) box.innerHTML = '<div style="background:#fffde7;border:1.5px solid #ffe082;border-radius:12px;padding:12px;margin-top:8px;font-size:12px;line-height:1.8;white-space:pre-wrap;color:#333"><b>미리보기</b>\n' + esc(sample) + '</div>';
+    if (rl) rl.innerHTML =
+      '<div class="res-label" style="margin-top:8px">수신자 목록 (' + list.length + '명)</div>' +
+      '<div style="max-height:150px;overflow-y:auto;border:1px solid var(--line);border-radius:12px;padding:8px">' +
+        list.map(function (r, i) {
+          return '<div style="display:flex;justify-content:space-between;padding:6px 4px;border-bottom:' + (i < list.length-1 ? '1px solid var(--line)' : 'none') + ';font-size:12px">' +
+            '<span style="font-weight:700">' + esc(r.name) + '</span>' +
+            '<span style="color:#888">' + esc(r.phone) + '</span>' +
+            '<span style="font-size:10px;color:' + (r.kakaoSent ? '#2e7d32' : '#bbb') + '">' + (r.kakaoSent ? '✓발송완료' : '미발송') + '</span>' +
+          '</div>';
+        }).join('') +
+      '</div>';
+  };
+
+  window.mDoBatchKakao = function () {
+    var sel = $('kakaoDeaSel') ? $('kakaoDeaSel').value : '';
+    var msg = $('kakaoMsg') ? $('kakaoMsg').value.trim() : '';
+    if (!sel) { toast('딜을 선택해 주세요 ⚠️'); return; }
+    if (!msg) { toast('메시지를 입력해 주세요 ⚠️'); return; }
+    var list = loadReservations();
+    var targets = list.filter(function (r) { return r.dealId === sel && !r.kakaoSent; });
+    if (targets.length === 0) { toast('발송할 대상이 없거나 이미 발송 완료됐어요'); return; }
+    var btn = $('kakaoBatchBtn');
+    if (btn) { btn.disabled = true; btn.textContent = '발송 중 (' + targets.length + '명)...'; }
+    setTimeout(function () {
+      var updated = list.map(function (r) {
+        if (r.dealId === sel) r.kakaoSent = true;
+        return r;
+      });
+      saveReservations(updated);
+      if (btn) { btn.disabled = false; btn.textContent = '💬 카카오톡 일괄 발송'; }
+      renderKakaoAdmin();
+      toast('🎉 카카오톡 ' + targets.length + '명에게 발송 완료!');
+      showKakaoResult(targets, msg);
+    }, 1500);
+  };
+
+  function showKakaoResult(targets, msg) {
+    var overlay = document.createElement('div');
+    overlay.id = 'kakaoResultOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+    overlay.innerHTML =
+      '<div style="background:#fff;border-radius:24px 24px 0 0;padding:28px 24px 48px;width:100%;max-width:480px;animation:fcardIn .35s ease;overflow-y:auto;max-height:80vh">' +
+        '<div style="text-align:center;font-size:44px;margin-bottom:4px">💬</div>' +
+        '<div style="text-align:center;font-size:19px;font-weight:900;margin-bottom:2px">카카오톡 발송 완료!</div>' +
+        '<div style="text-align:center;font-size:12px;color:#888;margin-bottom:20px">총 <b>' + targets.length + '명</b>에게 메시지를 발송했어요</div>' +
+        '<div style="background:#fffde7;border-radius:12px;padding:14px;font-size:12px;line-height:1.8;max-height:120px;overflow-y:auto;white-space:pre-wrap;margin-bottom:14px">' + esc(msg) + '</div>' +
+        '<div style="font-size:11px;color:#aaa;margin-bottom:16px;text-align:center">※ 실제 발송은 카카오 비즈메시지 API 연동 시 자동 전송됩니다</div>' +
+        '<button onclick="document.getElementById(\'kakaoResultOverlay\').remove()" ' +
+          'style="width:100%;padding:16px;background:#FEE500;color:#3C1E1E;border:none;border-radius:14px;font-size:15px;font-weight:900;cursor:pointer">확인</button>' +
+      '</div>';
+    document.body.appendChild(overlay);
+  }
 
   /* ---------- 공동구매 진행중 (가로) ---------- */
   function renderDeals() {
