@@ -218,6 +218,10 @@ tr:hover td{background:#faf7f4}
       <div id="capsInfo" style="display:none;margin-top:6px;font-size:11.5px;padding:6px 10px;border-radius:7px;background:#fff3cd;color:#856404;font-weight:600">⚠️ 대문자 잠금(Caps Lock)이 켜져 있어요</div>
       <div id="pwDisplay" style="display:none;margin-top:6px;font-size:13px;padding:8px 12px;border-radius:8px;background:#f0f7ff;color:#1a56db;letter-spacing:2px;font-family:monospace;font-weight:700;word-break:break-all"></div>
     </div>
+    <div style="display:flex;align-items:center;gap:8px;margin:4px 0 12px">
+      <input type="checkbox" id="lgAutoLogin" style="width:16px;height:16px;accent-color:var(--coral);cursor:pointer">
+      <label for="lgAutoLogin" style="font-size:13px;color:var(--ink2);cursor:pointer;user-select:none">로그인 상태 유지 (자동로그인)</label>
+    </div>
     <button class="lf-btn" onclick="doLogin()">로그인</button>
     <div class="lf-err" id="lgErr">아이디 또는 비밀번호가 올바르지 않습니다</div>
     <div class="lf-hint">초기 계정: admin / modil2024 (최고관리자)<br>부운영자는 발급받은 아이디/비밀번호로 로그인하세요</div>
@@ -826,19 +830,47 @@ function getPlaza(){try{var p=localStorage.getItem('modilMobilePlaza_v1');return
 /* ================================================================
    AUTH
    ================================================================ */
+var ADMIN_AUTO_KEY='modilAdminAuto_v1';
 var currentAdmin=null;
+
+function adminAutoLogin(){
+  try{
+    var saved=JSON.parse(localStorage.getItem(ADMIN_AUTO_KEY)||'null');
+    if(!saved)return false;
+    var admins=getAdmins();
+    var found=admins.find(function(a){return a.id===saved.id&&a.pw===saved.pw&&a.active!==false;});
+    if(!found){localStorage.removeItem(ADMIN_AUTO_KEY);return false;}
+    currentAdmin=found;
+    hide('loginScreen');
+    show('adminApp','block');
+    boot();
+    return true;
+  }catch(e){return false;}
+}
+
 window.doLogin=function(){
   var id=v('lgId'),pw=v('lgPw');
   var admins=getAdmins();
   var found=admins.find(function(a){return a.id===id&&a.pw===pw&&a.active!==false;});
   if(!found){show('lgErr');return;}
   hide('lgErr');
+  // 자동로그인 체크 여부에 따라 저장
+  var chk=document.getElementById('lgAutoLogin');
+  if(chk&&chk.checked){
+    try{localStorage.setItem(ADMIN_AUTO_KEY,JSON.stringify({id:id,pw:pw}));}catch(e){}
+  } else {
+    localStorage.removeItem(ADMIN_AUTO_KEY);
+  }
   currentAdmin=found;
   hide('loginScreen');
   show('adminApp','block');
   boot();
 };
-window.doLogout=function(){currentAdmin=null;location.reload();};
+window.doLogout=function(){
+  localStorage.removeItem(ADMIN_AUTO_KEY);
+  currentAdmin=null;
+  location.reload();
+};
 function isSuper(){return currentAdmin&&currentAdmin.role==='super';}
 function isSub(){return currentAdmin&&(currentAdmin.role==='super'||currentAdmin.role==='sub');}
 function isDealAdmin(){return currentAdmin&&currentAdmin.role==='deal';}
@@ -1675,6 +1707,9 @@ var _expose=['nav','openDealModal','closeDealModal','editDeal','saveDeal','dmTab
 _expose.forEach(function(fn){
   try{if(typeof eval(fn)==='function')window[fn]=eval(fn);}catch(e){}
 });
+
+/* 페이지 로드 즉시 자동로그인 시도 */
+adminAutoLogin();
 
 document.getElementById('loginScreen').addEventListener('keydown',function(e){if(e.key==='Enter')window.doLogin();});
 
