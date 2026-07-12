@@ -206,9 +206,15 @@
 
   function renderFeed() {
     var el = $('feed'); if (!el) return;
-    var pinned = plaza.posts.filter(function (p) { return p.pinned; })
+    // 항상 SEED_POSTS 포함 보장
+    var all = plaza.posts.slice();
+    var existIds = all.map(function(p){ return p.id; });
+    SEED_POSTS.forEach(function(sp) {
+      if (existIds.indexOf(sp.id) === -1) all.push(sp);
+    });
+    var pinned = all.filter(function (p) { return p.pinned; })
       .sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
-    var unpinned = plaza.posts.filter(function (p) { return !p.pinned; })
+    var unpinned = all.filter(function (p) { return !p.pinned; })
       .sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
     var show = pinned.concat(unpinned).slice(0, 2);
     el.innerHTML = show.map(fcardHTML).join('');
