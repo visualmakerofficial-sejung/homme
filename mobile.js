@@ -207,18 +207,19 @@
   function renderFeed() {
     var el = $('feed'); if (!el) return;
     // 항상 SEED_POSTS 포함 보장
-    var all = plaza.posts.slice();
+    var all = (plaza && plaza.posts) ? plaza.posts.slice() : [];
     var existIds = all.map(function(p){ return p.id; });
     SEED_POSTS.forEach(function(sp) {
-      if (existIds.indexOf(sp.id) === -1) all.push(sp);
+      if (existIds.indexOf(sp.id) === -1) all.push(JSON.parse(JSON.stringify(sp)));
     });
     var pinned = all.filter(function (p) { return p.pinned; })
       .sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
     var unpinned = all.filter(function (p) { return !p.pinned; })
       .sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
     var show = pinned.concat(unpinned).slice(0, 2);
-    el.innerHTML = show.map(fcardHTML).join('');
-    if ($('plazaWatch')) $('plazaWatch').textContent = num(plaza.watching);
+    if (show.length > 0) el.innerHTML = show.map(fcardHTML).join('');
+    // show가 비어도 HTML 하드코딩 카드가 그대로 유지됨
+    if ($('plazaWatch')) $('plazaWatch').textContent = num(plaza ? plaza.watching : 1287);
   }
   window.mOpenSucc = function () { var s = $('succSheet'); if (s) s.classList.add('show'); };
 

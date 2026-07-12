@@ -113,7 +113,37 @@
     </div>
 
     <!-- 최신 딜 요청 피드 -->
-    <div class="feed" id="feed"></div>
+    <div class="feed" id="feed">
+      <!-- 기본 샘플 카드 (JS 로드 전에도 항상 표시) -->
+      <div class="fcard" id="fc-seed1">
+        <div class="fc-head">
+          <div class="fc-ava">🦝</div>
+          <div><span class="fc-nick">퇴근런너</span><span class="fc-lvl">LV.7</span></div>
+          <span class="fc-time">2시간 전</span>
+        </div>
+        <div class="fc-cat">#운동</div>
+        <div class="fc-title">헬스장 끊고 3일 만에 탈퇴한 사람들 모여라 🏋️ <b>PT 양도권 단체공구</b> 50명 모으면 80% 할인!</div>
+        <div class="fc-foot">
+          <button class="fc-btn like" onclick="mLike('seed1',this)">👍 <span>142</span></button>
+          <button class="fc-btn comment" onclick="mComment('seed1')">💬 <span>7</span></button>
+          <button class="fc-btn share" onclick="mSummon('seed1')">📤 추천</button>
+        </div>
+      </div>
+      <div class="fcard" id="fc-seed2">
+        <div class="fc-head">
+          <div class="fc-ava">🐤</div>
+          <div><span class="fc-nick">고잔동붕어</span><span class="fc-lvl">LV.4</span></div>
+          <span class="fc-time">30분 전</span>
+        </div>
+        <div class="fc-cat">#음식</div>
+        <div class="fc-title">새벽 2시 치킨 혼자 먹기 미안한 사람들 🍗 <b>치킨 100마리 단체주문</b> 동네 나눠먹기 프로젝트!</div>
+        <div class="fc-foot">
+          <button class="fc-btn like" onclick="mLike('seed2',this)">👍 <span>230</span></button>
+          <button class="fc-btn comment" onclick="mComment('seed2')">💬 <span>11</span></button>
+          <button class="fc-btn share" onclick="mSummon('seed2')">📤 추천</button>
+        </div>
+      </div>
+    </div>
     <a class="feed-more-link" href="plaza.html">더 많은 딜 보기 →</a>
   </section>
 
