@@ -60,7 +60,8 @@ export function Header({
         className="flex cursor-pointer items-center"
       >
         <img
-          src="/geotu-logo.svg"
+          // 하위 경로 배포(/homme/geotuscan/)에서도 깨지지 않게 base를 붙인다.
+          src={`${import.meta.env.BASE_URL}geotu-logo.svg`}
           alt="거투스캔"
           width={140}
           height={48}

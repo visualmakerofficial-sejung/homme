@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react"
-import { Banknote, X } from "lucide-react"
+import { Banknote, Target, X } from "lucide-react"
 
-import { cn } from "@/lib/utils"
 import { onlyDigits } from "@/lib/format"
+import { calculateBid, man, solveBidForProfit } from "@/lib/bid-calc"
+import { cn } from "@/lib/utils"
 
 interface Props {
   open: boolean
@@ -11,17 +12,17 @@ interface Props {
 
 type Kind = "villa" | "apt"
 
-/** 원본 입력칸: w-24 h-7, 우측 정렬, 단위는 별도 span. 금액 단위는 전부 만원. */
+const inputClass =
+  "h-7 rounded-md border bg-background px-2 text-right text-xs focus:ring-1 focus:ring-primary focus:outline-none"
+
 function MoneyRow({
   label,
   value,
   onChange,
-  placeholder = "0",
 }: {
   label: string
   value: string
   onChange: (v: string) => void
-  placeholder?: string
 }) {
   return (
     <div className="flex items-center justify-between gap-2">
@@ -30,11 +31,11 @@ function MoneyRow({
         <input
           type="text"
           inputMode="numeric"
-          placeholder={placeholder}
+          placeholder="0"
           aria-label={label}
           value={value}
           onChange={(e) => onChange(onlyDigits(e.target.value))}
-          className="h-7 w-24 rounded-md border bg-background px-2 text-right text-xs focus:ring-1 focus:ring-primary focus:outline-none"
+          className={cn(inputClass, "w-24")}
         />
         <span className="w-6 text-[10px] text-muted-foreground">만원</span>
       </div>
@@ -73,7 +74,7 @@ function RateField({
                 : onlyDigits(e.target.value),
             )
           }
-          className="h-7 w-full rounded-md border bg-background px-2 text-right text-xs focus:ring-1 focus:ring-primary focus:outline-none"
+          className={cn(inputClass, "w-full")}
         />
         <span className="text-[10px] text-muted-foreground">{unit}</span>
       </div>
@@ -81,20 +82,52 @@ function RateField({
   )
 }
 
+/** 결과 카드의 한 줄. 총 제비용만 값이 primary 색이다. */
+function ResultRow({
+  label,
+  value,
+  note,
+  accent,
+}: {
+  label: string
+  value: string
+  note?: string
+  accent?: boolean
+}) {
+  return (
+    <div className="flex items-center justify-between py-1">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <div className="text-right">
+        <span
+          className={cn("text-sm font-semibold", accent && "text-primary")}
+        >
+          {value}
+        </span>
+        {note && (
+          <span className="ml-1 text-[10px] text-muted-foreground">{note}</span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+const Divider = () => <div className="my-1 border-t" />
+
 /**
- * 입찰계산기.
- *
- * 원본은 다이얼로그가 아니라 **전체화면 오버레이**다
+ * 입찰계산기. 다이얼로그가 아니라 전체화면 오버레이다
  * (`fixed inset-0 z-50 bg-background overflow-y-auto` + sticky 헤더).
- * 입력 항목·기본값(수리비 300 / 기타비용 50 / 대출 80% / 금리 4.5% / 5개월)은
- * 스냅샷 그대로다.
  *
- * 다만 스냅샷은 금액칸이 비어 있는 상태라 **결과 영역이 렌더되지 않았다.**
- * 아래 결과 블록은 하단 면책 문구(종합소득세·일반세율 언급)를 근거로 구성한
- * 것이고, 원본과 항목·산식이 같다는 보장은 없다.
+ * 모드별 차이 (스냅샷 2장에서 확인):
+ * - 빌라/도생: 취득세 입력 없음 → 입찰가의 1.1%로 자동 산정.
+ *              "기대수익으로 입찰가 역산" 블록이 있다.
+ * - 아파트   : "취득세+채권+법무사"를 직접 입력한다.
+ *
+ * 다만 두 스냅샷이 모드와 입력 채움 상태가 동시에 달라서, 역산 블록이
+ * 빌라 전용인지 "매도예상가가 채워졌을 때만" 나오는 건지는 구분할 수 없었다.
+ * 관찰한 조합대로 빌라 전용으로 뒀다.
  */
 export function BidCalculatorPanel({ open, onClose }: Props) {
-  const [kind, setKind] = useState<Kind>("apt")
+  const [kind, setKind] = useState<Kind>("villa")
   const [appraisal, setAppraisal] = useState("")
   const [bid, setBid] = useState("")
   const [sale, setSale] = useState("")
@@ -105,35 +138,37 @@ export function BidCalculatorPanel({ open, onClose }: Props) {
   const [loanRatio, setLoanRatio] = useState("80")
   const [rate, setRate] = useState("4.5")
   const [months, setMonths] = useState("5")
+  const [targetProfit, setTargetProfit] = useState("")
 
-  const result = useMemo(() => {
-    const n = (v: string) => Number(v || 0)
-    const bidAmt = n(bid)
-    const saleAmt = n(sale)
-    if (bidAmt <= 0 || saleAmt <= 0) return null
+  const n = (v: string) => Number(v || 0)
+  const base = {
+    kind,
+    appraisal: n(appraisal),
+    sale: n(sale),
+    acquisitionManual: n(acquisition),
+    repair: n(repair),
+    eviction: n(eviction),
+    etc: n(etc),
+    loanRatio: n(loanRatio),
+    rate: n(rate),
+    months: n(months),
+  }
 
-    const costs = n(acquisition) + n(repair) + n(eviction) + n(etc)
-    const loan = Math.round((bidAmt * n(loanRatio)) / 100)
-    const interest = Math.round((loan * (n(rate) / 100) * n(months)) / 12)
-    const cash = bidAmt - loan + costs + interest
-    const grossProfit = saleAmt - bidAmt - costs - interest
-    // 면책 문구가 "종합소득세 일반세율"을 언급해 기본세율 6~45% 중 구간을 적용.
-    const taxRate =
-      grossProfit <= 1400 ? 0.06
-      : grossProfit <= 5000 ? 0.15
-      : grossProfit <= 8800 ? 0.24
-      : grossProfit <= 15000 ? 0.35
-      : 0.38
-    const tax = grossProfit > 0 ? Math.round(grossProfit * taxRate) : 0
-    const netProfit = grossProfit - tax
-    const roi = cash > 0 ? (netProfit / cash) * 100 : 0
+  const result = useMemo(
+    () => calculateBid({ ...base, bid: n(bid) }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [kind, appraisal, bid, sale, acquisition, repair, eviction, etc, loanRatio, rate, months],
+  )
 
-    return { costs, loan, interest, cash, grossProfit, tax, netProfit, roi }
-  }, [bid, sale, acquisition, repair, eviction, etc, loanRatio, rate, months])
+  const bidRatio =
+    n(appraisal) > 0 && n(bid) > 0 ? (n(bid) / n(appraisal)) * 100 : null
+
+  function handleSolve() {
+    const solved = solveBidForProfit(base, n(targetProfit))
+    if (solved) setBid(String(solved))
+  }
 
   if (!open) return null
-
-  const won = (man: number) => `${man.toLocaleString("ko-KR")}만원`
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-background">
@@ -181,16 +216,59 @@ export function BidCalculatorPanel({ open, onClose }: Props) {
           <h3 className="mb-2 text-xs font-semibold">기본 정보</h3>
           <MoneyRow label="감정가" value={appraisal} onChange={setAppraisal} />
           <MoneyRow label="입찰가 (낙찰가)" value={bid} onChange={setBid} />
+          {bidRatio !== null && (
+            <div className="text-right">
+              <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                낙찰가율 {bidRatio.toFixed(1)}%
+              </span>
+            </div>
+          )}
           <MoneyRow label="매도예상가 (시세)" value={sale} onChange={setSale} />
+
+          {kind === "villa" && (
+            <div className="mt-2 border-t pt-2">
+              <div className="mb-1 flex items-center gap-1">
+                <Target className="h-3 w-3 text-primary" />
+                <span className="text-[10px] font-semibold text-primary">
+                  기대수익으로 입찰가 역산
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="기대수익 (만원)"
+                    aria-label="기대수익"
+                    value={targetProfit}
+                    onChange={(e) =>
+                      setTargetProfit(onlyDigits(e.target.value))
+                    }
+                    className="h-8 w-full rounded-md border bg-background px-2 text-xs focus:ring-1 focus:ring-primary focus:outline-none"
+                  />
+                </div>
+                <button
+                  type="button"
+                  disabled={n(targetProfit) <= 0 || n(sale) <= 0}
+                  onClick={handleSolve}
+                  className="h-8 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  입찰가 계산
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2 rounded-lg bg-muted/30 p-3">
           <h3 className="mb-2 text-xs font-semibold">비용 항목</h3>
-          <MoneyRow
-            label="취득세+채권+법무사"
-            value={acquisition}
-            onChange={setAcquisition}
-          />
+          {kind === "apt" && (
+            <MoneyRow
+              label="취득세+채권+법무사"
+              value={acquisition}
+              onChange={setAcquisition}
+            />
+          )}
           <MoneyRow label="수리비" value={repair} onChange={setRepair} />
           <MoneyRow label="명도비" value={eviction} onChange={setEviction} />
           <MoneyRow label="기타비용" value={etc} onChange={setEtc} />
@@ -224,38 +302,76 @@ export function BidCalculatorPanel({ open, onClose }: Props) {
         </div>
 
         {result && (
-          <div className="space-y-2 rounded-lg bg-muted/30 p-3">
-            <h3 className="mb-2 text-xs font-semibold">예상 수익</h3>
-            {[
-              ["총 비용", won(result.costs)],
-              ["대출금", won(result.loan)],
-              ["이자", won(result.interest)],
-              ["실투자금", won(result.cash)],
-              ["세전 차익", won(result.grossProfit)],
-              ["예상 세금", won(result.tax)],
-            ].map(([label, value]) => (
-              <div
-                key={label}
-                className="flex items-center justify-between gap-2"
-              >
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  {label}
-                </span>
-                <span className="price-text text-xs">{value}</span>
-              </div>
-            ))}
-            <div className="mt-2 flex items-center justify-between gap-2 border-t pt-2">
-              <span className="text-xs font-semibold">순수익</span>
+          <div className="space-y-1 rounded-lg border-2 border-primary/20 bg-primary/5 p-4">
+            <h3 className="mb-3 text-sm font-bold text-primary">
+              투자 분석 결과
+            </h3>
+
+            <ResultRow
+              label="낙찰가율"
+              value={`${result.bidRatio.toFixed(1)}%`}
+            />
+            <Divider />
+
+            <ResultRow label="취득세" value={man(result.acquisitionTax)} />
+            <ResultRow label="중개비" value={man(result.brokerage)} />
+            <ResultRow
+              label={`이자 (${n(months)}개월)`}
+              value={man(result.interest)}
+            />
+            <ResultRow label="수리비" value={man(n(repair))} />
+            <ResultRow label="명도비" value={man(n(eviction))} />
+            <ResultRow label="기타비용" value={man(n(etc))} />
+            <ResultRow label="총 제비용" value={man(result.totalCost)} accent />
+            <Divider />
+
+            <ResultRow label="예상 소득금액" value={man(result.income)} />
+            <ResultRow
+              label={`종합소득세 (${Math.round(result.incomeTaxRate * 100)}%)`}
+              value={man(result.incomeTax)}
+              note={
+                result.incomeTaxDeduction > 0
+                  ? `공제 ${man(result.incomeTaxDeduction)}`
+                  : undefined
+              }
+            />
+            <ResultRow label="지방소득세 (10%)" value={man(result.localTax)} />
+            <Divider />
+
+            <div className="flex items-center justify-between py-2">
+              <span className="text-sm font-bold">순수이익</span>
               <span
                 className={cn(
-                  "price-text text-sm font-bold",
-                  result.netProfit >= 0 ? "text-primary" : "text-destructive",
+                  "text-lg font-bold",
+                  result.netProfit >= 0
+                    ? "text-emerald-600"
+                    : "text-destructive",
                 )}
               >
-                {won(result.netProfit)}
-                <span className="ml-1 text-[10px] font-medium">
-                  ({result.roi.toFixed(1)}%)
-                </span>
+                {result.netProfit >= 0 ? "+" : ""}
+                {man(result.netProfit)}
+              </span>
+            </div>
+            <Divider />
+
+            <ResultRow label="대출가능금액" value={man(result.loan)} />
+            <ResultRow
+              label="투자필요금 (자기자본)"
+              value={man(result.ownCapital)}
+            />
+
+            <div className="mt-3 rounded-lg border bg-background p-3 text-center">
+              <span className="mb-1 block text-xs text-muted-foreground">
+                예상 수익률
+              </span>
+              <span
+                className={cn(
+                  "text-2xl font-bold",
+                  result.roi >= 0 ? "text-emerald-600" : "text-destructive",
+                )}
+              >
+                {result.roi >= 0 ? "+" : ""}
+                {result.roi.toFixed(1)}%
               </span>
             </div>
           </div>
