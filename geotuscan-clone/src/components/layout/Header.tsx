@@ -1,13 +1,5 @@
 import { useState } from "react"
-import {
-  Banknote,
-  Bell,
-  Calculator,
-  LayoutGrid,
-  LogOut,
-  MessageSquare,
-  UserRound,
-} from "lucide-react"
+import { Banknote, Bell, LogOut, MessageSquare, UserRound } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -19,10 +11,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  AptCalculatorPanel,
-  DsrCalculatorPanel,
-} from "@/components/dialogs/CalculatorPanels"
 import { BidCalculatorPanel } from "@/components/dialogs/BidCalculatorPanel"
 import { YuchalAlarmDialog } from "@/components/dialogs/YuchalAlarmDialog"
 import { InquiryDialog } from "@/components/dialogs/MiscDialogs"
@@ -37,6 +25,11 @@ export interface HeaderProps {
 /**
  * 원본 header: h-14 / border-b / bg-card, 좌측 로고 버튼 + 우측 액션 그룹.
  * 액션 라벨은 sm 미만에서 숨고 아이콘만 남는다(`hidden sm:inline`).
+ *
+ * 원본에는 "아파트 계산기"와 "DSR" 버튼도 있었지만 두 화면은 스냅샷을 못 받아
+ * 내부 구성과 산식을 확인할 수 없었다. 지어낸 계산 결과를 보여주느니 빼는 게
+ * 낫다고 판단해 제외했다 — 원본 대비 의도적인 차이다.
+ * 원본 화면을 확보하면 버튼과 패널을 되살리면 된다.
  */
 export function Header({
   memberName,
@@ -44,9 +37,7 @@ export function Header({
   serviceEnd,
   onLogoClick,
 }: HeaderProps) {
-  const [aptOpen, setAptOpen] = useState(false)
   const [bidOpen, setBidOpen] = useState(false)
-  const [dsrOpen, setDsrOpen] = useState(false)
   const [noticeOpen, setNoticeOpen] = useState(false)
   const [inquiryOpen, setInquiryOpen] = useState(false)
 
@@ -76,25 +67,10 @@ export function Header({
           variant="ghost"
           size="sm"
           className="h-8 gap-1 px-2 text-[0.8rem]"
-          onClick={() => setAptOpen(true)}
-        >
-          <LayoutGrid className="h-4 w-4" />
-          <span className="hidden text-xs sm:inline">아파트 계산기</span>
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 gap-1 px-2 text-[0.8rem]"
           onClick={() => setBidOpen(true)}
         >
           <Banknote className="h-4 w-4" />
           <span className="hidden text-xs sm:inline">입찰계산기</span>
-        </Button>
-
-        <Button variant="ghost" size="sm" onClick={() => setDsrOpen(true)}>
-          <Calculator className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">DSR</span>
         </Button>
 
         <Button variant="ghost" size="sm" onClick={() => setNoticeOpen(true)}>
@@ -145,8 +121,6 @@ export function Header({
         </DropdownMenu>
       </div>
 
-      <AptCalculatorPanel open={aptOpen} onClose={() => setAptOpen(false)} />
-      <DsrCalculatorPanel open={dsrOpen} onClose={() => setDsrOpen(false)} />
       <YuchalAlarmDialog open={noticeOpen} onOpenChange={setNoticeOpen} />
       <BidCalculatorPanel open={bidOpen} onClose={() => setBidOpen(false)} />
       <InquiryDialog open={inquiryOpen} onOpenChange={setInquiryOpen} />
