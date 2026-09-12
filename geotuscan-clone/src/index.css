@@ -88,8 +88,10 @@
   --radius-4xl: 2rem;
 
   /* 원본: 라틴/숫자는 Geist, 한글은 Pretendard로 폴백된다. */
-  --font-sans: "Geist", "Pretendard", ui-sans-serif, system-ui, -apple-system,
-    "Malgun Gothic", sans-serif;
+  /* Pretendard는 jsDelivr에서 받는데, 그 호스트를 못 쓰는 환경에서는
+     Google Fonts의 Noto Sans KR로 한 단계 더 폴백된다. */
+  --font-sans: "Geist", "Pretendard", "Noto Sans KR", ui-sans-serif, system-ui,
+    -apple-system, "Malgun Gothic", sans-serif;
   --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
 
   --animate-reveal: reveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
