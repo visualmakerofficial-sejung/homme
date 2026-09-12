@@ -81,7 +81,9 @@ export function calculateBid(input: BidCalcInput): BidCalcResult | null {
     INCOME_TAX_BRACKETS.find((b) => income <= b.upTo) ??
     INCOME_TAX_BRACKETS[INCOME_TAX_BRACKETS.length - 1]
   const incomeTax =
-    income > 0 ? Math.max(0, Math.round(income * bracket.rate - bracket.deduction)) : 0
+    income > 0
+      ? Math.max(0, Math.round(income * bracket.rate - bracket.deduction))
+      : 0
   const localTax = Math.round(incomeTax * 0.1)
 
   const netProfit = income - incomeTax - localTax

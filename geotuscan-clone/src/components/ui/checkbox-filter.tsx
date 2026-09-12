@@ -22,7 +22,9 @@ export function CheckboxFilter({
   accent?: string
 }) {
   return (
-    <label className={cn("flex cursor-pointer items-center gap-1.5", className)}>
+    <label
+      className={cn("flex cursor-pointer items-center gap-1.5", className)}
+    >
       <input
         type="checkbox"
         className={cn("h-3.5 w-3.5 rounded border-gray-300", accent)}

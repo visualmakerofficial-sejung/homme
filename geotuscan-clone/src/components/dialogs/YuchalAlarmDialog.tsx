@@ -33,7 +33,9 @@ export function YuchalAlarmDialog({ open, onOpenChange }: Props) {
   const [max, setMax] = useState("")
 
   const toggle = (list: string[], set: (v: string[]) => void, value: string) =>
-    set(list.includes(value) ? list.filter((v) => v !== value) : [...list, value])
+    set(
+      list.includes(value) ? list.filter((v) => v !== value) : [...list, value],
+    )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

@@ -48,9 +48,7 @@ export function AuctionSearchPage() {
       <SearchCard onSearch={handleSearch} />
       <RecentSearches
         items={items}
-        onSelect={(item) =>
-          toast(item.label, { description: item.address })
-        }
+        onSelect={(item) => toast(item.label, { description: item.address })}
         onRemove={remove}
         onClear={clear}
       />

@@ -20,9 +20,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
-  AptCalculatorDialog,
-  DsrCalculatorDialog,
-} from "@/components/dialogs/CalculatorDialogs"
+  AptCalculatorPanel,
+  DsrCalculatorPanel,
+} from "@/components/dialogs/CalculatorPanels"
 import { BidCalculatorPanel } from "@/components/dialogs/BidCalculatorPanel"
 import { YuchalAlarmDialog } from "@/components/dialogs/YuchalAlarmDialog"
 import { InquiryDialog } from "@/components/dialogs/MiscDialogs"
@@ -129,7 +129,9 @@ export function Header({
               <span className="price-text text-foreground">{serviceEnd}</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => toast("내 정보는 준비 중입니다.")}>
+            <DropdownMenuItem
+              onSelect={() => toast("내 정보는 준비 중입니다.")}
+            >
               <UserRound />내 정보
             </DropdownMenuItem>
             <DropdownMenuItem
@@ -143,8 +145,8 @@ export function Header({
         </DropdownMenu>
       </div>
 
-      <AptCalculatorDialog open={aptOpen} onOpenChange={setAptOpen} />
-      <DsrCalculatorDialog open={dsrOpen} onOpenChange={setDsrOpen} />
+      <AptCalculatorPanel open={aptOpen} onClose={() => setAptOpen(false)} />
+      <DsrCalculatorPanel open={dsrOpen} onClose={() => setDsrOpen(false)} />
       <YuchalAlarmDialog open={noticeOpen} onOpenChange={setNoticeOpen} />
       <BidCalculatorPanel open={bidOpen} onClose={() => setBidOpen(false)} />
       <InquiryDialog open={inquiryOpen} onOpenChange={setInquiryOpen} />

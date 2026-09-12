@@ -49,11 +49,31 @@ const DUE_RANGES = [
 
 /** 원본 "특징 필터" 5종. 강조색과 보조 라벨까지 스냅샷 그대로. */
 const TRAITS = [
-  { id: "old", label: "오래된 아파트", hint: "30년+", accent: "accent-amber-500" },
-  { id: "solo", label: "나홀로 아파트", hint: "50세대↓", accent: "accent-sky-500" },
-  { id: "gap", label: "시세 차익 큼", hint: "3천↑", accent: "accent-emerald-500" },
+  {
+    id: "old",
+    label: "오래된 아파트",
+    hint: "30년+",
+    accent: "accent-amber-500",
+  },
+  {
+    id: "solo",
+    label: "나홀로 아파트",
+    hint: "50세대↓",
+    accent: "accent-sky-500",
+  },
+  {
+    id: "gap",
+    label: "시세 차익 큼",
+    hint: "3천↑",
+    accent: "accent-emerald-500",
+  },
   { id: "rural", label: "시골 아파트", hint: "리", accent: "accent-lime-600" },
-  { id: "large", label: "대형 아파트", hint: "85㎡+", accent: "accent-violet-500" },
+  {
+    id: "large",
+    label: "대형 아파트",
+    hint: "85㎡+",
+    accent: "accent-violet-500",
+  },
 ] as const
 
 /**
