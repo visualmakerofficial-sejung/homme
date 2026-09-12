@@ -1,0 +1,10 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+
+# 리포지터리 루트 .gitignore가 package.json / package-lock.json을 전역으로
+# 무시한다. 이 프로젝트는 매니페스트가 없으면 설치가 안 되므로 되살린다.
+!package.json
+!package-lock.json
