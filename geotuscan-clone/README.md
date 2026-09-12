@@ -39,8 +39,22 @@ npm run build:pages   # BASE_PATH=/homme/geotuscan/ OUT_DIR=../geotuscan
 git add ../geotuscan && git commit && git push
 ```
 
-main에 머지되면 <https://visualmakerofficial-sejung.github.io/homme/geotuscan/> 에서 열린다.
 소스를 고쳤으면 `build:pages`를 다시 돌려 `geotuscan/`을 갱신해야 한다 (자동 빌드 아님).
+
+### ⚠ Pages 워크플로가 한 번도 성공한 적이 없다
+
+`static.yml`은 2026-06-19 첫 실행부터 **19회 전부 실패**했다 (이 클론과 무관하게
+그 전부터). 매번 2~5초 만에 로그도 없이 끝나는데, 이는 `github-pages` 환경이
+없어서 잡이 시작 직후 거부될 때 나오는 형태다.
+
+원인은 저장소 설정일 가능성이 높다:
+
+> Settings → Pages → Build and deployment → **Source 를 "GitHub Actions" 로**
+
+현재 Source가 "Deploy from a branch"라면 사이트 자체는 main 루트에서 서비스되고
+있을 것이고(그러면 `/geotuscan/`도 자동으로 함께 올라간다), 이 워크플로는
+계속 실패만 하는 잔재다. Source가 아예 꺼져 있다면 아무것도 서비스되지 않는다.
+둘 중 어느 쪽인지는 저장소 설정 화면에서 확인해야 한다.
 
 ---
 
