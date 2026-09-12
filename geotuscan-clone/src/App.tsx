@@ -1,10 +1,11 @@
 import { useState } from "react"
-import { Toaster } from "sonner"
 
 import { Header } from "@/components/layout/Header"
 import { MobileTabBar, TabNav } from "@/components/layout/TabNav"
 import { ExternalLinksFab } from "@/components/layout/ExternalLinksFab"
+import { Toaster } from "@/components/ui/sonner"
 import { TABS, type TabId } from "@/data/nav"
+import { useThemeMode } from "@/lib/theme"
 import { AuctionSearchPage } from "@/features/auction-search/AuctionSearchPage"
 import { ComingSoonPage } from "@/features/ComingSoonPage"
 
@@ -26,6 +27,7 @@ const MEMBER = {
  */
 export default function App() {
   const [active, setActive] = useState<TabId>("auction-search")
+  const theme = useThemeMode()
   const tab = TABS.find((t) => t.id === active)!
 
   return (
@@ -50,7 +52,7 @@ export default function App() {
 
       <ExternalLinksFab />
 
-      <Toaster position="bottom-center" />
+      <Toaster theme={theme} />
     </div>
   )
 }

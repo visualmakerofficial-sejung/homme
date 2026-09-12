@@ -64,9 +64,21 @@ div.min-h-screen.flex.flex-col
 그래서 `src/index.css`의 `:root` / `.dark` 블록은 shadcn 뉴트럴 베이스에
 블루 프라이머리(`oklch(0.546 0.198 262.9)` ≈ `#2563eb`)를 얹어 채워 뒀다. **여기서부턴 추측이다.**
 
-원본 색을 넣으려면 `진헌스캔` 폴더의
-`거투스캔 - 경매 분석 프로그램_files/` 안에 있는 CSS 두 개에서 `--primary`, `--card`,
-`--muted` … 값을 찾아 `src/index.css`의 두 블록만 교체하면 된다. 나머지는 전부 토큰 참조라 따라온다.
+### 원본 색으로 교체하는 법
+
+로컬 `진헌스캔` 폴더 안 `거투스캔 - 경매 분석 프로그램_files/` 에 그 CSS가 들어 있다.
+추출 스크립트를 붙여 뒀으니 경로만 넘기면 된다.
+
+```bash
+# 미리보기 (붙여넣을 블록을 출력만)
+node scripts/extract-theme.mjs "…/거투스캔 - 경매 분석 프로그램_files"
+
+# 바로 적용 (src/index.css의 :root / .dark 블록을 교체)
+node scripts/extract-theme.mjs "…/거투스캔 - 경매 분석 프로그램_files" --write
+```
+
+개별 파일 경로를 여러 개 넘겨도 되고, 원본에서 못 찾은 토큰은 현재 값을 그대로 유지한다.
+색상은 전부 이 두 블록을 참조하므로 버튼·카드·뱃지·토스트까지 한 번에 따라온다.
 
 확인된 토큰 이름 (원본 마크업에서 실제로 쓰이는 것):
 
@@ -98,6 +110,7 @@ Geist에는 한글 글리프가 없어서 **라틴/숫자는 Geist, 한글은 Pr
 | 대상 | 동작 |
 | --- | --- |
 | 모든 버튼 | `transition-all` + `active:translate-y-px` (누르면 1px 내려감) |
+| 토스트 | sonner. `--normal-bg` 등을 디자인 토큰에 연결해 팔레트를 같이 따라간다 |
 | ghost 버튼 | `hover:bg-muted hover:text-foreground`, `aria-expanded:bg-muted` (열림 상태 유지) |
 | 포커스 링 | `focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50` |
 | FAB | `transition-transform hover:scale-105 active:scale-95` |
@@ -146,26 +159,48 @@ Geist에는 한글 글리프가 없어서 **라틴/숫자는 Geist, 한글은 Pr
 원본 RSC 페이로드에 박혀 있던 세션 값(`추진헌` / `01087717357` / `2026-10-01`)은
 `src/App.tsx`의 `MEMBER` 상수로 옮겼다.
 
-터치 기기에서는 hover가 없어 삭제 버튼이 영영 안 보이는 문제가 있어
-`[@media(hover:none)]:opacity-100`을 하나 더 붙였다. 원본 대비 유일한 동작 변경점이다.
+### 다크 모드
+
+원본 헤더에는 테마 토글이 없고 스냅샷의 `<html>`에도 `class="dark"`가 없다.
+반면 마크업 전반에는 `dark:` 변형이 깔려 있다. 둘 중 뭐가 원본 동작인지 단정할 수 없어서
+**눈에 보이는 증거(라이트 화면)** 를 따라 `src/lib/theme.ts`의 `THEME_MODE = "light"`로 고정했다.
+`"system"`으로 바꾸면 OS 설정을 따라가고 `.dark` 팔레트가 살아난다. UI에 토글은 넣지 않았다
+(원본 헤더는 액션 5개 + 아바타가 전부라, 하나 더 붙이면 그 자체가 차이가 된다).
+
+### 원본과 다른 점
+
+터치 기기에서는 hover가 없어 최근 검색 삭제 버튼이 영영 안 보인다.
+`[@media(hover:none)]:opacity-100`을 하나 더 붙였다. 의도적으로 둔 유일한 동작 차이다.
 
 ---
 
 ## 8. 구조
 
 ```
+scripts/extract-theme.mjs      원본 CSS → 디자인 토큰 추출
 src/
 ├─ App.tsx                     (tabs) 레이아웃 + 탭 상태
 ├─ index.css                   디자인 토큰 / 커스텀 유틸  ← 색상 교체 지점
 ├─ data/nav.ts                 6개 탭 정의
 ├─ lib/
 │  ├─ utils.ts                 cn()
-│  └─ format.ts                한국식 금액 축약, 사건번호 조립
+│  ├─ format.ts                한국식 금액 축약, 사건번호 조립
+│  └─ theme.ts                 라이트/다크 모드 결정  ← THEME_MODE
 ├─ components/
-│  ├─ ui/                      button card input badge select dialog dropdown-menu
+│  ├─ ui/                      button card input badge select dialog dropdown-menu sonner
 │  ├─ layout/                  Header TabNav(+MobileTabBar) ExternalLinksFab
 │  └─ dialogs/                 CalculatorDialogs MiscDialogs
 └─ features/
    ├─ auction-search/          AuctionSearchPage SearchCard RecentSearches useRecentSearches
    └─ ComingSoonPage.tsx
 ```
+
+## 9. 확인한 것
+
+`npm run build` 통과. Chromium(Playwright)으로 실제 렌더링과 동작을 확인했다.
+
+- 320 / 390 / 1280px 전부 가로 스크롤 없음
+- 연도 선택 → 타경번호 입력 → 검색 → 토스트 + 최근 검색 추가 → 전체 삭제 → 빈 상태
+- 탭 전환, 헤더 드롭다운, 다이얼로그 3종 열림/입력/계산
+- 토스트 배경이 `var(--popover)`로 해석됨 (sonner 기본 회색이 아니라 토큰을 탐)
+- 콘솔 에러 없음 (CDN 폰트 차단은 이 개발 컨테이너 한정)
