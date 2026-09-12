@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>진헌스캔 — 전국 법원경매 통합검색</title>
+<meta name="description" content="전국 법원경매 물건을 지역·종류·가격·유찰·특수권리 조건으로 한 번에 스캔하는 경매 검색 서비스">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f2e5c'/><path d='M22 30h56M22 50h56M22 70h56' stroke='%234da3ff' stroke-width='9' stroke-linecap='round'/></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<!-- ===== 헤더 ===== -->
+<header class="hdr">
+  <div class="hdr-in">
+    <a class="brand" href="./index.html">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 40 40" width="34" height="34">
+          <rect width="40" height="40" rx="10" fill="#0f2e5c"/>
+          <path d="M9 13h22M9 20h22M9 27h22" stroke="#4da3ff" stroke-width="3.4" stroke-linecap="round"/>
+          <circle cx="28.5" cy="27" r="7.5" fill="none" stroke="#ffd166" stroke-width="3"/>
+          <path d="M34 32.5l4.5 4.5" stroke="#ffd166" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span class="brand-tx">
+        <b>진헌스캔</b>
+        <em>전국 법원경매 통합검색</em>
+      </span>
+    </a>
+
+    <nav class="nav">
+      <button class="nav-a is-on" data-tab="search">경매검색</button>
+      <button class="nav-a" data-tab="fav">관심물건 <span class="favcount" id="favCount">0</span></button>
+      <button class="nav-a" data-tab="guide">이용안내</button>
+    </nav>
+
+    <div class="hdr-right">
+      <span class="badge-sample" title="실제 경매 데이터가 아닙니다">샘플 데이터</span>
+    </div>
+  </div>
+</header>
+
+<!-- ===== 검색바 ===== -->
+<section class="searchbar">
+  <div class="searchbar-in">
+    <div class="sb-field sb-grow">
+      <label for="q">소재지 · 단지명 · 키워드</label>
+      <input id="q" type="search" placeholder="예) 강남구 / 한빛아파트 / 근린상가" autocomplete="off">
+    </div>
+    <div class="sb-field">
+      <label for="qCase">사건번호</label>
+      <input id="qCase" type="search" placeholder="예) 2025타경12345" autocomplete="off">
+    </div>
+    <button class="btn-primary" id="btnSearch">검색</button>
+    <button class="btn-ghost" id="btnReset">초기화</button>
+    <button class="btn-filter" id="btnFilterOpen">필터</button>
+  </div>
+  <div class="quickchips" id="quickChips">
+    <button data-quick="apt">아파트만</button>
+    <button data-quick="fail2">2회 이상 유찰</button>
+    <button data-quick="rate70">최저가율 70% 이하</button>
+    <button data-quick="clean">특수권리 없음</button>
+    <button data-quick="week">7일 내 매각기일</button>
+    <button data-quick="under1">최저가 1억 이하</button>
+    <button data-quick="seoul">서울</button>
+  </div>
+</section>
+
+<!-- 모바일에서 헤더 배지 대신 보여주는 샘플 데이터 고지 -->
+<div class="sample-bar">샘플 데이터 · 실제 경매 물건이 아닙니다</div>
+
+<!-- ===== 본문 ===== -->
+<main class="layout">
+
+  <!-- 필터 -->
+  <aside class="filters" id="filters">
+    <div class="filters-head">
+      <b>상세 조건</b>
+      <button class="filters-close" id="btnFilterClose" aria-label="필터 닫기">✕</button>
+    </div>
+
+    <div class="fgroup">
+      <h3>지역</h3>
+      <select id="fSido"><option value="">시/도 전체</option></select>
+      <div class="chipwrap" id="fSigungu"></div>
+    </div>
+
+    <div class="fgroup">
+      <h3>관할 법원</h3>
+      <select id="fCourt"><option value="">법원 전체</option></select>
+    </div>
+
+    <div class="fgroup">
+      <h3>물건 종류 <button class="mini" data-clear="types">해제</button></h3>
+      <div id="fTypes"></div>
+    </div>
+
+    <div class="fgroup">
+      <h3>감정가 <small>(만원)</small></h3>
+      <div class="rangerow">
+        <input type="number" id="fApprMin" placeholder="최소" min="0" step="100">
+        <span>~</span>
+        <input type="number" id="fApprMax" placeholder="최대" min="0" step="100">
+      </div>
+    </div>
+
+    <div class="fgroup">
+      <h3>최저가 <small>(만원)</small></h3>
+      <div class="rangerow">
+        <input type="number" id="fMinMin" placeholder="최소" min="0" step="100">
+        <span>~</span>
+        <input type="number" id="fMinMax" placeholder="최대" min="0" step="100">
+      </div>
+      <div class="presets" id="pricePresets">
+        <button data-max="5000">5천만 이하</button>
+        <button data-max="10000">1억 이하</button>
+        <button data-max="30000">3억 이하</button>
+        <button data-max="50000">5억 이하</button>
+      </div>
+    </div>
+
+    <div class="fgroup">
+      <h3>최저가율 <small>(감정가 대비 %)</small></h3>
+      <div class="rangerow">
+        <input type="number" id="fRateMin" placeholder="0" min="0" max="100">
+        <span>~</span>
+        <input type="number" id="fRateMax" placeholder="100" min="0" max="100">
+      </div>
+    </div>
+
+    <div class="fgroup">
+      <h3>유찰 횟수</h3>
+      <div class="rangerow">
+        <input type="number" id="fFailMin" placeholder="0" min="0" max="10">
+        <span>~</span>
+        <input type="number" id="fFailMax" placeholder="10" min="0" max="10">
+      </div>
+    </div>
+
+    <div class="fgroup">
+      <h3>매각기일</h3>
+      <div class="rangerow">
+        <input type="date" id="fDateFrom">
+        <span>~</span>
+        <input type="date" id="fDateTo">
+      </div>
+      <div class="presets" id="datePresets">
+        <button data-days="7">7일</button>
+        <button data-days="14">14일</button>
+        <button data-days="30">30일</button>
+        <button data-days="0">전체</button>
+      </div>
+    </div>
+
+    <div class="fgroup">
+      <h3>면적
+        <span class="unit-toggle">
+          <button class="is-on" data-unit="m2">㎡</button><button data-unit="py">평</button>
+        </span>
+      </h3>
+      <div class="rangerow">
+        <input type="number" id="fAreaMin" placeholder="최소" min="0" step="1">
+        <span>~</span>
+        <input type="number" id="fAreaMax" placeholder="최대" min="0" step="1">
+      </div>
+      <p class="hint">건물면적 기준(토지·자동차는 토지면적 기준)</p>
+    </div>
+
+    <div class="fgroup">
+      <h3>특수권리 <button class="mini" data-clear="tags">해제</button></h3>
+      <label class="chk chk-strong"><input type="checkbox" id="fClean"><span>특수권리 없는 물건만</span></label>
+      <div class="chipwrap" id="fTags"></div>
+    </div>
+
+    <div class="fgroup">
+      <h3>진행 상태</h3>
+      <div class="chipwrap" id="fStatus"></div>
+    </div>
+
+    <div class="filters-foot">
+      <button class="btn-primary block" id="btnApply">이 조건으로 검색</button>
+    </div>
+  </aside>
+  <div class="filters-dim" id="filtersDim"></div>
+
+  <!-- 결과 -->
+  <section class="results">
+
+    <div class="stats" id="stats">
+      <div class="stat"><span>검색 결과</span><b id="stTotal">-</b><i>건</i></div>
+      <div class="stat"><span>평균 최저가율</span><b id="stRate">-</b><i>%</i></div>
+      <div class="stat"><span>평균 유찰</span><b id="stFail">-</b><i>회</i></div>
+      <div class="stat"><span>신건</span><b id="stNew">-</b><i>건</i></div>
+      <div class="stat"><span>7일 내 기일</span><b id="stSoon">-</b><i>건</i></div>
+    </div>
+
+    <div class="toolbar">
+      <div class="tb-left" id="activeChips"></div>
+      <div class="tb-right">
+        <select id="sort">
+          <option value="date_asc">매각기일 임박순</option>
+          <option value="date_desc">매각기일 늦은순</option>
+          <option value="min_asc">최저가 낮은순</option>
+          <option value="min_desc">최저가 높은순</option>
+          <option value="rate_asc">최저가율 낮은순</option>
+          <option value="rate_desc">최저가율 높은순</option>
+          <option value="fail_desc">유찰 많은순</option>
+          <option value="appr_desc">감정가 높은순</option>
+          <option value="area_desc">면적 넓은순</option>
+        </select>
+        <select id="pageSize">
+          <option value="20">20개씩</option>
+          <option value="50">50개씩</option>
+          <option value="100">100개씩</option>
+        </select>
+        <span class="viewtoggle">
+          <button class="is-on" data-view="table" title="표로 보기">☰</button><button data-view="card" title="카드로 보기">▦</button>
+        </span>
+        <button class="btn-ghost" id="btnCsv">엑셀(CSV)</button>
+      </div>
+    </div>
+
+    <div id="resultBox"></div>
+
+    <div class="pager" id="pager"></div>
+  </section>
+</main>
+
+<!-- ===== 상세 모달 ===== -->
+<div class="modal" id="modal" hidden>
+  <div class="modal-dim" data-close="1"></div>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-label="물건 상세">
+    <button class="modal-x" data-close="1" aria-label="닫기">✕</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<!-- ===== 이용안내 ===== -->
+<div class="modal" id="guide" hidden>
+  <div class="modal-dim" data-close="1"></div>
+  <div class="modal-box modal-narrow" role="dialog" aria-modal="true" aria-label="이용안내">
+    <button class="modal-x" data-close="1" aria-label="닫기">✕</button>
+    <div class="guide">
+      <h2>진헌스캔 이용안내</h2>
+      <ol>
+        <li><b>조건 걸기</b> — 왼쪽 상세 조건에서 지역·종류·가격·유찰·특수권리를 조합합니다. 상단 빠른칩으로 자주 쓰는 조건을 한 번에 넣을 수 있습니다.</li>
+        <li><b>결과 훑기</b> — 최저가율(감정가 대비 현재 최저가)이 낮을수록 유찰이 누적된 물건입니다. 정렬을 바꿔 가며 봅니다.</li>
+        <li><b>상세 확인</b> — 행을 누르면 기일 내역, 특수권리, 수익 계산기가 열립니다.</li>
+        <li><b>관심 저장</b> — ★ 를 누르면 이 브라우저에 저장됩니다(서버 전송 없음).</li>
+        <li><b>내보내기</b> — 엑셀(CSV) 버튼으로 현재 검색 결과 전체를 내려받습니다.</li>
+      </ol>
+      <h3>데이터에 대하여</h3>
+      <p class="warn">현재 표시되는 물건은 <b>기능 시연용 샘플</b>입니다. 실제 법원경매 물건·주소·금액이 아니며, 입찰 판단에 사용하면 안 됩니다.
+      실제 물건은 <a href="https://www.courtauction.go.kr" target="_blank" rel="noopener">법원경매정보(courtauction.go.kr)</a>에서 확인하세요.</p>
+      <h3>실데이터 연동</h3>
+      <p>백엔드가 준비되면 <code>api.js</code> 의 <code>CONFIG.mode</code> 를 <code>'remote'</code> 로 바꾸고 <code>endpoint</code> 만 지정하면 화면 수정 없이 그대로 동작합니다.</p>
+    </div>
+  </div>
+</div>
+
+<footer class="ft">
+  <div class="ft-in">
+    <div>
+      <b>진헌스캔</b>
+      <p>전국 법원경매 통합검색 · 조건 한 번에 스캔</p>
+    </div>
+    <p class="ft-note">본 사이트의 물건 정보는 시연용 샘플 데이터입니다. 실제 입찰 전에는 반드시 법원 공고와 현장 확인을 거치세요.</p>
+  </div>
+</footer>
+
+<script src="data.js"></script>
+<script src="api.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
