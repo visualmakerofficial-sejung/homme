@@ -21,13 +21,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import {
   AptCalculatorDialog,
-  BidCalculatorDialog,
   DsrCalculatorDialog,
 } from "@/components/dialogs/CalculatorDialogs"
-import {
-  InquiryDialog,
-  NotificationsDialog,
-} from "@/components/dialogs/MiscDialogs"
+import { BidCalculatorPanel } from "@/components/dialogs/BidCalculatorPanel"
+import { YuchalAlarmDialog } from "@/components/dialogs/YuchalAlarmDialog"
+import { InquiryDialog } from "@/components/dialogs/MiscDialogs"
 
 export interface HeaderProps {
   memberName: string
@@ -145,9 +143,9 @@ export function Header({
       </div>
 
       <AptCalculatorDialog open={aptOpen} onOpenChange={setAptOpen} />
-      <BidCalculatorDialog open={bidOpen} onOpenChange={setBidOpen} />
       <DsrCalculatorDialog open={dsrOpen} onOpenChange={setDsrOpen} />
-      <NotificationsDialog open={noticeOpen} onOpenChange={setNoticeOpen} />
+      <YuchalAlarmDialog open={noticeOpen} onOpenChange={setNoticeOpen} />
+      <BidCalculatorPanel open={bidOpen} onClose={() => setBidOpen(false)} />
       <InquiryDialog open={inquiryOpen} onOpenChange={setInquiryOpen} />
     </header>
   )

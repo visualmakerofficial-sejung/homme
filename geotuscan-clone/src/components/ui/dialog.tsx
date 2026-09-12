@@ -56,9 +56,10 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4",
-          "rounded-xl bg-card p-4 text-sm text-card-foreground shadow-lg ring-1 ring-foreground/10",
-          "duration-200",
+          // 유찰알림 스냅샷에서 확인한 원본 클래스 그대로.
+          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4",
+          "rounded-xl bg-background p-4 text-sm ring-1 ring-foreground/10",
+          "max-h-[85vh] overflow-y-auto outline-none duration-100 sm:max-w-lg",
           "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
           "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
           className,
@@ -70,14 +71,17 @@ function DialogContent({
           <DialogPrimitive.Close
             data-slot="dialog-close"
             className={cn(
-              "absolute top-3.5 right-3.5 rounded-[min(var(--radius-md),12px)] p-1 text-muted-foreground opacity-70 transition-all",
-              "hover:bg-muted hover:text-foreground hover:opacity-100",
-              "focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
-              "disabled:pointer-events-none",
+              // 원본은 ghost 버튼 그대로에 size-7 + absolute top-2 right-2.
+              "group/button absolute top-2 right-2 inline-flex size-7 shrink-0 items-center justify-center",
+              "rounded-[min(var(--radius-md),12px)] border border-transparent bg-clip-padding",
+              "text-sm font-medium whitespace-nowrap transition-all outline-none select-none",
+              "hover:bg-muted hover:text-foreground dark:hover:bg-muted/50",
+              "focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+              "active:translate-y-px disabled:pointer-events-none",
             )}
           >
             <XIcon className="size-4" />
-            <span className="sr-only">닫기</span>
+            <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Content>
@@ -89,7 +93,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("flex flex-col gap-1 pr-8 text-left", className)}
+      className={cn("flex flex-col gap-2 text-left", className)}
       {...props}
     />
   )
@@ -116,7 +120,7 @@ function DialogTitle({
     <DialogPrimitive.Title
       data-slot="dialog-title"
       className={cn(
-        "flex items-center gap-1.5 text-base font-semibold",
+        "flex items-center gap-2 text-base leading-none font-medium",
         className,
       )}
       {...props}

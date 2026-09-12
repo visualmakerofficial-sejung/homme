@@ -1,8 +1,7 @@
 import { useState } from "react"
-import { Bell, MessageSquare, Send } from "lucide-react"
+import { MessageSquare, Send } from "lucide-react"
 import { toast } from "sonner"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -17,74 +16,6 @@ import { Input } from "@/components/ui/input"
 interface DialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-}
-
-/* 스냅샷에는 다이얼로그가 닫힌 상태라 내용은 예시로 채웠다. */
-const NOTICES = [
-  {
-    id: 1,
-    tag: "업데이트",
-    title: "빌라 실거래 데이터 9월분 반영",
-    date: "9.11",
-    unread: true,
-  },
-  {
-    id: 2,
-    tag: "공지",
-    title: "추석 연휴 기간 경매 일정 안내",
-    date: "9.8",
-    unread: true,
-  },
-  {
-    id: 3,
-    tag: "점검",
-    title: "9월 3일 02:00~04:00 서버 점검",
-    date: "9.1",
-    unread: false,
-  },
-]
-
-export function NotificationsDialog({ open, onOpenChange }: DialogProps) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>
-            <Bell className="h-4 w-4 text-muted-foreground" />
-            알림
-          </DialogTitle>
-          <DialogDescription>
-            서비스 공지와 데이터 갱신 내역입니다.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-1">
-          {NOTICES.map((n) => (
-            <div
-              key={n.id}
-              className="flex cursor-pointer items-start gap-3 rounded-lg px-3 py-2.5 transition-colors hover:bg-accent"
-            >
-              <span
-                className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary data-[read=true]:bg-transparent"
-                data-read={!n.unread}
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="h-5 shrink-0 text-[10px]">
-                    {n.tag}
-                  </Badge>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {n.date}
-                  </p>
-                </div>
-                <p className="mt-0.5 truncate text-sm font-medium">{n.title}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
 }
 
 export function InquiryDialog({ open, onOpenChange }: DialogProps) {
