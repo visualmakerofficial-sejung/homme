@@ -1,7 +1,21 @@
-# 거투스캔 경매검색 화면 클론
+# 거투스캔 클론
 
-`거투스캔 - 경매 분석 프로그램.html` (원본: `https://geotuscan-app.vercel.app/auction-search` 의
-"페이지 저장" 스냅샷) 을 분석해 React + TypeScript + Tailwind CSS v4로 재구현한 결과물.
+`geotuscan-app.vercel.app` 의 "페이지 저장" 스냅샷들을 분석해
+React + TypeScript + Tailwind CSS v4로 재구현한 결과물.
+
+받은 스냅샷 → 구현 상태:
+
+| 탭 | 원본 경로 | 상태 |
+| --- | --- | --- |
+| 경매검색 | `/auction-search` | 복제 완료 |
+| 빌라데이터 | (미상) | **스냅샷 없음** → 빈 상태 |
+| 돈되는부동산 | `/apt-deals` | 복제 완료 |
+| AI복기 | `/ai-review` | 복제 완료 |
+| 아파트경쟁률 | `/apt-stats` | 복제 완료 |
+| 빌라경쟁률 | `/villa-stats` | 복제 완료 |
+
+`/apt-stats`와 `/villa-stats`는 Base UI가 붙이는 랜덤 id를 지우고 diff하면
+제목·아이콘·부제 말고 차이가 없어서 `StatsPage` 하나를 공유한다.
 
 ```bash
 npm install
@@ -139,6 +153,20 @@ Geist에는 한글 글리프가 없어서 **라틴/숫자는 Geist, 한글은 Pr
 - `input.tsx` — `text-base` → `md:text-sm` (모바일 자동 확대 방지).
 - `badge.tsx` — `rounded-4xl` 캡슐, `[&>svg]:size-3!`.
 - `select.tsx` / `dropdown-menu.tsx` / `dialog.tsx` — Radix 기반.
+- `filter-pill.tsx` — 통계/목록 화면의 알약 필터. 기본 `px-2.5 py-1 text-xs`,
+  정렬용 작은형 `px-2 py-1 text-[11px]`.
+- `segmented.tsx` — `bg-muted` 트랙 세그먼트 토글. 경매검색(사건번호/주소)과
+  AI복기(차익/정확도)가 같은 마크업이라 하나로 합쳤다.
+- `checkbox-filter.tsx` — 원본이 shadcn Checkbox 대신 네이티브 input + `accent-*`를
+  쓰기에 그대로 따랐다. 강조색이 항목마다 다르다(primary/emerald/amber/sky/lime/violet).
+
+### 원본이 공용 컴포넌트를 안 쓴 자리
+
+AI복기의 검색 input과 "찾기" 버튼은 원본에서 `Input`/`Button`을 거치지 않고
+클래스를 직접 박아 뒀다(`h-9 ... focus:ring-1 focus:ring-primary`). 그 불일치도 그대로 옮겼다.
+
+셀렉트 트리거는 원본이 전부 `w-fit`이라 `grid-cols-2` 안에서도 칸을 채우지 않고
+내용 너비로 남는다. 레이아웃 버그처럼 보이지만 스냅샷이 그렇게 돼 있어 손대지 않았다.
 
 ---
 
@@ -148,8 +176,11 @@ Geist에는 한글 글리프가 없어서 **라틴/숫자는 Geist, 한글은 Pr
 
 | 항목 | 상태 |
 | --- | --- |
-| 경매검색 탭 (검색 카드 + 최근 검색) | 스냅샷에 있음 → 그대로 복제 |
-| 나머지 5개 탭 | 스냅샷에 없음 → 빈 상태 카드 (`ComingSoonPage`) |
+| 경매검색 / 돈되는부동산 / AI복기 / 아파트·빌라 경쟁률 | 스냅샷에 있음 → 그대로 복제 |
+| 빌라데이터 | 스냅샷 없음 → 빈 상태 카드 (`ComingSoonPage`) |
+| 시도·시군구 목록 | 원본은 API로 받는 듯 → 표준 행정구역을 정적으로 넣음 (`src/data/regions.ts`) |
+| 지역 랭킹 TOP 10 | 접힌 상태만 캡처됨 → 펼침 동작만 구현, 내용은 빈 상태 |
+| 각 화면 결과 목록 | 전부 "선택해주세요"/"데이터 없음" 상태로 캡처됨 → 목록 렌더링은 없음 |
 | 아파트 계산기 / 입찰계산기 / DSR | 다이얼로그가 닫힌 상태라 내부 미상 → 공개 산식으로 재구성, 실제 동작함 |
 | 알림 / 문의 / 참고 사이트 | 동일 → 예시 데이터로 채움 |
 | 최근 검색 저장소 | 원본은 서버일 것 → `localStorage`로 동일 동작(추가/개별삭제/전체삭제) 재현 |
@@ -179,28 +210,36 @@ Geist에는 한글 글리프가 없어서 **라틴/숫자는 Geist, 한글은 Pr
 ```
 scripts/extract-theme.mjs      원본 CSS → 디자인 토큰 추출
 src/
-├─ App.tsx                     (tabs) 레이아웃 + 탭 상태
+├─ App.tsx                     (tabs) 레이아웃 + 탭 → 화면 매핑
 ├─ index.css                   디자인 토큰 / 커스텀 유틸  ← 색상 교체 지점
-├─ data/nav.ts                 6개 탭 정의
+├─ data/
+│  ├─ nav.ts                   6개 탭 정의
+│  └─ regions.ts               시도·시군구, 월 옵션
 ├─ lib/
 │  ├─ utils.ts                 cn()
 │  ├─ format.ts                한국식 금액 축약, 사건번호 조립
 │  └─ theme.ts                 라이트/다크 모드 결정  ← THEME_MODE
 ├─ components/
-│  ├─ ui/                      button card input badge select dialog dropdown-menu sonner
-│  ├─ layout/                  Header TabNav(+MobileTabBar) ExternalLinksFab
+│  ├─ ui/                      button card input badge select dialog dropdown-menu
+│  │                           sonner filter-pill segmented checkbox-filter
+│  ├─ layout/                  Header TabNav(+MobileTabBar) ExternalLinksFab PageHeader
 │  └─ dialogs/                 CalculatorDialogs MiscDialogs
 └─ features/
    ├─ auction-search/          AuctionSearchPage SearchCard RecentSearches useRecentSearches
-   └─ ComingSoonPage.tsx
+   ├─ apt-deals/               AptDealsPage          (돈되는부동산)
+   ├─ ai-review/               AiReviewPage          (AI복기)
+   ├─ stats/                   StatsPage             (아파트·빌라 경쟁률 공용)
+   └─ ComingSoonPage.tsx       (빌라데이터)
 ```
 
 ## 9. 확인한 것
 
 `npm run build` 통과. Chromium(Playwright)으로 실제 렌더링과 동작을 확인했다.
 
-- 320 / 390 / 1280px 전부 가로 스크롤 없음
+- 320 / 390 / 1280px 전부 가로 스크롤 없음 (새로 붙인 4개 탭 포함)
 - 연도 선택 → 타경번호 입력 → 검색 → 토스트 + 최근 검색 추가 → 전체 삭제 → 빈 상태
+- 시도 선택 → 시군구 셀렉트 활성화 및 목록 갱신 → 안내 문구 전환
+- 지역 랭킹 카드 펼침/접힘, 알약 필터·세그먼트·체크박스 선택 상태
 - 탭 전환, 헤더 드롭다운, 다이얼로그 3종 열림/입력/계산
 - 토스트 배경이 `var(--popover)`로 해석됨 (sonner 기본 회색이 아니라 토큰을 탐)
 - 콘솔 에러 없음 (CDN 폰트 차단은 이 개발 컨테이너 한정)

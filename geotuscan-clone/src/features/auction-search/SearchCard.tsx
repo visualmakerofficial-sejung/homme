@@ -4,6 +4,7 @@ import { Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Segmented } from "@/components/ui/segmented"
 import {
   Select,
   SelectContent,
@@ -12,7 +13,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { onlyDigits } from "@/lib/format"
-import { cn } from "@/lib/utils"
 
 import type { SearchMode } from "./types"
 
@@ -65,32 +65,14 @@ export function SearchCard({ onSearch }: SearchCardProps) {
   return (
     <Card className="overflow-visible">
       <CardContent className="space-y-3 pt-4">
-        <div className="flex gap-1 rounded-lg bg-muted p-1">
-          <button
-            type="button"
-            onClick={() => setMode("case")}
-            className={cn(
-              "flex-1 rounded-md py-1.5 text-sm font-medium transition-colors",
-              mode === "case"
-                ? "bg-background shadow-sm"
-                : "text-muted-foreground",
-            )}
-          >
-            사건번호
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("keyword")}
-            className={cn(
-              "flex-1 rounded-md py-1.5 text-sm font-medium transition-colors",
-              mode === "keyword"
-                ? "bg-background shadow-sm"
-                : "text-muted-foreground",
-            )}
-          >
-            주소/키워드
-          </button>
-        </div>
+        <Segmented
+          value={mode}
+          onChange={setMode}
+          options={[
+            { value: "case", label: "사건번호" },
+            { value: "keyword", label: "주소/키워드" },
+          ]}
+        />
 
         <form onSubmit={handleSubmit}>
           {mode === "case" ? (
