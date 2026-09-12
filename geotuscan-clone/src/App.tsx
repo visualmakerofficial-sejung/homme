@@ -13,10 +13,16 @@ import { AptDealsPage } from "@/features/apt-deals/AptDealsPage"
 import { StatsPage } from "@/features/stats/StatsPage"
 import { VillaDataPage } from "@/features/villa-data/VillaDataPage"
 
-/** 원본 RSC 페이로드에 그대로 들어 있던 세션 값. */
+/**
+ * 로그인 세션 표시용 값.
+ *
+ * 원본 스냅샷의 RSC 페이로드에는 실제 회원 이름과 휴대폰 번호가 그대로
+ * 들어 있었다. 공개 저장소와 호스팅에 실제 개인정보를 올릴 이유가 없어
+ * 데모값으로 바꿨다. 실제 인증을 붙일 때 이 상수를 세션에서 받아오면 된다.
+ */
 const MEMBER = {
-  name: "추진헌",
-  phone: "01087717357",
+  name: "홍길동",
+  phone: "010-0000-0000",
   serviceEnd: "2026-10-01",
 }
 

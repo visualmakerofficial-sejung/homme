@@ -29,7 +29,34 @@ npm run preview
 npm run build:pages # 리포 루트의 geotuscan/ 로 빌드 (GitHub Pages 배포용)
 ```
 
-## 배포
+## 라이브
+
+<https://claude.ai/code/artifact/9340c183-3cf6-4ecc-a34d-ed68782fb2e8>
+
+Claude Artifact로 호스팅했다. 기본은 비공개이고, 페이지의 공유 메뉴에서 링크를 열 수 있다.
+갱신하려면 `npm run build:artifact` 로 빌드해 (`dist-artifact/`)
+`index.html` 대신 아래 형태의 페이지와 `assets/`를 함께 올린다 (아티팩트는
+`<html>/<head>/<body>` 없이 본문만 받는다).
+
+```html
+<title>거투스캔</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist...&family=Noto+Sans+KR..." />
+<link rel="stylesheet" href="assets/<해시>.css" />
+<div id="root"></div>
+<script type="module" src="assets/<해시>.js"></script>
+```
+
+폰트가 다른 이유: 아티팩트 CSP는 스타일시트를 `fonts.googleapis.com`에서만 받는다.
+그래서 jsDelivr의 Pretendard가 차단되고 Noto Sans KR로 폴백된다.
+`--font-sans`에 둘 다 넣어 뒀으므로 일반 호스트에서는 Pretendard가 그대로 쓰인다.
+
+## 개인정보
+
+원본 스냅샷의 RSC 페이로드에는 **실제 회원 이름과 휴대폰 번호**가 그대로 들어 있었다.
+공개 저장소와 호스팅에 올릴 값이 아니라 `src/App.tsx`의 `MEMBER`를 데모값으로 바꿨다.
+실제 인증을 붙일 때 세션에서 받아오면 된다.
+
+## GitHub Pages (참고)
 
 `.github/workflows/static.yml`이 **main 푸시 시 리포 루트 전체**를 GitHub Pages로 올린다.
 그래서 빌드 산출물을 리포 루트 `geotuscan/`에 커밋해 두는 방식으로 붙였다.

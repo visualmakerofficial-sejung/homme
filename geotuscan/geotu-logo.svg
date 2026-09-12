@@ -1,16 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="140" height="48" viewBox="0 0 140 48" role="img" aria-label="거투스캔">
-  <!--
-    원본 geotu-logo.png를 못 받아 임시로 쓰는 워드마크.
-    currentColor를 쓰므로 다크 모드에서도 그대로 보인다.
-    원본 PNG가 들어오면 public/ 의 이 파일을 교체하고 Header.tsx의
-    확장자만 바꾸면 된다.
-  -->
-  <g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="17" cy="21" r="8.5"/>
-    <path d="M23.2 27.2 29 33"/>
-    <path d="M13 21h8"/>
-    <path d="M17 17v8"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="152" height="48" viewBox="0 0 152 48" role="img" aria-label="거투스캔">
+  <title>거투스캔</title>
+  <desc>스캔 링과 건물 실루엣을 겹친 마크. img 태그로 불러오므로 색은 고정값이다.</desc>
+  <g transform="translate(2 6)">
+    <rect width="36" height="36" rx="11" fill="#2563eb" opacity=".12"/>
+
+    <path d="M7.5 22.5a11 11 0 1 1 21 0" fill="none" stroke="#2563eb"
+          stroke-width="2.2" stroke-linecap="round" opacity=".38"/>
+    <path d="M10.5 15.5A8.6 8.6 0 0 1 18 11.4" fill="none" stroke="#2563eb"
+          stroke-width="2.2" stroke-linecap="round"/>
+
+    <path d="M13 27.5V18.6l5-3.1 5 3.1v8.9" fill="none" stroke="#1d4ed8"
+          stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M16.4 27.5v-3.7h3.2v3.7" fill="none" stroke="#1d4ed8"
+          stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+
+    <path d="M8.4 27.5h19.2" fill="none" stroke="#2563eb"
+          stroke-width="2.4" stroke-linecap="round"/>
   </g>
-  <text x="40" y="30" font-family="Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif"
-        font-size="20" font-weight="800" fill="currentColor" letter-spacing="-0.8">거투스캔</text>
+
+  <text x="46" y="30" font-family="'Noto Sans KR', Pretendard, -apple-system, system-ui, sans-serif"
+        font-size="20" font-weight="800" fill="#111827" letter-spacing="-0.9">거투스캔</text>
 </svg>
