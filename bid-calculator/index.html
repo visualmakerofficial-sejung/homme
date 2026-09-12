@@ -1,0 +1,993 @@
+<title>경매 입찰 계산기</title>
+<meta name="description" content="입찰가를 넣으면 제비용·세금까지 빼고 순수이익과 수익률이 바로 나옵니다." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap"
+  rel="stylesheet"
+/>
+
+<style>
+  /* ── 토큰 ────────────────────────────────────────────────────────────
+     장부(帳簿) 느낌으로 잡았다. 종이색 바탕에 깊은 소나무색 강조,
+     숫자는 전부 모노. 회색은 중립 회색이 아니라 강조색 쪽으로 아주 살짝
+     기울인 값을 썼다. */
+  :root {
+    --paper: #fbfcfb;
+    --surface: #ffffff;
+    --ink: #16211d;
+    --ink-soft: #5c6b65;
+    --ink-faint: #93a09a;
+    --rule: #e2e8e5;
+    --rule-strong: #c9d3cf;
+    --accent: #1f5f4b;
+    --accent-soft: #eaf3ef;
+    --loss: #a13b2a;
+    --focus: #2f8468;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #111613;
+      --surface: #182120;
+      --ink: #eef3f0;
+      --ink-soft: #9aaaa3;
+      --ink-faint: #6d7d77;
+      --rule: #27332f;
+      --rule-strong: #35443f;
+      --accent: #6fc7a5;
+      --accent-soft: #16302a;
+      --loss: #e08a76;
+      --focus: #6fc7a5;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #111613;
+    --surface: #182120;
+    --ink: #eef3f0;
+    --ink-soft: #9aaaa3;
+    --ink-faint: #6d7d77;
+    --rule: #27332f;
+    --rule-strong: #35443f;
+    --accent: #6fc7a5;
+    --accent-soft: #16302a;
+    --loss: #e08a76;
+    --focus: #6fc7a5;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont,
+      "Malgun Gothic", sans-serif;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 560px;
+    margin: 0 auto;
+    padding-inline: 20px;
+    padding-block: 40px 64px;
+  }
+
+  /* ── 머리말 ─────────────────────────────────────────────── */
+  header {
+    border-bottom: 2px solid var(--ink);
+    padding-bottom: 16px;
+    margin-bottom: 28px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  .tagline {
+    margin: 6px 0 0;
+    color: var(--ink-soft);
+    font-size: 0.875rem;
+  }
+
+  /* ── 구획 ───────────────────────────────────────────────── */
+  section {
+    margin-bottom: 26px;
+  }
+
+  .legend {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .legend h2 {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+
+  .legend::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid var(--rule);
+    transform: translateY(-2px);
+  }
+
+  /* ── 물건 종류 ──────────────────────────────────────────── */
+  .kinds {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--rule-strong);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .kinds button {
+    flex: 1;
+    padding: 11px 8px;
+    border: 0;
+    background: var(--surface);
+    color: var(--ink-soft);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+  }
+
+  .kinds button + button {
+    border-left: 1px solid var(--rule-strong);
+  }
+
+  .kinds button[aria-pressed="true"] {
+    background: var(--accent);
+    color: var(--paper);
+    font-weight: 600;
+  }
+
+  .kinds button:not([aria-pressed="true"]):hover {
+    background: var(--accent-soft);
+    color: var(--ink);
+  }
+
+  /* ── 입력 줄 ────────────────────────────────────────────── */
+  .field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .field:last-child {
+    border-bottom: 0;
+  }
+
+  .field > label {
+    font-size: 0.875rem;
+    color: var(--ink-soft);
+    min-width: 0;
+  }
+
+  .field .hint {
+    display: block;
+    font-size: 0.6875rem;
+    color: var(--ink-faint);
+  }
+
+  .entry {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  input[type="text"] {
+    width: 7.5rem;
+    padding: 7px 10px;
+    border: 1px solid var(--rule-strong);
+    border-radius: 2px;
+    background: var(--surface);
+    color: var(--ink);
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.9375rem;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  input[type="text"].narrow {
+    width: 4.25rem;
+  }
+
+  input[type="text"]:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 1px;
+    border-color: var(--focus);
+  }
+
+  input::placeholder {
+    color: var(--ink-faint);
+  }
+
+  .unit {
+    font-size: 0.75rem;
+    color: var(--ink-faint);
+    width: 2.2rem;
+  }
+
+  .unit.tight {
+    width: 1rem;
+  }
+
+  /* ── 대출 3열 ───────────────────────────────────────────── */
+  .triple {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    padding-top: 4px;
+  }
+
+  .triple .field {
+    flex: 1 1 8rem;
+    border-bottom: 0;
+    padding: 0;
+    gap: 8px;
+  }
+
+  /* ── 역산 ───────────────────────────────────────────────── */
+  .solve {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 10px;
+    padding: 12px;
+    background: var(--accent-soft);
+    border-radius: 2px;
+  }
+
+  .solve label {
+    font-size: 0.8125rem;
+    color: var(--ink);
+    flex: 1;
+  }
+
+  .solve input {
+    width: 5.5rem;
+  }
+
+  button.solve-go {
+    padding: 8px 12px;
+    border: 1px solid var(--accent);
+    border-radius: 2px;
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  button.solve-go:hover:not(:disabled) {
+    background: var(--accent);
+    color: var(--paper);
+  }
+
+  button.solve-go:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* ── 명세서 ─────────────────────────────────────────────── */
+  .statement {
+    background: var(--surface);
+    border: 1px solid var(--rule-strong);
+    border-top: 2px solid var(--ink);
+    border-radius: 2px;
+    padding: 20px 18px;
+  }
+
+  .statement h2 {
+    margin: 0 0 14px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  /* 영수증처럼 라벨과 금액 사이를 점선으로 잇는다 */
+  .row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 5px 0;
+  }
+
+  .row .name {
+    font-size: 0.8125rem;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+
+  .row .leader {
+    flex: 1;
+    border-bottom: 1px dotted var(--rule-strong);
+    transform: translateY(-3px);
+    min-width: 12px;
+  }
+
+  .row .amt {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .row.subtotal .name,
+  .row.subtotal .amt {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .row .note {
+    font-size: 0.6875rem;
+    color: var(--ink-faint);
+    white-space: nowrap;
+  }
+
+  .sep {
+    border: 0;
+    border-top: 1px solid var(--rule);
+    margin: 10px 0;
+  }
+
+  .sep.heavy {
+    border-top: 1px solid var(--rule-strong);
+  }
+
+  .total {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0 2px;
+  }
+
+  .total .name {
+    font-size: 0.9375rem;
+    font-weight: 700;
+  }
+
+  .total .amt {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 1.375rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  .pos {
+    color: var(--accent);
+  }
+
+  .neg {
+    color: var(--loss);
+  }
+
+  .roi {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--rule-strong);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .roi .name {
+    font-size: 0.8125rem;
+    color: var(--ink-soft);
+  }
+
+  .roi .amt {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 1.75rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  .empty {
+    color: var(--ink-faint);
+    font-size: 0.875rem;
+    text-align: center;
+    padding: 28px 0;
+  }
+
+  /* ── 기타 ───────────────────────────────────────────────── */
+  .chip {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 7px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 2px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .field-foot {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .seed {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 18px;
+    padding: 9px 12px;
+    border: 1px dashed var(--rule-strong);
+    border-radius: 2px;
+    font-size: 0.75rem;
+    color: var(--ink-soft);
+  }
+
+  .seed button {
+    border: 0;
+    background: transparent;
+    padding: 2px 4px;
+    color: var(--accent);
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  footer {
+    margin-top: 30px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule);
+    font-size: 0.75rem;
+    line-height: 1.7;
+    color: var(--ink-faint);
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      transition: none !important;
+    }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>경매 입찰 계산기</h1>
+    <p class="tagline">
+      입찰가를 넣으면 제비용·세금까지 빼고 순수이익과 수익률이 바로 나옵니다.
+      금액은 모두 <strong>만원</strong> 단위입니다.
+    </p>
+  </header>
+
+  <div class="seed" id="seed">
+    <span>예시 값이 채워져 있습니다. 숫자를 바꾸면 바로 다시 계산됩니다.</span>
+    <button type="button" id="clear">비우기</button>
+  </div>
+
+  <section>
+    <div class="legend"><h2>물건 종류</h2></div>
+    <div class="kinds" role="group" aria-label="물건 종류">
+      <button type="button" id="kindVilla" aria-pressed="true">빌라 · 도시형</button>
+      <button type="button" id="kindApt" aria-pressed="false">아파트</button>
+    </div>
+  </section>
+
+  <section>
+    <div class="legend"><h2>기본 정보</h2></div>
+
+    <div class="field">
+      <label for="appraisal">감정가</label>
+      <span class="entry">
+        <input type="text" id="appraisal" inputmode="numeric" placeholder="0" />
+        <span class="unit">만원</span>
+      </span>
+    </div>
+
+    <div class="field">
+      <label for="bid">입찰가 <span class="hint">낙찰 예정 금액</span></label>
+      <span class="entry">
+        <input type="text" id="bid" inputmode="numeric" placeholder="0" />
+        <span class="unit">만원</span>
+      </span>
+    </div>
+
+    <div class="field-foot"><span class="chip" id="bidRatio" hidden></span></div>
+
+    <div class="field">
+      <label for="sale">매도예상가 <span class="hint">낙찰 후 팔 가격</span></label>
+      <span class="entry">
+        <input type="text" id="sale" inputmode="numeric" placeholder="0" />
+        <span class="unit">만원</span>
+      </span>
+    </div>
+
+    <div class="solve">
+      <label for="target">목표 수익으로 입찰가 거꾸로 구하기</label>
+      <input type="text" id="target" inputmode="numeric" placeholder="수익" />
+      <button type="button" class="solve-go" id="solve" disabled>계산</button>
+    </div>
+  </section>
+
+  <section>
+    <div class="legend"><h2>비용</h2></div>
+
+    <div class="field" id="acqRow" hidden>
+      <label for="acq">취득세 + 채권 + 법무사</label>
+      <span class="entry">
+        <input type="text" id="acq" inputmode="numeric" placeholder="0" />
+        <span class="unit">만원</span>
+      </span>
+    </div>
+
+    <div class="field">
+      <label for="repair">수리비</label>
+      <span class="entry">
+        <input type="text" id="repair" inputmode="numeric" placeholder="0" />
+        <span class="unit">만원</span>
+      </span>
+    </div>
+
+    <div class="field">
+      <label for="eviction">명도비</label>
+      <span class="entry">
+        <input type="text" id="eviction" inputmode="numeric" placeholder="0" />
+        <span class="unit">만원</span>
+      </span>
+    </div>
+
+    <div class="field">
+      <label for="etc">기타비용</label>
+      <span class="entry">
+        <input type="text" id="etc" inputmode="numeric" placeholder="0" />
+        <span class="unit">만원</span>
+      </span>
+    </div>
+  </section>
+
+  <section>
+    <div class="legend"><h2>대출 / 이자</h2></div>
+    <div class="triple">
+      <div class="field">
+        <label for="loanRatio">대출비율</label>
+        <span class="entry">
+          <input type="text" id="loanRatio" class="narrow" inputmode="numeric" />
+          <span class="unit tight">%</span>
+        </span>
+      </div>
+      <div class="field">
+        <label for="rate">금리</label>
+        <span class="entry">
+          <input type="text" id="rate" class="narrow" inputmode="decimal" />
+          <span class="unit tight">%</span>
+        </span>
+      </div>
+      <div class="field">
+        <label for="months">보유기간</label>
+        <span class="entry">
+          <input type="text" id="months" class="narrow" inputmode="numeric" />
+          <span class="unit tight">개월</span>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="statement">
+      <h2>손익 명세</h2>
+      <div id="result"></div>
+      <p class="empty" id="placeholder">
+        입찰가와 매도예상가를 넣으면 여기에 명세가 나옵니다.
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    참고용 계산기입니다. 정확한 세금은 세무사에게 확인하세요.<br />
+    종합소득세는 일반세율(6~45%) 기준이며 단기보유·다주택 중과는 반영되지
+    않습니다. 취득세는 빌라·도시형 1.1%, 중개보수는 매도가의 0.7%로 잡습니다.
+  </footer>
+</div>
+
+<script>
+  // ── 산식 ────────────────────────────────────────────────────────────
+  // 종합소득세 기본세율 (과세표준 만원 단위, 누진공제 포함)
+  var BRACKETS = [
+    { upTo: 1400, rate: 0.06, deduct: 0 },
+    { upTo: 5000, rate: 0.15, deduct: 126 },
+    { upTo: 8800, rate: 0.24, deduct: 576 },
+    { upTo: 15000, rate: 0.35, deduct: 1544 },
+    { upTo: 30000, rate: 0.38, deduct: 1994 },
+    { upTo: 50000, rate: 0.4, deduct: 2594 },
+    { upTo: 100000, rate: 0.42, deduct: 3594 },
+    { upTo: Infinity, rate: 0.45, deduct: 6594 },
+  ];
+
+  var ACQ_RATE = 0.011; // 빌라·도시형 취득세 1% + 지방교육세 0.1%
+  var BROKER_RATE = 0.007; // 매도 중개보수
+
+  function calc(v) {
+    if (v.bid <= 0 || v.sale <= 0) return null;
+
+    var acq = v.kind === "villa" ? Math.round(v.bid * ACQ_RATE) : v.acq;
+    var broker = Math.round(v.sale * BROKER_RATE);
+    var loan = Math.round((v.bid * v.loanRatio) / 100);
+    var interest = Math.round((loan * (v.rate / 100) * v.months) / 12);
+    var cost = acq + broker + interest + v.repair + v.eviction + v.etc;
+    var income = v.sale - v.bid - cost;
+
+    var b = BRACKETS[BRACKETS.length - 1];
+    for (var i = 0; i < BRACKETS.length; i++) {
+      if (income <= BRACKETS[i].upTo) {
+        b = BRACKETS[i];
+        break;
+      }
+    }
+    var incomeTax =
+      income > 0 ? Math.max(0, Math.round(income * b.rate - b.deduct)) : 0;
+    var localTax = Math.round(incomeTax * 0.1);
+    var net = income - incomeTax - localTax;
+    var own = v.bid - loan + cost;
+
+    return {
+      ratio: v.appraisal > 0 ? (v.bid / v.appraisal) * 100 : null,
+      acq: acq,
+      broker: broker,
+      interest: interest,
+      cost: cost,
+      income: income,
+      taxRate: b.rate,
+      deduct: b.deduct,
+      incomeTax: incomeTax,
+      localTax: localTax,
+      net: net,
+      loan: loan,
+      own: own,
+      roi: own > 0 ? (net / own) * 100 : null,
+    };
+  }
+
+  /** 목표 순수익이 나오는 입찰가를 이분탐색으로 찾는다. */
+  function solveBid(v, target) {
+    if (v.sale <= 0 || target <= 0) return null;
+    var lo = 1,
+      hi = v.sale,
+      ans = null;
+    for (var i = 0; i < 60 && hi - lo > 0.5; i++) {
+      var mid = (lo + hi) / 2;
+      var r = calc(Object.assign({}, v, { bid: Math.round(mid) }));
+      if (r && r.net >= target) {
+        ans = Math.round(mid);
+        lo = mid;
+      } else {
+        hi = mid;
+      }
+    }
+    return ans;
+  }
+
+  // ── 표기 ────────────────────────────────────────────────────────────
+  function money(v) {
+    var n = Math.round(v);
+    var sign = n < 0 ? "-" : "";
+    n = Math.abs(n);
+    var eok = Math.floor(n / 10000);
+    var man = n % 10000;
+    if (eok > 0) {
+      return (
+        sign +
+        eok.toLocaleString("ko-KR") +
+        "억" +
+        (man > 0 ? " " + man.toLocaleString("ko-KR") + "만" : "")
+      );
+    }
+    return sign + n.toLocaleString("ko-KR") + "만";
+  }
+
+  // ── 상태 ────────────────────────────────────────────────────────────
+  var STORE = "bid-calc:v1";
+  var EXAMPLE = {
+    kind: "villa",
+    appraisal: "9100",
+    bid: "5818",
+    sale: "9000",
+    acq: "",
+    repair: "800",
+    eviction: "0",
+    etc: "50",
+    loanRatio: "80",
+    rate: "4.5",
+    months: "5",
+  };
+  var FIELDS = [
+    "appraisal",
+    "bid",
+    "sale",
+    "acq",
+    "repair",
+    "eviction",
+    "etc",
+    "loanRatio",
+    "rate",
+    "months",
+  ];
+
+  var el = {};
+  FIELDS.concat([
+    "target",
+    "solve",
+    "result",
+    "placeholder",
+    "bidRatio",
+    "acqRow",
+    "kindVilla",
+    "kindApt",
+    "seed",
+    "clear",
+  ]).forEach(function (id) {
+    el[id] = document.getElementById(id);
+  });
+
+  var kind = "villa";
+  var usingExample = true;
+
+  function digits(s) {
+    return s.replace(/[^0-9]/g, "");
+  }
+  function decimal(s) {
+    return s.replace(/[^0-9.]/g, "");
+  }
+  function num(id) {
+    return Number(el[id].value || 0);
+  }
+
+  function values() {
+    return {
+      kind: kind,
+      appraisal: num("appraisal"),
+      bid: num("bid"),
+      sale: num("sale"),
+      acq: num("acq"),
+      repair: num("repair"),
+      eviction: num("eviction"),
+      etc: num("etc"),
+      loanRatio: num("loanRatio"),
+      rate: num("rate"),
+      months: num("months"),
+    };
+  }
+
+  // ── 렌더 ────────────────────────────────────────────────────────────
+  function row(name, amount, opts) {
+    opts = opts || {};
+    return (
+      '<div class="row' +
+      (opts.subtotal ? " subtotal" : "") +
+      '"><span class="name">' +
+      name +
+      '</span><span class="leader"></span>' +
+      (opts.note ? '<span class="note">' + opts.note + "</span>" : "") +
+      '<span class="amt' +
+      (opts.tone ? " " + opts.tone : "") +
+      '">' +
+      amount +
+      "</span></div>"
+    );
+  }
+
+  function render() {
+    var v = values();
+    var r = calc(v);
+
+    if (r && r.ratio !== null) {
+      el.bidRatio.textContent = "낙찰가율 " + r.ratio.toFixed(1) + "%";
+      el.bidRatio.hidden = false;
+    } else {
+      el.bidRatio.hidden = true;
+    }
+
+    el.solve.disabled = !(Number(el.target.value || 0) > 0 && v.sale > 0);
+
+    if (!r) {
+      el.result.innerHTML = "";
+      el.placeholder.hidden = false;
+      save();
+      return;
+    }
+    el.placeholder.hidden = true;
+
+    var html = "";
+    if (r.ratio !== null) {
+      html += row("낙찰가율", r.ratio.toFixed(1) + "%");
+      html += '<hr class="sep" />';
+    }
+
+    html += row(
+      v.kind === "villa" ? "취득세 (1.1%)" : "취득세 + 채권 + 법무사",
+      money(r.acq),
+    );
+    html += row("중개비 (0.7%)", money(r.broker));
+    html += row("이자 (" + v.months + "개월)", money(r.interest));
+    html += row("수리비", money(v.repair));
+    html += row("명도비", money(v.eviction));
+    html += row("기타비용", money(v.etc));
+    html += row("총 제비용", money(r.cost), { subtotal: true });
+
+    html += '<hr class="sep" />';
+    html += row("예상 소득금액", money(r.income));
+    html += row(
+      "종합소득세 (" + Math.round(r.taxRate * 100) + "%)",
+      money(r.incomeTax),
+      { note: r.deduct > 0 ? "공제 " + money(r.deduct) : "" },
+    );
+    html += row("지방소득세 (10%)", money(r.localTax));
+
+    html += '<hr class="sep heavy" />';
+    var tone = r.net >= 0 ? "pos" : "neg";
+    html +=
+      '<div class="total"><span class="name">순수이익</span><span class="amt ' +
+      tone +
+      '">' +
+      (r.net >= 0 ? "+" : "") +
+      money(r.net) +
+      "</span></div>";
+
+    html += '<hr class="sep" />';
+    html += row("대출가능금액", money(r.loan));
+    html += row("실제 투자금", money(r.own), { subtotal: true });
+
+    if (r.roi !== null) {
+      html +=
+        '<div class="roi"><span class="name">수익률 (투자금 대비)</span><span class="amt ' +
+        tone +
+        '">' +
+        (r.roi >= 0 ? "+" : "") +
+        r.roi.toFixed(1) +
+        "%</span></div>";
+    }
+
+    el.result.innerHTML = html;
+    save();
+  }
+
+  // ── 저장 (이 브라우저에만 남는다) ───────────────────────────────────
+  function save() {
+    try {
+      var data = { kind: kind };
+      FIELDS.forEach(function (f) {
+        data[f] = el[f].value;
+      });
+      localStorage.setItem(STORE, JSON.stringify(data));
+    } catch (e) {
+      /* 프라이빗 모드 등에서는 그냥 넘어간다 */
+    }
+  }
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORE);
+      if (!raw) return null;
+      var d = JSON.parse(raw);
+      return d && typeof d === "object" ? d : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function apply(data) {
+    kind = data.kind === "apt" ? "apt" : "villa";
+    FIELDS.forEach(function (f) {
+      el[f].value = data[f] == null ? "" : String(data[f]);
+    });
+    syncKind();
+  }
+
+  function syncKind() {
+    el.kindVilla.setAttribute("aria-pressed", String(kind === "villa"));
+    el.kindApt.setAttribute("aria-pressed", String(kind === "apt"));
+    el.acqRow.hidden = kind !== "apt";
+  }
+
+  // ── 이벤트 ──────────────────────────────────────────────────────────
+  FIELDS.forEach(function (f) {
+    el[f].addEventListener("input", function () {
+      var clean = f === "rate" ? decimal(this.value) : digits(this.value);
+      if (clean !== this.value) this.value = clean;
+      if (usingExample) {
+        usingExample = false;
+        el.seed.hidden = true;
+      }
+      render();
+    });
+  });
+
+  el.target.addEventListener("input", function () {
+    var clean = digits(this.value);
+    if (clean !== this.value) this.value = clean;
+    el.solve.disabled = !(Number(clean || 0) > 0 && num("sale") > 0);
+  });
+
+  el.solve.addEventListener("click", function () {
+    var found = solveBid(values(), Number(el.target.value || 0));
+    if (found === null) return;
+    el.bid.value = String(found);
+    if (usingExample) {
+      usingExample = false;
+      el.seed.hidden = true;
+    }
+    render();
+    el.bid.focus();
+  });
+
+  el.kindVilla.addEventListener("click", function () {
+    kind = "villa";
+    syncKind();
+    render();
+  });
+  el.kindApt.addEventListener("click", function () {
+    kind = "apt";
+    syncKind();
+    render();
+  });
+
+  el.clear.addEventListener("click", function () {
+    FIELDS.forEach(function (f) {
+      el[f].value = "";
+    });
+    el.loanRatio.value = "80";
+    el.rate.value = "4.5";
+    el.months.value = "5";
+    el.target.value = "";
+    usingExample = false;
+    el.seed.hidden = true;
+    render();
+    el.appraisal.focus();
+  });
+
+  // ── 시작 ────────────────────────────────────────────────────────────
+  var saved = load();
+  if (saved) {
+    usingExample = false;
+    el.seed.hidden = true;
+    apply(saved);
+  } else {
+    apply(EXAMPLE);
+  }
+  render();
+</script>
