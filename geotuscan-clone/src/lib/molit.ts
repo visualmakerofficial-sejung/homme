@@ -120,7 +120,10 @@ async function readXlsx(file: File): Promise<string[][]> {
 }
 
 type SheetJs = {
-  read: (data: ArrayBuffer, opts: { type: "array" }) => {
+  read: (
+    data: ArrayBuffer,
+    opts: { type: "array" },
+  ) => {
     SheetNames: string[]
     Sheets: Record<string, unknown>
   }
@@ -189,8 +192,8 @@ function mapColumns(header: string[]): Record<keyof typeof COLUMNS, number> {
       key === "floor"
         ? c === "층"
         : key === "day"
-          // "계약일"은 "계약년월"과 겹치므로 완전일치로만 잡는다
-          ? c === "계약일"
+          ? // "계약일"은 "계약년월"과 겹치므로 완전일치로만 잡는다
+            c === "계약일"
           : aliases.some((a) => c.startsWith(norm(a))),
     )
   }
@@ -204,7 +207,9 @@ const toNumber = (v: string) => {
 
 /** "인천광역시 연수구 동춘동" → 시도 / 시군구 / 읍면동 */
 function splitRegion(value: string) {
-  const parts = String(value ?? "").trim().split(/\s+/)
+  const parts = String(value ?? "")
+    .trim()
+    .split(/\s+/)
   return {
     sido: parts[0] ?? "",
     // 성남시 분당구처럼 시군구가 두 토막인 경우를 흡수한다
@@ -268,12 +273,9 @@ export async function parseMolitFile(file: File): Promise<ParseResult> {
   return { deals, skipped }
 }
 
-
 /* ── 3. 집계 ───────────────────────────────────────────────────────── */
 
 const PYEONG = 3.305785
-
-export const toPyeong = (m2: number) => m2 / PYEONG
 
 function median(values: number[]): number {
   if (values.length === 0) return 0
@@ -282,62 +284,138 @@ function median(values: number[]): number {
   return s.length % 2 ? s[mid] : Math.round((s[mid - 1] + s[mid]) / 2)
 }
 
-/* 거래 목록 정렬 ---------------------------------------------------- */
+/* 구간 정의 --------------------------------------------------------- */
 
-export type SortKey = "floor" | "builtYear" | "area" | "price" | "date"
+export type Metric = "floor" | "age" | "area" | "price"
 
-export const SORT_LABELS: Record<Exclude<SortKey, "date">, string> = {
-  floor: "층수",
-  builtYear: "건축년도",
-  area: "전용평수",
-  price: "매매금액",
+interface Bucket {
+  label: string
+  /** 값이 이 구간에 들어가는지 */
+  test: (d: Deal) => boolean
 }
 
-const SORT_VALUE: Record<SortKey, (d: Deal) => number> = {
-  floor: (d) => d.floor,
-  builtYear: (d) => d.builtYear,
-  area: (d) => d.areaM2,
-  price: (d) => d.priceMan,
-  date: (d) => d.year * 10000 + d.month * 100 + d.day,
+/**
+ * 구간 경계로 버킷을 만든다. [~a, a~b, …, z+]
+ *
+ * pick이 NaN을 주면(값이 비어 있으면) 어느 구간에도 넣지 않는다. 그래서
+ * 건축년도처럼 빠진 값이 있는 지표는 구간 합이 그 해 거래건수보다 적다.
+ * 첨부 화면의 건축년도 표도 그렇게 동작한다.
+ */
+function bands(
+  edges: number[],
+  unit: string,
+  pick: (d: Deal) => number,
+  fmt: (n: number) => string = String,
+): Bucket[] {
+  const out: Bucket[] = [
+    { label: `~${fmt(edges[0])}${unit}`, test: (d) => pick(d) < edges[0] },
+  ]
+  for (let i = 0; i < edges.length - 1; i += 1) {
+    const lo = edges[i]
+    const hi = edges[i + 1]
+    out.push({
+      label: `${fmt(lo)}~${fmt(hi)}${unit}`,
+      test: (d) => pick(d) >= lo && pick(d) < hi,
+    })
+  }
+  const last = edges[edges.length - 1]
+  out.push({ label: `${fmt(last)}${unit}+`, test: (d) => pick(d) >= last })
+  return out
 }
 
-export function sortDeals(
-  deals: Deal[],
-  key: SortKey,
-  dir: "asc" | "desc",
-): Deal[] {
-  const pick = SORT_VALUE[key]
-  const sign = dir === "asc" ? 1 : -1
-  return [...deals].sort((a, b) => {
-    const diff = (pick(a) - pick(b)) * sign
-    if (diff !== 0) return diff
-    // 같은 값이면 최신 거래가 위로
-    return SORT_VALUE.date(b) - SORT_VALUE.date(a)
-  })
+const eok = (man: number) => man / 10000
+
+/**
+ * 지표별 구간. 첨부 화면과 같은 구간으로 맞췄다.
+ * 건축년도는 연도가 아니라 **건물 나이**(계약연도 − 건축년도) 기준이다.
+ */
+export const METRICS: Record<Metric, { label: string; buckets: Bucket[] }> = {
+  floor: {
+    label: "층수",
+    buckets: [
+      { label: "지하층", test: (d) => d.floor < 0 },
+      { label: "1층", test: (d) => d.floor === 1 },
+      { label: "2층", test: (d) => d.floor === 2 },
+      { label: "3층", test: (d) => d.floor === 3 },
+      { label: "4층", test: (d) => d.floor === 4 },
+      { label: "5층+", test: (d) => d.floor >= 5 },
+    ],
+  },
+  age: {
+    label: "건축년도",
+    buckets: bands([5, 10, 15, 20, 25, 30], "년", (d) =>
+      d.builtYear > 0 ? d.year - d.builtYear : NaN,
+    ),
+  },
+  area: {
+    label: "전용평수",
+    buckets: bands([5, 10, 15, 20, 25, 30], "평", (d) =>
+      d.areaM2 > 0 ? d.areaM2 / PYEONG : NaN,
+    ),
+  },
+  price: {
+    label: "매매금액",
+    buckets: [
+      { label: "~5천", test: (d) => d.priceMan < 5000 },
+      {
+        label: "5천~1억",
+        test: (d) => d.priceMan >= 5000 && d.priceMan < 10000,
+      },
+      // 1억부터는 억 단위로 끊는다. bands의 첫 칸(~1억)은 위에서 이미
+      // 만원 단위로 나눠 놨으니 잘라낸다.
+      ...bands([1, 1.5, 2, 2.5, 3, 4, 5, 6], "억", (d) =>
+        eok(d.priceMan),
+      ).slice(1),
+    ],
+  },
 }
 
-/* 요약 -------------------------------------------------------------- */
+export const METRIC_LIST: Metric[] = ["floor", "age", "area", "price"]
 
-export interface Summary {
-  count: number
-  medianMan: number
-  medianPyeong: number
-  medianBuiltYear: number
-  years: { year: number; count: number }[]
+/* 피벗 -------------------------------------------------------------- */
+
+export interface Pivot {
+  /** 구간 이름 (열) */
+  columns: string[]
+  /** 연도별 행 */
+  rows: { year: number; counts: number[]; total: number }[]
+  /** 열별 합계 */
+  totals: number[]
+  grandTotal: number
+  /** 표 안에서 가장 큰 셀 값 (강조용) */
+  peak: number
 }
 
-export function summarize(deals: Deal[]): Summary {
-  const years = new Map<number, number>()
-  for (const d of deals) years.set(d.year, (years.get(d.year) ?? 0) + 1)
+export function buildPivot(deals: Deal[], metric: Metric): Pivot {
+  const { buckets } = METRICS[metric]
+  const byYear = new Map<number, Deal[]>()
+  for (const d of deals) {
+    const list = byYear.get(d.year)
+    if (list) list.push(d)
+    else byYear.set(d.year, [d])
+  }
+
+  const totals = new Array(buckets.length).fill(0)
+  let peak = 0
+
+  const rows = [...byYear.keys()]
+    .sort((a, b) => a - b)
+    .map((year) => {
+      const list = byYear.get(year)!
+      const counts = buckets.map((b) => list.filter((d) => b.test(d)).length)
+      counts.forEach((c, i) => {
+        totals[i] += c
+        if (c > peak) peak = c
+      })
+      return { year, counts, total: list.length }
+    })
 
   return {
-    count: deals.length,
-    medianMan: median(deals.map((d) => d.priceMan)),
-    medianPyeong: median(deals.filter((d) => d.areaM2 > 0).map((d) => d.areaM2)) / PYEONG,
-    medianBuiltYear: median(deals.filter((d) => d.builtYear > 0).map((d) => d.builtYear)),
-    years: [...years.entries()]
-      .sort((a, b) => a[0] - b[0])
-      .map(([year, count]) => ({ year, count })),
+    columns: buckets.map((b) => b.label),
+    rows,
+    totals,
+    grandTotal: rows.reduce((sum, r) => sum + r.total, 0),
+    peak,
   }
 }
 
@@ -361,7 +439,6 @@ export function groupOf(sido: string): AreaGroup {
 
 export interface TopDong {
   rank: number
-  /** 화면에 쓰는 이름. 동 이름은 구마다 겹치므로 시군구를 붙인다. */
   label: string
   sido: string
   sigungu: string
@@ -371,8 +448,8 @@ export interface TopDong {
 }
 
 /**
- * 지역군(서울/경기/인천/그 외) 안에서 동별 거래량 상위 20곳.
- * 동 이름은 구를 건너 중복되므로(예: 중동) 시군구까지 묶어 센다.
+ * 지역군 안에서 동별 거래량 1~20위.
+ * 동 이름은 구를 건너 겹치므로(예: 중동) 시군구까지 묶어 센다.
  */
 export function topDongs(
   deals: Deal[],
@@ -380,16 +457,13 @@ export function topDongs(
   limit = 20,
 ): TopDong[] {
   const groups = new Map<string, { d: Deal; prices: number[] }>()
-
   for (const d of deals) {
-    if (groupOf(d.sido) !== group) continue
-    if (!d.dong) continue
+    if (groupOf(d.sido) !== group || !d.dong) continue
     const key = `${d.sido}|${d.sigungu}|${d.dong}`
     const hit = groups.get(key)
     if (hit) hit.prices.push(d.priceMan)
     else groups.set(key, { d, prices: [d.priceMan] })
   }
-
   return [...groups.values()]
     .map(({ d, prices }) => ({
       label: `${d.sigungu} ${d.dong}`.trim(),
@@ -404,14 +478,12 @@ export function topDongs(
     .map((row, i) => ({ rank: i + 1, ...row }))
 }
 
-/** 파일에 자료가 있는 지역군만 메뉴에 띄운다. */
 export function availableGroups(deals: Deal[]): Set<AreaGroup> {
   return new Set(deals.map((d) => groupOf(d.sido)))
 }
 
 /* 지역 옵션 ---------------------------------------------------------- */
 
-/** 파일에 실제로 들어 있는 지역만 셀렉트에 띄운다. */
 export function regionOptions(deals: Deal[]) {
   const sido = new Map<string, Map<string, Set<string>>>()
   for (const d of deals) {
@@ -428,17 +500,14 @@ export function regionOptions(deals: Deal[]) {
 /** 1억 3,020만 */
 export function formatMan(man: number): string {
   if (!Number.isFinite(man) || man <= 0) return "-"
-  const eok = Math.floor(man / 10000)
+  const e = Math.floor(man / 10000)
   const rest = Math.round(man % 10000)
-  if (eok > 0) {
+  if (e > 0) {
     return rest > 0
-      ? `${eok.toLocaleString("ko-KR")}억 ${rest.toLocaleString("ko-KR")}만`
-      : `${eok.toLocaleString("ko-KR")}억`
+      ? `${e.toLocaleString("ko-KR")}억 ${rest.toLocaleString("ko-KR")}만`
+      : `${e.toLocaleString("ko-KR")}억`
   }
   return `${Math.round(man).toLocaleString("ko-KR")}만`
 }
 
-/** 2025.8.31 */
-export function formatDate(d: Deal): string {
-  return d.day > 0 ? `${d.year}.${d.month}.${d.day}` : `${d.year}.${d.month}`
-}
+export const count = (n: number) => n.toLocaleString("ko-KR")

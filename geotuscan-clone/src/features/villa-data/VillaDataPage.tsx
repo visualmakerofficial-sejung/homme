@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import {
-  ArrowDown,
-  ArrowUp,
+  ArrowLeftRight,
   Database,
   ExternalLink,
   Trophy,
@@ -20,39 +19,34 @@ import {
 } from "@/components/ui/select"
 import {
   AREA_GROUPS,
+  METRICS,
+  METRIC_LIST,
   MOLIT_URL,
   MolitParseError,
-  SORT_LABELS,
   availableGroups,
-  formatDate,
+  buildPivot,
+  count,
   formatMan,
   parseMolitFile,
   regionOptions,
-  sortDeals,
-  summarize,
-  toPyeong,
   topDongs,
   type AreaGroup,
   type Deal,
-  type SortKey,
+  type Metric,
 } from "@/lib/molit"
 import { cn } from "@/lib/utils"
 
+import { Donut, StackedBars, cellTone } from "./charts"
+
 const ALL = "__all__"
-const PAGE = 50
-const SORT_TABS: Exclude<SortKey, "date">[] = [
-  "floor",
-  "builtYear",
-  "area",
-  "price",
-]
 
 /**
  * 빌라데이터 (/villa-data).
  *
- * 국토교통부 실거래가 파일을 올리면 브라우저 안에서 파싱해
- *  - 지역을 좁히면 거래 목록을 표로 정리하고
- *  - "거래량 TOP 20"은 서울/경기/인천/그 외로 나눠 동별 순위를 낸다.
+ * 국토교통부 실거래가 파일을 올리면 브라우저 안에서 집계한다.
+ *  - 지역을 고르면 연도 × 구간 거래건수 표 (+ 전치 보기)
+ *  - 아래에 연도별 누적 막대와 구간 비중 도넛
+ *  - "거래량 TOP 20"은 서울/경기/인천/그 외로 나눠 동별 순위를 낸다
  * 파일은 어디로도 전송되지 않는다.
  */
 export function VillaDataPage() {
@@ -65,9 +59,8 @@ export function VillaDataPage() {
   const [sigungu, setSigungu] = useState(ALL)
   const [dong, setDong] = useState(ALL)
 
-  const [sortKey, setSortKey] = useState<SortKey>("price")
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
-  const [limit, setLimit] = useState(PAGE)
+  const [metric, setMetric] = useState<Metric>("floor")
+  const [byCategory, setByCategory] = useState(false)
 
   const [showTop, setShowTop] = useState(false)
   const [group, setGroup] = useState<AreaGroup>("seoul")
@@ -90,27 +83,17 @@ export function VillaDataPage() {
     )
   }, [deals, sido, sigungu, dong])
 
-  const summary = useMemo(
-    () => (filtered.length ? summarize(filtered) : null),
-    [filtered],
-  )
-  const sorted = useMemo(
-    () => sortDeals(filtered, sortKey, sortDir),
-    [filtered, sortKey, sortDir],
+  const pivot = useMemo(
+    () => (filtered.length ? buildPivot(filtered, metric) : null),
+    [filtered, metric],
   )
   const top = useMemo(
     () => (deals && showTop ? topDongs(deals, group) : []),
     [deals, showTop, group],
   )
 
-  // 조건이 바뀌면 목록을 처음부터 다시 보여준다
-  useEffect(() => setLimit(PAGE), [sido, sigungu, dong, sortKey, sortDir])
-
-  // 파일에 없는 지역군이 선택돼 있으면 있는 쪽으로 옮긴다
   useEffect(() => {
-    if (groups.size > 0 && !groups.has(group)) {
-      setGroup([...groups][0])
-    }
+    if (groups.size > 0 && !groups.has(group)) setGroup([...groups][0])
   }, [groups, group])
 
   async function handleFile(file: File) {
@@ -122,18 +105,17 @@ export function VillaDataPage() {
       setSido(ALL)
       setSigungu(ALL)
       setDong(ALL)
-      toast.success(
-        `거래 ${parsed.length.toLocaleString("ko-KR")}건을 읽었습니다.`,
-        {
-          description:
-            skipped > 0
-              ? `형식이 맞지 않는 ${skipped}줄은 건너뛰었습니다.`
-              : undefined,
-        },
-      )
+      toast.success(`거래 ${count(parsed.length)}건을 읽었습니다.`, {
+        description:
+          skipped > 0
+            ? `형식이 맞지 않는 ${skipped}줄은 건너뛰었습니다.`
+            : undefined,
+      })
     } catch (err) {
       toast.error(
-        err instanceof MolitParseError ? err.message : "파일을 읽지 못했습니다.",
+        err instanceof MolitParseError
+          ? err.message
+          : "파일을 읽지 못했습니다.",
       )
     } finally {
       setLoading(false)
@@ -141,21 +123,14 @@ export function VillaDataPage() {
     }
   }
 
-  function toggleSort(key: SortKey) {
-    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"))
-    else {
-      setSortKey(key)
-      setSortDir(key === "builtYear" ? "asc" : "desc")
-    }
-  }
-
-  const sigunguList = sido === ALL ? [] : [...(regions?.get(sido)?.keys() ?? [])]
+  const sigunguList =
+    sido === ALL ? [] : [...(regions?.get(sido)?.keys() ?? [])]
   const dongList =
     sido === ALL || sigungu === ALL
       ? []
       : [...(regions?.get(sido)?.get(sigungu) ?? [])]
 
-  const SortArrow = sortDir === "asc" ? ArrowUp : ArrowDown
+  const metricLabel = METRICS[metric].label
 
   return (
     <div className="space-y-3">
@@ -187,7 +162,7 @@ export function VillaDataPage() {
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">{fileName}</p>
                 <p className="text-xs text-muted-foreground">
-                  거래 {deals.length.toLocaleString("ko-KR")}건
+                  거래 {count(deals.length)}건
                 </p>
               </div>
               <button
@@ -384,8 +359,12 @@ export function VillaDataPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b text-xs text-muted-foreground">
-                      <th className="py-1.5 pr-2 text-left font-medium">순위</th>
-                      <th className="py-1.5 pr-2 text-left font-medium">동네</th>
+                      <th className="py-1.5 pr-2 text-left font-medium">
+                        순위
+                      </th>
+                      <th className="py-1.5 pr-2 text-left font-medium">
+                        동네
+                      </th>
                       <th className="py-1.5 pr-2 text-right font-medium">
                         거래건수
                       </th>
@@ -416,7 +395,7 @@ export function VillaDataPage() {
                         </td>
                         <td className="py-1.5 pr-2">{row.label}</td>
                         <td className="price-text py-1.5 pr-2 text-right font-medium">
-                          {row.count.toLocaleString("ko-KR")}
+                          {count(row.count)}
                         </td>
                         <td className="price-text py-1.5 text-right text-muted-foreground">
                           {formatMan(row.medianMan)}
@@ -434,144 +413,168 @@ export function VillaDataPage() {
         </Card>
       )}
 
-      {/* ── 요약 ────────────────────────────────────────── */}
-      {summary && (
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
-              {[
-                ["거래건수", `${summary.count.toLocaleString("ko-KR")}건`],
-                ["중위 매매가", formatMan(summary.medianMan)],
-                ["중위 전용", `${summary.medianPyeong.toFixed(1)}평`],
-                [
-                  "중위 건축년도",
-                  summary.medianBuiltYear > 0
-                    ? `${summary.medianBuiltYear}년`
-                    : "-",
-                ],
-              ].map(([label, value]) => (
-                <div key={label}>
-                  <p className="text-[11px] text-muted-foreground">{label}</p>
-                  <p className="price-text text-sm font-semibold">{value}</p>
-                </div>
-              ))}
-            </div>
-
-            {summary.years.length > 1 && (
-              <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t pt-3">
-                <span className="text-[11px] text-muted-foreground">연도별</span>
-                {summary.years.map((y) => (
-                  <span
-                    key={y.year}
-                    className="price-text rounded bg-muted px-1.5 py-0.5 text-[11px]"
-                  >
-                    {y.year} {y.count.toLocaleString("ko-KR")}건
-                  </span>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ── 정렬 탭 ─────────────────────────────────────── */}
+      {/* ── 지표 탭 ─────────────────────────────────────── */}
       <div className="flex gap-2">
-        {SORT_TABS.map((key) => (
+        {METRIC_LIST.map((m) => (
           <button
-            key={key}
+            key={m}
             type="button"
-            aria-pressed={sortKey === key}
-            onClick={() => toggleSort(key)}
+            aria-pressed={metric === m}
+            onClick={() => setMetric(m)}
             className={cn(
-              "flex flex-1 items-center justify-center gap-1 rounded-lg py-2 text-sm font-medium transition-colors",
-              sortKey === key
-                ? "bg-primary text-primary-foreground shadow-sm"
+              "flex-1 rounded-lg py-2 text-sm font-medium transition-colors",
+              metric === m
+                ? "bg-slate-800 text-white shadow-sm dark:bg-slate-700"
                 : "bg-muted/60 text-muted-foreground hover:bg-muted",
             )}
           >
-            {SORT_LABELS[key]}
-            {sortKey === key && <SortArrow className="h-3 w-3" />}
+            {METRICS[m].label}
           </button>
         ))}
       </div>
 
-      {/* ── 거래 목록 ───────────────────────────────────── */}
-      {sorted.length > 0 ? (
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm whitespace-nowrap">
-                <thead>
-                  <tr className="border-b text-xs text-muted-foreground">
-                    <th
-                      onClick={() => toggleSort("date")}
-                      className="cursor-pointer py-1.5 pr-3 text-left font-medium hover:text-foreground"
-                    >
-                      계약일
-                    </th>
-                    {dong === ALL && (
-                      <th className="py-1.5 pr-3 text-left font-medium">동</th>
-                    )}
-                    <th className="py-1.5 pr-3 text-left font-medium">건물명</th>
-                    {(["area", "floor", "builtYear", "price"] as const).map(
-                      (key) => (
-                        <th
-                          key={key}
-                          onClick={() => toggleSort(key)}
-                          className="cursor-pointer py-1.5 pr-3 text-right font-medium last:pr-0 hover:text-foreground"
-                        >
-                          {SORT_LABELS[key]}
-                        </th>
-                      ),
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {sorted.slice(0, limit).map((d, i) => (
-                    <tr
-                      key={`${d.sido}${d.sigungu}${d.dong}${d.name}${d.year}${d.month}${d.day}${d.priceMan}${i}`}
-                      className="border-b last:border-0"
-                    >
-                      <td className="price-text py-1.5 pr-3 text-xs text-muted-foreground">
-                        {formatDate(d)}
-                      </td>
-                      {dong === ALL && (
-                        <td className="py-1.5 pr-3 text-xs text-muted-foreground">
-                          {d.dong}
-                        </td>
-                      )}
-                      <td className="max-w-[10rem] truncate py-1.5 pr-3">
-                        {d.name || "-"}
-                      </td>
-                      <td className="price-text py-1.5 pr-3 text-right">
-                        {d.areaM2 > 0 ? `${toPyeong(d.areaM2).toFixed(1)}평` : "-"}
-                      </td>
-                      <td className="price-text py-1.5 pr-3 text-right">
-                        {d.floor !== 0 ? `${d.floor}층` : "-"}
-                      </td>
-                      <td className="price-text py-1.5 pr-3 text-right">
-                        {d.builtYear > 0 ? d.builtYear : "-"}
-                      </td>
-                      <td className="price-text py-1.5 text-right font-semibold">
-                        {formatMan(d.priceMan)}
+      {/* ── 집계 표 + 그래프 ────────────────────────────── */}
+      {pivot ? (
+        <>
+          <Card>
+            <CardContent className="px-0 pt-0 pb-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm whitespace-nowrap">
+                  <thead>
+                    <tr className="border-b bg-muted/50 text-xs">
+                      <th className="px-3 py-2.5 text-left font-medium">
+                        {byCategory ? metricLabel : "연도"}
+                      </th>
+                      {byCategory
+                        ? pivot.rows.map((r) => (
+                            <th
+                              key={r.year}
+                              className="px-3 py-2.5 text-right font-medium"
+                            >
+                              {r.year}년
+                            </th>
+                          ))
+                        : pivot.columns.map((c) => (
+                            <th
+                              key={c}
+                              className="px-3 py-2.5 text-right font-medium"
+                            >
+                              {c}
+                            </th>
+                          ))}
+                      <th className="bg-muted px-3 py-2.5 text-right font-semibold">
+                        합계
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {byCategory
+                      ? pivot.columns.map((col, ci) => (
+                          <tr key={col} className="border-b">
+                            <td className="px-3 py-2 font-medium">{col}</td>
+                            {pivot.rows.map((r) => (
+                              <td
+                                key={r.year}
+                                className={cn(
+                                  "price-text px-3 py-2 text-right",
+                                  cellTone(r.counts[ci], pivot.peak),
+                                )}
+                              >
+                                {count(r.counts[ci])}
+                              </td>
+                            ))}
+                            <td className="price-text bg-muted/40 px-3 py-2 text-right font-semibold">
+                              {count(pivot.totals[ci])}
+                            </td>
+                          </tr>
+                        ))
+                      : pivot.rows.map((row) => (
+                          <tr key={row.year} className="border-b">
+                            <td className="price-text px-3 py-2 font-medium">
+                              {row.year}년
+                            </td>
+                            {row.counts.map((c, i) => (
+                              <td
+                                key={i}
+                                className={cn(
+                                  "price-text px-3 py-2 text-right",
+                                  cellTone(c, pivot.peak),
+                                )}
+                              >
+                                {count(c)}
+                              </td>
+                            ))}
+                            <td className="price-text bg-muted/40 px-3 py-2 text-right font-semibold">
+                              {count(row.total)}
+                            </td>
+                          </tr>
+                        ))}
+                  </tbody>
+
+                  <tfoot>
+                    <tr className="bg-muted/50 text-sm font-semibold">
+                      <td className="px-3 py-2.5">합계</td>
+                      {byCategory
+                        ? pivot.rows.map((r) => (
+                            <td
+                              key={r.year}
+                              className="price-text px-3 py-2.5 text-right"
+                            >
+                              {count(r.total)}
+                            </td>
+                          ))
+                        : pivot.totals.map((t, i) => (
+                            <td
+                              key={i}
+                              className="price-text px-3 py-2.5 text-right"
+                            >
+                              {count(t)}
+                            </td>
+                          ))}
+                      <td className="price-text bg-muted px-3 py-2.5 text-right text-primary">
+                        {count(pivot.grandTotal)}
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </tfoot>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
 
-            {sorted.length > limit && (
-              <button
-                type="button"
-                onClick={() => setLimit((n) => n + PAGE)}
-                className="mt-3 w-full rounded-lg border py-2 text-xs font-medium transition-colors hover:bg-accent"
-              >
-                더 보기 · {(sorted.length - limit).toLocaleString("ko-KR")}건 남음
-              </button>
-            )}
-          </CardContent>
-        </Card>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setByCategory((v) => !v)}
+              className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-accent"
+            >
+              <ArrowLeftRight className="h-3.5 w-3.5" />
+              {byCategory ? "연도별 보기" : "카테고리별 보기"}
+            </button>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            <Card>
+              <CardContent className="pt-4 pb-3">
+                <StackedBars
+                  title={`연도별 ${metricLabel} 구성`}
+                  columns={pivot.columns}
+                  rows={pivot.rows}
+                />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-4 pb-3">
+                <Donut
+                  title={`${metricLabel}별 비중`}
+                  columns={pivot.columns}
+                  totals={pivot.totals}
+                  grandTotal={pivot.grandTotal}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        </>
       ) : (
         <div className="py-16 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
@@ -581,7 +584,7 @@ export function VillaDataPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             {deals
               ? "선택한 지역에 거래 내역이 없습니다"
-              : "실거래가 파일을 올리면 지역별 거래 내역을 표로 정리해 줍니다"}
+              : "실거래가 파일을 올리면 연도별 거래건수를 표와 그래프로 정리해 줍니다"}
           </p>
         </div>
       )}
