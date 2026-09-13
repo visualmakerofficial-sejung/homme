@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" role="img" aria-label="거투스캔 마크">
+  <title>거투스캔 마크</title>
+  <desc>스캔 링과 건물 실루엣을 겹친 마크. 글자는 HTML로 따로 두어 테마를 따라간다.</desc>
+  <g transform="translate(2 2)">
+    <rect width="36" height="36" rx="11" fill="#2563eb" opacity=".12"/>
+
+    <path d="M7.5 22.5a11 11 0 1 1 21 0" fill="none" stroke="#2563eb"
+          stroke-width="2.2" stroke-linecap="round" opacity=".38"/>
+    <path d="M10.5 15.5A8.6 8.6 0 0 1 18 11.4" fill="none" stroke="#2563eb"
+          stroke-width="2.2" stroke-linecap="round"/>
+
+    <path d="M13 27.5V18.6l5-3.1 5 3.1v8.9" fill="none" stroke="#3b82f6"
+          stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M16.4 27.5v-3.7h3.2v3.7" fill="none" stroke="#3b82f6"
+          stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+
+    <path d="M8.4 27.5h19.2" fill="none" stroke="#2563eb"
+          stroke-width="2.4" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -45,21 +45,29 @@ export function Header({
 
   return (
     <header className="flex h-14 items-center justify-between border-b bg-card px-4">
+      {/*
+        글자는 SVG가 아니라 HTML로 둔다. img로 불러온 SVG는 currentColor를
+        물려받지 못해서, 워드마크를 SVG 안에 넣으면 색이 고정되어 다크모드에서
+        배경에 묻힌다. 마크만 이미지로 두고 글자는 text-foreground를 쓴다.
+      */}
       <button
         type="button"
         onClick={onLogoClick}
-        className="flex cursor-pointer items-center"
+        aria-label="거투스캔 홈"
+        className="flex cursor-pointer items-center gap-2"
       >
         <img
           // 하위 경로 배포(/homme/geotuscan/)에서도 깨지지 않게 base를 붙인다.
-          src={`${import.meta.env.BASE_URL}geotu-logo.svg`}
-          alt="거투스캔"
-          width={140}
-          height={48}
-          loading="lazy"
+          src={`${import.meta.env.BASE_URL}geotu-mark.svg`}
+          alt=""
+          width={36}
+          height={36}
           decoding="async"
-          className="h-10 object-contain text-foreground"
+          className="h-9 w-9 shrink-0"
         />
+        <span className="text-xl leading-none font-extrabold tracking-[-0.045em] text-foreground">
+          거투스캔
+        </span>
       </button>
 
       <div className="flex items-center gap-1">
